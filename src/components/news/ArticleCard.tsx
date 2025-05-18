@@ -9,7 +9,7 @@ import { Bookmark, BookmarkCheck, ExternalLink, FileText } from "lucide-react";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { summarizeArticle, SummarizeArticleInput } from "@/ai/flows/summarize-article";
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Added useEffect here
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { LoadingSpinner } from "../common/LoadingSpinner";
 
@@ -31,7 +31,7 @@ export function ArticleCard({ article, isSaved, onToggleSave }: ArticleCardProps
   const [currentImageUrl, setCurrentImageUrl] = useState(article.imageUrl || FALLBACK_IMAGE_PLACEHOLDER);
 
   // Update image if article.imageUrl changes and is valid
-  React.useEffect(() => {
+  useEffect(() => { // Changed from React.useEffect to useEffect
     setCurrentImageUrl(article.imageUrl || FALLBACK_IMAGE_PLACEHOLDER);
   }, [article.imageUrl]);
 
@@ -144,3 +144,4 @@ export function ArticleCard({ article, isSaved, onToggleSave }: ArticleCardProps
     </Card>
   );
 }
+
