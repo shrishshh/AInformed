@@ -34,7 +34,7 @@ const nextConfig: NextConfig = {
       { hostname: 'assets.bwbx.io' }, // Bloomberg
       { hostname: 'images.unsplash.com' }, // If you use Unsplash for fallbacks
       { hostname: 'cdn.vox-cdn.com'}, // Vox Media (The Verge, etc.)
-      { hostname: 'www.theverge.com'}, 
+      { hostname: 'www.theverge.com'},
       { hostname: 'www.engadget.com'},
       { hostname: 's.aolcdn.com'}, // Engadget, TechCrunch (some assets)
       { hostname: 'www.aljazeera.com'},
@@ -42,6 +42,7 @@ const nextConfig: NextConfig = {
       { hostname: 'www.euronews.com'},
       { hostname: 'ichef.bbci.co.uk'}, // BBC Images
       { hostname: 'news.google.com'},
+      { hostname: 'www.indiewire.com' }, // Added to fix the error
       // Add more specific hostnames as you encounter them from NewsAPI
       // Or, for wider but less secure coverage during development:
       // { protocol: 'https', hostname: '**' } // Allows all HTTPS images
