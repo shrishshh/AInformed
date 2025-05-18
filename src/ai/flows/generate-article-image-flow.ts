@@ -1,13 +1,16 @@
 
+// This file is no longer needed as images are sourced from NewsAPI.
+// It can be deleted.
+// To ensure no build errors if other files still import it temporarily,
+// we can leave it empty or with a placeholder. For cleanup, it should be removed.
+
+/*
 'use server';
 /**
  * @fileOverview Generates an image for a news article using its title and summary.
- *
- * - generateArticleImage - A function that handles image generation for an article.
- * - GenerateArticleImageInput - The input type for the generateArticleImage function.
- * - GenerateArticleImageOutput - The return type for the generateArticleImage function.
+ * (This flow is deprecated as images are now sourced from NewsAPI)
  */
-
+/*
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
@@ -25,42 +28,24 @@ const GenerateArticleImageOutputSchema = z.object({
 export type GenerateArticleImageOutput = z.infer<typeof GenerateArticleImageOutputSchema>;
 
 export async function generateArticleImage(input: GenerateArticleImageInput): Promise<GenerateArticleImageOutput> {
-  return generateArticleImageFlow(input);
+  console.warn("generateArticleImage flow is deprecated and should not be called. Images are sourced from NewsAPI.");
+  // Return a placeholder or throw an error
+  return { imageDataUri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=' };
 }
 
-// This flow uses a specific model capable of image generation.
 const generateArticleImageFlow = ai.defineFlow(
   {
-    name: 'generateArticleImageFlow',
+    name: 'generateArticleImageFlow_DEPRECATED', // Renamed to avoid conflicts if accidentally called
     inputSchema: GenerateArticleImageInputSchema,
-    outputSchema: GenerateArticleImageOutputSchema, // The flow itself returns the Zod schema directly
+    outputSchema: GenerateArticleImageOutputSchema,
   },
   async (input) => {
-    const { media, text } = await ai.generate({
-      model: 'googleai/gemini-2.0-flash-exp', // Explicitly use the image-capable model
-      prompt: `Generate a visually appealing and relevant news-style image that would be suitable for a news website article.
-               The article title is: "${input.title}"
-               The article summary is: "${input.summary}"
-               Create a generic but professional news graphic if specific details are hard to visualize. Avoid text in the image unless it's very generic like "NEWS".`,
-      config: {
-        responseModalities: ['IMAGE', 'TEXT'], // Must request IMAGE and TEXT
-         safetySettings: [ // Added safety settings to be less restrictive for typical news images
-          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
-          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-        ],
-      },
-    });
-
-    if (media?.url) {
-      return { imageDataUri: media.url };
-    } else {
-      // Fallback or error handling if image generation fails
-      console.error('Image generation failed for title:', input.title, 'Generated text was:', text);
-      // Return a placeholder or throw an error. For now, returning a known placeholder data URI.
-      // This is a transparent 1x1 pixel PNG.
-      return { imageDataUri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=' };
-    }
+     console.warn("generateArticleImageFlow is deprecated.");
+     return { imageDataUri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=' };
   }
 );
+*/
+
+// Intentionally left mostly empty to signify deprecation.
+// Consider deleting this file as part of project cleanup.
+export {}; // Add an empty export to make it a module and satisfy TypeScript if needed.

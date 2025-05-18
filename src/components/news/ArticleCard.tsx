@@ -10,7 +10,7 @@ import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { summarizeArticle, SummarizeArticleInput } from "@/ai/flows/summarize-article";
 import { useState } from "react";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { LoadingSpinner } from "../common/LoadingSpinner";
 
 interface ArticleCardProps {
@@ -18,6 +18,9 @@ interface ArticleCardProps {
   isSaved: boolean;
   onToggleSave: (article: NewsArticle) => void;
 }
+
+const FALLBACK_IMAGE_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDYwMCA0MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSI0MDAiIGZpbGw9IiMzNzQxNTEiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjRweCIgZmlsbD0iI2EwYTVhZSI+Tm8gSW1hZ2UgQXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
+
 
 export function ArticleCard({ article, isSaved, onToggleSave }: ArticleCardProps) {
   const { toast } = useToast();
@@ -29,7 +32,6 @@ export function ArticleCard({ article, isSaved, onToggleSave }: ArticleCardProps
     setIsSummarizing(true);
     setAiSummary(null);
     try {
-      // Use full article summary for better AI summarization if available, else title as fallback
       const contentToSummarize = article.summary || article.title;
       if (!contentToSummarize) {
         toast({
@@ -60,20 +62,28 @@ export function ArticleCard({ article, isSaved, onToggleSave }: ArticleCardProps
     }
   };
 
+  const imageUrl = article.imageUrl || FALLBACK_IMAGE_PLACEHOLDER;
+  const imageAlt = article.title || "News article image";
+
   return (
     <Card className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 bg-card">
-      {article.imageUrl && ( // Check if imageUrl exists
-        <div className="relative w-full h-48">
-          <Image
-            src={article.imageUrl} // This will now be a data URI
-            alt={article.title}
-            fill={true}
-            className="object-cover"
-            priority={false} 
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
-        </div>
-      )}
+      <div className="relative w-full h-48 bg-muted">
+        <Image
+          src={imageUrl}
+          alt={imageAlt}
+          fill={true}
+          className="object-cover"
+          priority={false}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          onError={(e) => {
+            // Log error or use a more sophisticated fallback
+            console.warn(`Failed to load image for article: ${article.title} from ${article.imageUrl}`);
+            // currentTarget.src will not work as expected here for retry, use placeholder state if needed
+            // For simplicity, rely on the initial FALLBACK_IMAGE_PLACEHOLDER or a static one if error occurs
+            (e.target as HTMLImageElement).src = FALLBACK_IMAGE_PLACEHOLDER;
+          }}
+        />
+      </div>
       <CardHeader>
         <div className="flex justify-between items-start gap-2">
           <CardTitle className="text-lg font-semibold leading-tight text-foreground">{article.title}</CardTitle>

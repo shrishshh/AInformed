@@ -1,12 +1,23 @@
 
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, ShieldAlert, ShieldX } from "lucide-react";
+import { ShieldCheck, ShieldAlert, ShieldX, HelpCircle } from "lucide-react";
 
 interface ReliabilityBadgeProps {
-  score: number;
+  score?: number; // Score is now optional
 }
 
 export function ReliabilityBadge({ score }: ReliabilityBadgeProps) {
+  if (typeof score === 'undefined' || score === null) {
+    // Optional: render nothing or a placeholder if score is undefined
+    // return null; 
+    return (
+      <Badge variant="outline" className="border-transparent bg-muted text-muted-foreground hover:bg-muted/90 transition-colors">
+        <HelpCircle className="h-3.5 w-3.5 mr-1.5" />
+        Reliability N/A
+      </Badge>
+    );
+  }
+
   let colorClass = "";
   let text = "";
   let IconComponent = ShieldAlert;

@@ -11,13 +11,28 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
-      // removed placehold.co as images will be generated data URIs
-      // If you add other external image sources, list their hostnames here.
+      // Add domains for news sources from NewsAPI as you encounter them.
+      // This is a starting list, NewsAPI aggregates from many sources.
+      // Examples:
+      { hostname: 's.abcnews.com' },
+      { hostname: 'media.cnn.com' },
+      { hostname: 'image.cnbcfm.com' },
+      { hostname: 'static.foxnews.com' },
+      { hostname: 'storage.googleapis.com' }, // Common for Google News
+      { hostname: 'dims.apnews.com' },
+      { hostname: 'i.kinja-img.com' }, // Gizmodo, Kotaku, etc.
+      { hostname: '*.reutersmedia.net' }, // Reuters (wildcard for subdomains)
+      { hostname: 'images.wsj.net' }, // Wall Street Journal
+      { hostname: 'static01.nyt.com' }, // New York Times
+      { hostname: 'img.etimg.com' }, // Economic Times
+      { hostname: 'www.theblock.co' },
+      { hostname: 'techcrunch.com' },
+      { hostname: '*.google.com' }, // For images from google news etc.
+      // Add more hostnames as needed based on NewsAPI sources you use
+      // Or, for wider but less secure coverage:
+      // { protocol: 'https', hostname: '**' } // Allows all HTTPS images
     ],
-    // It's good to allow data URIs for next/image if not enabled by default,
-    // however, Next.js 13+ typically supports data URIs for src without explicit config.
-    // If issues arise, you might need to specify domains for any non-data-URI images
-    // or ensure your Next.js version handles data URIs as expected.
+    // Data URIs are still supported for fallbacks or other uses.
   },
 };
 

@@ -7,26 +7,31 @@ import { ArticleCard } from "@/components/news/ArticleCard";
 import { FeedCustomizationForm } from "@/components/news/FeedCustomizationForm";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { PageWrapper } from "@/components/layout/PageWrapper";
-import { generateNewsFeed, GenerateNewsFeedInput, GenerateNewsFeedOutput } from "@/ai/flows/generate-news-feed";
-import { generateArticleImage, GenerateArticleImageInput } from "@/ai/flows/generate-article-image-flow";
+import { generateNewsFeed, GenerateNewsFeedInput } from "@/ai/flows/generate-news-feed";
+// generateArticleImage is removed as NewsAPI provides image URLs
 import { useToast } from "@/hooks/use-toast";
 import { useSavedArticles } from "@/hooks/useSavedArticles";
 import { AlertTriangle, ListX } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-const FEED_PREFERENCES_KEY = "AInformedFeedPreferences_v2";
+const FEED_PREFERENCES_KEY = "AInformedFeedPreferences_v3"; // Incremented version due to schema change
 
 const DEFAULT_NUMBER_OF_ARTICLES = 15;
 
 export default function HomePage() {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState("Generating your personalized feed...");
+  const [loadingMessage, setLoadingMessage] = useState("Fetching live news articles..."); // Updated message
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { savedArticles, saveArticle, unsaveArticle, isArticleSaved } = useSavedArticles();
-  const [initialFormValues, setInitialFormValues] = useState<Partial<GenerateNewsFeedInput> | undefined>(undefined);
+  const { saveArticle, unsaveArticle, isArticleSaved } = useSavedArticles();
+  
+  // Simplified initial form values, mainly for search query
+  const [initialFormValues, setInitialFormValues] = useState<Partial<GenerateNewsFeedInput>>({
+    searchQuery: "latest technology AI", // Default search query
+    numberOfArticles: DEFAULT_NUMBER_OF_ARTICLES,
+  });
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -35,30 +40,22 @@ export default function HomePage() {
         try {
           const parsedPrefs = JSON.parse(storedPreferences) as GenerateNewsFeedInput;
           setInitialFormValues({
-            keywords: parsedPrefs.keywords || ["AI", "technology"],
-            topics: parsedPrefs.topics || ["latest news", "innovations"],
-            reliabilityScore: parsedPrefs.reliabilityScore || 0.7,
+            searchQuery: parsedPrefs.searchQuery || "latest technology AI",
             numberOfArticles: parsedPrefs.numberOfArticles || DEFAULT_NUMBER_OF_ARTICLES,
           });
-          // fetchNews(parsedPrefs); // Don't auto-fetch on load to avoid immediate long load
         } catch (e) {
           console.error("Failed to parse stored preferences", e);
           localStorage.removeItem(FEED_PREFERENCES_KEY);
            setInitialFormValues({ 
-            keywords: ["AI", "technology"], 
-            topics: ["latest news", "innovations"], 
-            reliabilityScore: 0.7,
+            searchQuery: "latest technology AI",
             numberOfArticles: DEFAULT_NUMBER_OF_ARTICLES 
           });
         }
       } else {
-        const defaultPrefs = { 
-          keywords: ["AI", "technology"], 
-          topics: ["latest news", "innovations"], 
-          reliabilityScore: 0.7,
-          numberOfArticles: DEFAULT_NUMBER_OF_ARTICLES
-        };
-        setInitialFormValues(defaultPrefs);
+         setInitialFormValues({ 
+          searchQuery: "latest technology AI",
+          numberOfArticles: DEFAULT_NUMBER_OF_ARTICLES 
+        });
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -69,45 +66,24 @@ export default function HomePage() {
     setIsLoading(true);
     setError(null);
     setArticles([]); 
-    setLoadingMessage("Generating news feed content...");
+    setLoadingMessage("Fetching live news articles...");
 
     try {
       if (typeof window !== "undefined") {
         localStorage.setItem(FEED_PREFERENCES_KEY, JSON.stringify(input));
       }
-      const feedResult: GenerateNewsFeedOutput = await generateNewsFeed(input);
+      // The flow now fetches real articles including their image URLs
+      const feedResult = await generateNewsFeed(input);
       
       if (feedResult.articles && feedResult.articles.length > 0) {
-        const articlesWithImages: NewsArticle[] = [];
-        for (let i = 0; i < feedResult.articles.length; i++) {
-          const article = feedResult.articles[i];
-          setLoadingMessage(`Generating image ${i + 1} of ${feedResult.articles.length} for "${article.title.substring(0,30)}..."`);
-          try {
-            const imageInput: GenerateArticleImageInput = { title: article.title, summary: article.summary };
-            const imageResult = await generateArticleImage(imageInput);
-            articlesWithImages.push({
-              ...article,
-              id: article.url || `article-${Date.now()}-${i}`,
-              imageUrl: imageResult.imageDataUri, // Use generated image data URI
-              publishedDate: new Date().toISOString(), // Placeholder, ideally from news source
-            });
-          } catch (imgError: any) {
-            console.error(`Failed to generate image for article "${article.title}":`, imgError);
-            toast({
-              title: "Image Generation Issue",
-              description: `Could not generate image for "${article.title.substring(0,30)}...". Using a fallback.`,
-              variant: "destructive",
-            });
-            articlesWithImages.push({ // Add article with fallback image
-              ...article,
-              id: article.url || `article-${Date.now()}-${i}`,
-              imageUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', // Fallback transparent pixel
-              publishedDate: new Date().toISOString(),
-            });
-          }
-          setArticles([...articlesWithImages]); // Update articles incrementally to show progress
-        }
-        // setArticles(articlesWithImages); // Set all at once if incremental update is not preferred
+        // Map articles and ensure they have an ID (using URL)
+        const articlesWithIds = feedResult.articles.map((article, index) => ({
+          ...article,
+          id: article.url || `article-${Date.now()}-${index}`,
+          // imageUrl is now directly from NewsAPI
+          // publishedDate is also from NewsAPI
+        }));
+        setArticles(articlesWithIds);
       } else {
         setArticles([]);
         toast({
@@ -117,32 +93,37 @@ export default function HomePage() {
       }
     } catch (e: any) {
       console.error("Failed to fetch news feed:", e);
-      const errorMessage = e.message || "An unexpected error occurred.";
-      setError(`Failed to generate news feed. ${errorMessage}. Please try again later.`);
+      let friendlyMessage = "Failed to fetch news. Please check your connection or API configuration.";
+      if (e.message && e.message.includes("NEWS_API_KEY")) {
+        friendlyMessage = "NewsAPI key is missing or invalid. Please check your .env file and ensure NEWS_API_KEY is set correctly.";
+      } else if (e.message) {
+        friendlyMessage = `Failed to fetch news: ${e.message.substring(0,100)}${e.message.length > 100 ? '...' : ''}`;
+      }
+      setError(friendlyMessage);
       toast({
         title: "Error Fetching News",
-        description: "There was a problem connecting to the news service.",
+        description: friendlyMessage.length > 100 ? "There was a problem connecting to the news service. See console for details." : friendlyMessage,
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
-      setLoadingMessage("Generating your personalized feed..."); // Reset message
+      setLoadingMessage("Fetching live news articles..."); 
     }
   };
 
   const handleRetryFetch = () => {
     if (initialFormValues) {
       const lastInput = localStorage.getItem(FEED_PREFERENCES_KEY);
+      let prefsToFetch: GenerateNewsFeedInput;
       if (lastInput) {
-        fetchNews(JSON.parse(lastInput));
+        prefsToFetch = JSON.parse(lastInput);
       } else {
-         fetchNews({ 
-            keywords: ["AI", "technology"], 
-            topics: ["latest news", "innovations"], 
-            reliabilityScore: 0.7,
-            numberOfArticles: DEFAULT_NUMBER_OF_ARTICLES
-          });
+         prefsToFetch = { 
+            searchQuery: initialFormValues.searchQuery || "latest technology AI",
+            numberOfArticles: initialFormValues.numberOfArticles || DEFAULT_NUMBER_OF_ARTICLES
+          };
       }
+      fetchNews(prefsToFetch);
     }
   };
 
@@ -173,10 +154,10 @@ export default function HomePage() {
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-destructive/10 mb-4">
               <AlertTriangle className="h-8 w-8 text-destructive" />
             </div>
-            <CardTitle className="text-xl text-foreground">Connection Error</CardTitle>
+            <CardTitle className="text-xl text-foreground">News Feed Error</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">{error.includes("Failed to generate news feed.") ? error.split("Failed to generate news feed.")[1].trim().split("Please try again later.")[0].trim() : "Failed to fetch news. Please check your connection or AI service configuration."}</p>
+            <p className="text-muted-foreground">{error}</p>
           </CardContent>
           <CardFooter className="flex justify-center">
             <Button onClick={handleRetryFetch} variant="default" className="bg-primary text-primary-foreground hover:bg-primary/90">
@@ -187,12 +168,12 @@ export default function HomePage() {
       )}
 
       {!isLoading && !error && articles.length === 0 && (
-         initialFormValues && ( // Only show "No Articles Yet" if form has loaded, not on initial page visit before any search
+         initialFormValues && ( 
         <div className="flex flex-col items-center justify-center my-12 text-center">
           <ListX className="h-16 w-16 text-muted-foreground mb-4" />
           <h2 className="text-2xl font-semibold mb-2 text-foreground">No Articles Yet</h2>
           <p className="text-muted-foreground">
-            Enter search terms above and press Enter to generate your feed.
+            Enter search terms above and press Enter to generate your feed, or adjust your query.
           </p>
         </div>
         )

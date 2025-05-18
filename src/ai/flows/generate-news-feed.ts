@@ -3,7 +3,7 @@
 'use server';
 
 /**
- * @fileOverview Generates a personalized news feed based on user interests and source reliability.
+ * @fileOverview Generates a personalized news feed by fetching articles from NewsAPI.org.
  *
  * - generateNewsFeed - A function that generates a news feed tailored to user preferences.
  * - GenerateNewsFeedInput - The input type for the generateNewsFeed function.
@@ -12,20 +12,16 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+// Import the tool function and its TypeScript input type
+import { fetchRealNewsArticlesTool, type FetchRealNewsArticlesToolInput } from '@/ai/tools/fetch-real-news-tool';
 
 const GenerateNewsFeedInputSchema = z.object({
-  keywords: z.array(z.string()).describe('Keywords to filter news articles.'),
-  topics: z.array(z.string()).describe('Topics of interest for news articles.'),
-  reliabilityScore: z
-    .number()
-    .min(0)
-    .max(1)
-    .describe('Minimum reliability score of news sources (0 to 1).'),
+  searchQuery: z.string().describe('Keywords or a phrase to search for news articles. This will be used as the "q" parameter for NewsAPI.'),
   numberOfArticles: z
     .number()
     .min(1)
-    .max(20) // Increased max to 20
-    .default(15) // Default to 15 articles
+    .max(20) // Max 20 for UI consistency, tool can fetch more if needed internally
+    .default(15)
     .describe('The number of news articles to generate in the feed.'),
 });
 
@@ -35,8 +31,10 @@ const NewsArticleSchema = z.object({
   title: z.string().describe('Title of the news article.'),
   summary: z.string().describe('Brief summary of the news article.'),
   source: z.string().describe('Source of the news article (e.g., BBC News, Reuters).'),
-  url: z.string().describe('Full URL of the news article. Should be from a real, well-known news domain if possible.'),
-  reliabilityScore: z.number().min(0).max(1).describe('Reliability score of the news source.'),
+  url: z.string().url().describe('Full URL of the news article.'), // Output from NewsAPI is a URL
+  imageUrl: z.string().url().optional().nullable().describe('URL of an image for the article, if available.'),
+  publishedDate: z.string().describe('Publication date of the article in ISO format.'),
+  reliabilityScore: z.number().min(0).max(1).optional().describe('Reliability score of the news source (0 to 1). Not provided by NewsAPI, can be assigned or estimated separately.'),
 });
 
 const GenerateNewsFeedOutputSchema = z.object({
@@ -49,45 +47,35 @@ export async function generateNewsFeed(input: GenerateNewsFeedInput): Promise<Ge
   return generateNewsFeedFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateNewsFeedPrompt',
-  input: {schema: GenerateNewsFeedInputSchema},
-  output: {schema: GenerateNewsFeedOutputSchema},
-  prompt: `You are an AI-powered news aggregator that provides a personalized news feed based on user interests and source reliability.
-
-  Generate a news feed consisting of {{numberOfArticles}} articles based on the following criteria:
-
-  Keywords: {{keywords}}
-  Topics: {{topics}}
-  Minimum Reliability Score: {{reliabilityScore}}
-
-  Each article in the feed should include the title, a brief summary, the source, the URL, and the reliability score of the source.
-  For the source, use well-known and reputable news organizations (e.g., Reuters, Associated Press, BBC News, CNN, The New York Times, etc.).
-  For the URL, construct a plausible URL that belongs to the domain of the source. While the specific article path may be generated, the domain should be real.
-
-  Ensure that the generated news feed aligns with the specified keywords, topics, and reliability score, so the user can stay informed about what matters most to them from trustworthy sources.
-  The articles should sound like real news items.
-
-  Output the news feed as a JSON object, structured as an array of news articles, where each article has the following structure:
-  {
-    "title": "article title",
-    "summary": "article summary",
-    "source": "article source",
-    "url": "article url",
-    "reliabilityScore": 0.85
-  }
-  `,
-});
-
+// This flow now uses the fetchRealNewsArticlesTool to get live news.
 const generateNewsFeedFlow = ai.defineFlow(
   {
     name: 'generateNewsFeedFlow',
     inputSchema: GenerateNewsFeedInputSchema,
     outputSchema: GenerateNewsFeedOutputSchema,
+    tools: [fetchRealNewsArticlesTool], // The tool is provided here for the AI to use
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (flowInput: GenerateNewsFeedInput): Promise<GenerateNewsFeedOutput> => {
+    // Prepare the input for the fetchRealNewsArticlesTool using the imported TypeScript type
+    const toolInput: FetchRealNewsArticlesToolInput = {
+        keywords: flowInput.searchQuery,
+        numberOfArticles: flowInput.numberOfArticles,
+    };
+
+    // Directly call the tool.
+    // The AI model isn't strictly needed here to "decide" to call the tool,
+    // as fetching news is the primary purpose of this flow.
+    // If we wanted the AI to, for example, refine the keywords first, then a prompt would be needed.
+    const toolResult = await fetchRealNewsArticlesTool(toolInput);
+
+    // Map tool output to flow output schema
+    // Assign a default reliability score or leave it undefined
+    const articlesWithDefaults = toolResult.articles.map(article => ({
+      ...article,
+      // id: article.url, // Using URL as ID if needed by frontend; ensure NewsArticle type matches
+      reliabilityScore: article.source ? 0.75 : undefined, // Example: Assign a default score
+    }));
+
+    return { articles: articlesWithDefaults };
   }
 );
-

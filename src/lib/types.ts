@@ -1,14 +1,13 @@
 
 export interface NewsArticle {
-  id: string; 
+  id: string;
   title: string;
   summary: string;
   source: string;
   url: string;
-  reliabilityScore: number;
-  publishedDate?: string; 
-  imageUrl?: string; // Will now store a data URI for generated images or a fallback
-  // dataAiHint is no longer needed as images will be generated
+  reliabilityScore?: number; // Now optional
+  publishedDate?: string;
+  imageUrl?: string | null; // Can be a URL string from NewsAPI or null
 }
 
 export interface SummarizedArticle extends NewsArticle {

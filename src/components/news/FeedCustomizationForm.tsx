@@ -8,14 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { GenerateNewsFeedInput } from "@/ai/flows/generate-news-feed";
+import { GenerateNewsFeedInput } from "@/ai/flows/generate-news-feed"; // Input type for the flow
 import { Search } from "lucide-react";
 import React from "react";
 
-// Simplified schema based on the new UI
+// Form schema based on what the user interacts with
 const formSchema = z.object({
   searchQuery: z.string().min(1, "Search query is required."),
-  // Sort functionality is mocked visually
+  // numberOfArticles could be an advanced option later, for now use default from page.tsx
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -23,24 +23,29 @@ type FormData = z.infer<typeof formSchema>;
 interface FeedCustomizationFormProps {
   onSubmit: (data: GenerateNewsFeedInput) => void;
   isLoading: boolean;
-  initialValues?: Partial<GenerateNewsFeedInput>; // Keep for potential initial search query
+  initialValues?: Partial<GenerateNewsFeedInput>; 
 }
 
 export function FeedCustomizationForm({ onSubmit, isLoading, initialValues }: FeedCustomizationFormProps) {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      searchQuery: initialValues?.keywords?.join(", ") || "",
+      searchQuery: initialValues?.searchQuery || "",
     },
   });
 
+  // Update form default value if initialValues.searchQuery changes after mount
+  React.useEffect(() => {
+    if (initialValues?.searchQuery) {
+      form.reset({ searchQuery: initialValues.searchQuery });
+    }
+  }, [initialValues?.searchQuery, form]);
+
   const handleSubmit: SubmitHandler<FormData> = (data) => {
-    // Adapt the simplified form data to the GenerateNewsFeedInput structure
+    // Adapt the form data to the GenerateNewsFeedInput structure
     const backendInput: GenerateNewsFeedInput = {
-      keywords: data.searchQuery.split(',').map(k => k.trim()).filter(k => k.length > 0),
-      topics: data.searchQuery.split(',').map(k => k.trim()).filter(k => k.length > 0), // Use search query for topics too, or define default
-      reliabilityScore: initialValues?.reliabilityScore || 0.7, // Keep previous or default
-      numberOfArticles: initialValues?.numberOfArticles || 5, // Keep previous or default
+      searchQuery: data.searchQuery,
+      numberOfArticles: initialValues?.numberOfArticles || 15, // Use default or stored number
     };
     onSubmit(backendInput);
   };
@@ -55,7 +60,7 @@ export function FeedCustomizationForm({ onSubmit, isLoading, initialValues }: Fe
   return (
     <div className="mb-8">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col sm:flex-row items-center gap-4">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <FormField
             control={form.control}
             name="searchQuery"
@@ -65,7 +70,7 @@ export function FeedCustomizationForm({ onSubmit, isLoading, initialValues }: Fe
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input 
-                      placeholder="Search articles..." 
+                      placeholder="Search live news articles..." 
                       {...field} 
                       className="pl-10 h-12 text-base bg-input border-border focus:bg-card"
                       onKeyDown={handleKeyDown}
@@ -78,17 +83,18 @@ export function FeedCustomizationForm({ onSubmit, isLoading, initialValues }: Fe
             )}
           />
           
-          <Select defaultValue="latest" disabled={isLoading}>
+          {/* Sort functionality is mocked visually / could be implemented with NewsAPI sort options */}
+          <Select defaultValue="publishedAt" disabled={isLoading}>
             <SelectTrigger className="w-full sm:w-[180px] h-12 bg-input border-border focus:bg-card text-base">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent className="bg-popover border-border">
-              <SelectItem value="latest">Latest</SelectItem>
-              <SelectItem value="relevant">Relevant</SelectItem>
-              <SelectItem value="popular">Popular</SelectItem>
+              <SelectItem value="publishedAt">Latest</SelectItem>
+              <SelectItem value="relevancy">Relevant</SelectItem>
+              <SelectItem value="popularity">Popular</SelectItem>
             </SelectContent>
           </Select>
-          {/* Hidden submit button, form submitted on Enter in search input */}
+          {/* Hidden submit button, form submitted on Enter in search input or explicit button for accessibility if needed */}
            <Button type="submit" className="hidden" disabled={isLoading}>
             Search
           </Button>
