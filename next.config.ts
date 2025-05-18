@@ -42,7 +42,8 @@ const nextConfig: NextConfig = {
       { hostname: 'www.euronews.com'},
       { hostname: 'ichef.bbci.co.uk'}, // BBC Images
       { hostname: 'news.google.com'},
-      { hostname: 'www.indiewire.com' }, // Added to fix the error
+      { hostname: 'www.indiewire.com' },
+      { hostname: 'imageio.forbes.com' }, // Added to fix the error
       // Add more specific hostnames as you encounter them from NewsAPI
       // Or, for wider but less secure coverage during development:
       // { protocol: 'https', hostname: '**' } // Allows all HTTPS images
