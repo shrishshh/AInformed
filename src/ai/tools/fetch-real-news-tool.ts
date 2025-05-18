@@ -17,7 +17,7 @@ const NewsApiArticleSchema = z.object({
   description: z.string().nullable(), // This will be mapped to 'summary'
   url: z.string().url().nullable(),
   urlToImage: z.string().url().nullable(),
-  publishedAt: z.string().datetime().nullable(), // ISO 8601 format
+  publishedAt: z.string().datetime({ message: "Invalid datetime string" }).nullable(), // ISO 8601 format
   source: z.object({
     id: z.string().nullable(),
     name: z.string().nullable(),
@@ -66,7 +66,7 @@ export const fetchRealNewsArticlesTool = ai.defineTool(
     newsApiUrl.searchParams.append('q', input.keywords);
     newsApiUrl.searchParams.append('pageSize', input.numberOfArticles.toString());
     newsApiUrl.searchParams.append('language', 'en'); // Fetch English articles
-    newsApiUrl.searchParams.append('sortBy', 'publishedAt'); // Sort by relevance or published date
+    newsApiUrl.searchParams.append('sortBy', 'publishedAt'); // Sort by published date for "latest"
     newsApiUrl.searchParams.append('apiKey', apiKey);
 
     try {

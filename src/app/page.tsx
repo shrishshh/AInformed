@@ -8,7 +8,6 @@ import { FeedCustomizationForm } from "@/components/news/FeedCustomizationForm";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { PageWrapper } from "@/components/layout/PageWrapper";
 import { generateNewsFeed, GenerateNewsFeedInput } from "@/ai/flows/generate-news-feed";
-// generateArticleImage is removed as NewsAPI provides image URLs
 import { useToast } from "@/hooks/use-toast";
 import { useSavedArticles } from "@/hooks/useSavedArticles";
 import { AlertTriangle, ListX } from "lucide-react";
@@ -27,9 +26,8 @@ export default function HomePage() {
   const { toast } = useToast();
   const { saveArticle, unsaveArticle, isArticleSaved } = useSavedArticles();
   
-  // Simplified initial form values, mainly for search query
   const [initialFormValues, setInitialFormValues] = useState<Partial<GenerateNewsFeedInput>>({
-    searchQuery: "latest technology AI", // Default search query
+    searchQuery: "latest technology AI", 
     numberOfArticles: DEFAULT_NUMBER_OF_ARTICLES,
   });
 
@@ -66,21 +64,20 @@ export default function HomePage() {
     setIsLoading(true);
     setError(null);
     setArticles([]); 
-    setLoadingMessage("Fetching live news articles...");
+    setLoadingMessage("Fetching live news articles from NewsAPI.org...");
 
     try {
       if (typeof window !== "undefined") {
         localStorage.setItem(FEED_PREFERENCES_KEY, JSON.stringify(input));
       }
-      // The flow now fetches real articles including their image URLs
+      
       const feedResult = await generateNewsFeed(input);
       
       if (feedResult.articles && feedResult.articles.length > 0) {
-        // Map articles and ensure they have an ID (using URL)
         const articlesWithIds = feedResult.articles.map((article, index) => ({
           ...article,
-          id: article.url || `article-${Date.now()}-${index}`,
-          // imageUrl is now directly from NewsAPI
+          id: article.url || `article-${Date.now()}-${index}`, // Use URL as ID, or generate one
+          // imageUrl is now directly from NewsAPI via the flow's output
           // publishedDate is also from NewsAPI
         }));
         setArticles(articlesWithIds);
@@ -88,7 +85,7 @@ export default function HomePage() {
         setArticles([]);
         toast({
           title: "No Articles Found",
-          description: "Try adjusting your search query for different results.",
+          description: "Try adjusting your search query or check NewsAPI.org for potential issues.",
         });
       }
     } catch (e: any) {
@@ -96,18 +93,20 @@ export default function HomePage() {
       let friendlyMessage = "Failed to fetch news. Please check your connection or API configuration.";
       if (e.message && e.message.includes("NEWS_API_KEY")) {
         friendlyMessage = "NewsAPI key is missing or invalid. Please check your .env file and ensure NEWS_API_KEY is set correctly.";
+      } else if (e.message && e.message.includes("NewsAPI request failed")) {
+        friendlyMessage = `Could not retrieve articles: ${e.message}`;
       } else if (e.message) {
         friendlyMessage = `Failed to fetch news: ${e.message.substring(0,100)}${e.message.length > 100 ? '...' : ''}`;
       }
       setError(friendlyMessage);
       toast({
         title: "Error Fetching News",
-        description: friendlyMessage.length > 100 ? "There was a problem connecting to the news service. See console for details." : friendlyMessage,
+        description: friendlyMessage.length > 150 ? "There was a problem connecting to the news service. See console for details." : friendlyMessage,
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
-      setLoadingMessage("Fetching live news articles..."); 
+      setLoadingMessage("Fetching live news articles from NewsAPI.org..."); 
     }
   };
 
@@ -173,7 +172,7 @@ export default function HomePage() {
           <ListX className="h-16 w-16 text-muted-foreground mb-4" />
           <h2 className="text-2xl font-semibold mb-2 text-foreground">No Articles Yet</h2>
           <p className="text-muted-foreground">
-            Enter search terms above and press Enter to generate your feed, or adjust your query.
+            Enter search terms above (e.g., "Tesla stock", "AI advancements") and press Enter to generate your feed.
           </p>
         </div>
         )

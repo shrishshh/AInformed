@@ -1,13 +1,13 @@
 
 export interface NewsArticle {
-  id: string;
+  id: string; // This will be typically the URL or a generated ID
   title: string;
   summary: string;
   source: string;
   url: string;
-  reliabilityScore?: number; // Now optional
-  publishedDate?: string;
-  imageUrl?: string | null; // Can be a URL string from NewsAPI or null
+  reliabilityScore?: number | null; // Optional, as NewsAPI won't provide this
+  publishedDate?: string; // ISO date string
+  imageUrl?: string | null; // URL string from NewsAPI, or null
 }
 
 export interface SummarizedArticle extends NewsArticle {

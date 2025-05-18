@@ -31,7 +31,7 @@ const NewsArticleSchema = z.object({
   title: z.string().describe('Title of the news article.'),
   summary: z.string().describe('Brief summary of the news article.'),
   source: z.string().describe('Source of the news article (e.g., BBC News, Reuters).'),
-  url: z.string().url().describe('Full URL of the news article.'), // Output from NewsAPI is a URL
+  url: z.string().describe('Full URL of the news article.'), // Output from NewsAPI is a URL, string schema here, validation in tool
   imageUrl: z.string().url().optional().nullable().describe('URL of an image for the article, if available.'),
   publishedDate: z.string().describe('Publication date of the article in ISO format.'),
   reliabilityScore: z.number().min(0).max(1).optional().describe('Reliability score of the news source (0 to 1). Not provided by NewsAPI, can be assigned or estimated separately.'),
@@ -44,6 +44,8 @@ const GenerateNewsFeedOutputSchema = z.object({
 export type GenerateNewsFeedOutput = z.infer<typeof GenerateNewsFeedOutputSchema>;
 
 export async function generateNewsFeed(input: GenerateNewsFeedInput): Promise<GenerateNewsFeedOutput> {
+  // This function directly calls the flow.
+  // The actual logic for fetching news is now within generateNewsFeedFlow, which uses the tool.
   return generateNewsFeedFlow(input);
 }
 
@@ -53,7 +55,11 @@ const generateNewsFeedFlow = ai.defineFlow(
     name: 'generateNewsFeedFlow',
     inputSchema: GenerateNewsFeedInputSchema,
     outputSchema: GenerateNewsFeedOutputSchema,
-    tools: [fetchRealNewsArticlesTool], // The tool is provided here for the AI to use
+    // The tool is not explicitly "called by an LLM" in this flow's current implementation.
+    // Instead, the flow's logic directly invokes the tool.
+    // If an LLM were to decide *whether* or *how* to call the tool, it would be listed in `tools`
+    // and the prompt would instruct the LLM accordingly.
+    // tools: [fetchRealNewsArticlesTool], 
   },
   async (flowInput: GenerateNewsFeedInput): Promise<GenerateNewsFeedOutput> => {
     // Prepare the input for the fetchRealNewsArticlesTool using the imported TypeScript type
@@ -63,17 +69,15 @@ const generateNewsFeedFlow = ai.defineFlow(
     };
 
     // Directly call the tool.
-    // The AI model isn't strictly needed here to "decide" to call the tool,
-    // as fetching news is the primary purpose of this flow.
-    // If we wanted the AI to, for example, refine the keywords first, then a prompt would be needed.
     const toolResult = await fetchRealNewsArticlesTool(toolInput);
 
     // Map tool output to flow output schema
     // Assign a default reliability score or leave it undefined
     const articlesWithDefaults = toolResult.articles.map(article => ({
       ...article,
-      // id: article.url, // Using URL as ID if needed by frontend; ensure NewsArticle type matches
-      reliabilityScore: article.source ? 0.75 : undefined, // Example: Assign a default score
+      // Assign a default reliability score or leave it undefined/null as NewsAPI doesn't provide it.
+      // Example: Assign a default score if source exists, otherwise null.
+      reliabilityScore: article.source ? 0.75 : undefined, 
     }));
 
     return { articles: articlesWithDefaults };

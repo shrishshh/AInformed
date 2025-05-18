@@ -11,28 +11,44 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
-      // Add domains for news sources from NewsAPI as you encounter them.
-      // This is a starting list, NewsAPI aggregates from many sources.
-      // Examples:
-      { hostname: 's.abcnews.com' },
+      // Common News API sources - this list can be expanded.
+      // Generic patterns for major CDNs or news outlets:
       { hostname: 'media.cnn.com' },
+      { hostname: 's.abcnews.com' },
       { hostname: 'image.cnbcfm.com' },
       { hostname: 'static.foxnews.com' },
-      { hostname: 'storage.googleapis.com' }, // Common for Google News
-      { hostname: 'dims.apnews.com' },
-      { hostname: 'i.kinja-img.com' }, // Gizmodo, Kotaku, etc.
-      { hostname: '*.reutersmedia.net' }, // Reuters (wildcard for subdomains)
+      { hostname: 'storage.googleapis.com' }, // Google News, etc.
+      { hostname: 'dims.apnews.com' }, // Associated Press
+      { hostname: 'i.kinja-img.com' }, // Gizmodo, Kotaku, etc. (G/O Media)
+      { hostname: '*.reutersmedia.net' }, // Reuters
       { hostname: 'images.wsj.net' }, // Wall Street Journal
       { hostname: 'static01.nyt.com' }, // New York Times
-      { hostname: 'img.etimg.com' }, // Economic Times
+      { hostname: 'img.etimg.com' }, // Economic Times (India)
       { hostname: 'www.theblock.co' },
       { hostname: 'techcrunch.com' },
-      { hostname: '*.google.com' }, // For images from google news etc.
-      // Add more hostnames as needed based on NewsAPI sources you use
-      // Or, for wider but less secure coverage:
+      { hostname: '*.google.com' }, // General Google images (news, etc.)
+      { hostname: 's.yimg.com' }, // Yahoo News / Verizon Media
+      { hostname: 'c.biztoc.com' }, // BizToc
+      { hostname: 'images.axios.com' }, // Axios
+      { hostname: 'media.wired.com' }, // Wired
+      { hostname: 'assets.bwbx.io' }, // Bloomberg
+      { hostname: 'images.unsplash.com' }, // If you use Unsplash for fallbacks
+      { hostname: 'cdn.vox-cdn.com'}, // Vox Media (The Verge, etc.)
+      { hostname: 'www.theverge.com'}, 
+      { hostname: 'www.engadget.com'},
+      { hostname: 's.aolcdn.com'}, // Engadget, TechCrunch (some assets)
+      { hostname: 'www.aljazeera.com'},
+      { hostname: 'www.reuters.com'},
+      { hostname: 'www.euronews.com'},
+      { hostname: 'ichef.bbci.co.uk'}, // BBC Images
+      { hostname: 'news.google.com'},
+      // Add more specific hostnames as you encounter them from NewsAPI
+      // Or, for wider but less secure coverage during development:
       // { protocol: 'https', hostname: '**' } // Allows all HTTPS images
     ],
     // Data URIs are still supported for fallbacks or other uses.
+    dangerouslyAllowSVG: true, // If you use SVG data URIs as fallbacks
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;", // Basic CSP for images
   },
 };
 
