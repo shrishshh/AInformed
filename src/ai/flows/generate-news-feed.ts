@@ -1,3 +1,4 @@
+
 // src/ai/flows/generate-news-feed.ts
 'use server';
 
@@ -34,7 +35,7 @@ const NewsArticleSchema = z.object({
   title: z.string().describe('Title of the news article.'),
   summary: z.string().describe('Brief summary of the news article.'),
   source: z.string().describe('Source of the news article.'),
-  url: z.string().url().describe('URL of the news article.'),
+  url: z.string().describe('URL of the news article.'), // Removed .url()
   reliabilityScore: z.number().min(0).max(1).describe('Reliability score of the news source.'),
 });
 
@@ -86,3 +87,4 @@ const generateNewsFeedFlow = ai.defineFlow(
     return output!;
   }
 );
+
