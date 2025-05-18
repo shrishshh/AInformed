@@ -57,9 +57,11 @@ export function ArticleCard({ article, isSaved, onToggleSave }: ArticleCardProps
           <Image
             src={article.imageUrl}
             alt={article.title}
-            layout="fill"
-            objectFit="cover"
-            data-ai-hint="news article"
+            fill={true}
+            className="object-cover"
+            data-ai-hint={article.dataAiHint || "news article"}
+            priority={false} // It's okay to set priority false for many images on a page
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         </div>
       )}

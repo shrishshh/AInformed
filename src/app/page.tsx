@@ -30,19 +30,16 @@ export default function HomePage() {
       if (storedPreferences) {
         try {
           const parsedPrefs = JSON.parse(storedPreferences) as GenerateNewsFeedInput;
-          // Ensure parsedPrefs has the expected structure for the new form.
-          // The new form expects keywords, topics, reliabilityScore, numberOfArticles for initial fetch.
           setInitialFormValues({
             keywords: parsedPrefs.keywords || ["AI", "technology"],
             topics: parsedPrefs.topics || ["latest news", "innovations"],
             reliabilityScore: parsedPrefs.reliabilityScore || 0.7,
             numberOfArticles: parsedPrefs.numberOfArticles || 5,
           });
-          // Automatically fetch news on load if preferences exist
           fetchNews(parsedPrefs);
         } catch (e) {
           console.error("Failed to parse stored preferences", e);
-          localStorage.removeItem(FEED_PREFERENCES_KEY); // Clear corrupted data
+          localStorage.removeItem(FEED_PREFERENCES_KEY);
            setInitialFormValues({ 
             keywords: ["AI", "technology"], 
             topics: ["latest news", "innovations"], 
@@ -51,7 +48,6 @@ export default function HomePage() {
           });
         }
       } else {
-        // Set initial state for form if no preferences stored
         const defaultPrefs = { 
           keywords: ["AI", "technology"], 
           topics: ["latest news", "innovations"], 
@@ -59,8 +55,7 @@ export default function HomePage() {
           numberOfArticles: 5 
         };
         setInitialFormValues(defaultPrefs);
-        // Optionally, fetch with default preferences on first load
-        // fetchNews(defaultPrefs); 
+        // fetchNews(defaultPrefs); // Optionally fetch with default on first load
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -78,12 +73,40 @@ export default function HomePage() {
       }
       const result: GenerateNewsFeedOutput = await generateNewsFeed(input);
       if (result.articles && result.articles.length > 0) {
-        const articlesWithPlaceholders: NewsArticle[] = result.articles.map((article, index) => ({
-          ...article,
-          id: article.url || `article-${Date.now()}-${index}`,
-          imageUrl: `https://placehold.co/600x400.png?t=${Date.now()}-${index}`,
-          publishedDate: new Date().toISOString(), 
-        }));
+        const articlesWithPlaceholders: NewsArticle[] = result.articles.map((article, index) => {
+          let hint = "news article"; // Default hint
+          const titleWords = article.title?.toLowerCase().match(/\b(\w+)\b/g) || [];
+          // Filter out common short/stop words and prefer longer words for hints
+          const significantTitleWords = titleWords.filter(w => w.length > 3 && !['the', 'a', 'is', 'of', 'for', 'on', 'in', 'to', 'new', 'top', 'how', 'why', 'what', 'and', 'but'].includes(w));
+
+          if (significantTitleWords.length >= 2) {
+            hint = `${significantTitleWords[0]} ${significantTitleWords[1]}`;
+          } else if (significantTitleWords.length === 1) {
+            hint = significantTitleWords[0];
+          } else if (input.keywords && input.keywords.length > 0) {
+            hint = input.keywords.slice(0, 2).join(" ");
+          } else if (input.topics && input.topics.length > 0) {
+             hint = input.topics.slice(0,2).join(" ");
+          }
+          
+          // Ensure hint is max 2 words and not empty
+          const finalHintWords = hint.split(" ").filter(Boolean);
+          if (finalHintWords.length > 2) {
+            hint = `${finalHintWords[0]} ${finalHintWords[1]}`;
+          } else if (finalHintWords.length === 0) {
+            hint = "news article"; // Fallback if all attempts fail
+          } else {
+            hint = finalHintWords.join(" ");
+          }
+
+          return {
+            ...article,
+            id: article.url || `article-${Date.now()}-${index}`,
+            imageUrl: `https://placehold.co/600x400.png?t=${Date.now()}-${index}`,
+            publishedDate: new Date().toISOString(),
+            dataAiHint: hint,
+          };
+        });
         setArticles(articlesWithPlaceholders);
       } else {
         setArticles([]);
@@ -108,7 +131,6 @@ export default function HomePage() {
 
   const handleRetryFetch = () => {
     if (initialFormValues) {
-      // Use the last known good input or default
       const lastInput = localStorage.getItem(FEED_PREFERENCES_KEY);
       if (lastInput) {
         fetchNews(JSON.parse(lastInput));
@@ -168,7 +190,7 @@ export default function HomePage() {
           <ListX className="h-16 w-16 text-muted-foreground mb-4" />
           <h2 className="text-2xl font-semibold mb-2 text-foreground">No Articles Yet</h2>
           <p className="text-muted-foreground">
-            Enter a search query above and press Enter to see articles.
+            Customize your feed preferences above and search to see articles.
           </p>
         </div>
       )}

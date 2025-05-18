@@ -8,6 +8,7 @@ export interface NewsArticle {
   reliabilityScore: number;
   publishedDate?: string; // Optional: good for sorting/display
   imageUrl?: string; // Optional: for article cards
+  dataAiHint?: string; // Optional: for placeholder image hints
 }
 
 export interface SummarizedArticle extends NewsArticle {
