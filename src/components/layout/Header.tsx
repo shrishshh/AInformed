@@ -2,41 +2,50 @@
 "use client";
 
 import Link from "next/link";
-import { Newspaper, Bookmark } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { Brain, Heart, Sun } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { usePathname } from "next/navigation";
+
 
 export function Header() {
   const pathname = usePathname();
 
-  const navItems = [
-    { href: "/", label: "Feed", icon: Newspaper },
-    { href: "/saved", label: "Saved Articles", icon: Bookmark },
-  ];
+  // Placeholder for theme toggle functionality
+  const toggleTheme = () => {
+    // In a real app, this would toggle between light and dark themes
+    console.log("Theme toggle clicked");
+    if (document.documentElement.classList.contains('dark')) {
+      // document.documentElement.classList.remove('dark');
+      // localStorage.setItem('theme', 'light');
+    } else {
+      // document.documentElement.classList.add('dark');
+      // localStorage.setItem('theme', 'dark');
+    }
+  };
+
 
   return (
-    <header className="bg-card border-b sticky top-0 z-50 shadow-sm">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+    <header className="bg-card border-b border-border relative shadow-md">
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pink-500 via-purple-600 to-blue-600"></div>
+      <div className="container mx-auto px-4 h-20 flex items-center justify-between pt-1"> {/* Increased height and pt-1 for top border */}
         <Link href="/" className="flex items-center gap-2">
-          <Newspaper className="h-7 w-7 text-primary" />
-          <h1 className="text-2xl font-bold text-primary">NewsWise</h1>
+          <Brain className="h-8 w-8 text-pink-500" />
+          <h1 className="text-3xl font-bold">
+            <span className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent">
+              AInformed
+            </span>
+          </h1>
         </Link>
-        <nav className="flex items-center gap-2 sm:gap-4">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-2 p-2 rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
-                pathname === item.href
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
-                  : "text-foreground"
-              )}
-            >
-              <item.icon className="h-5 w-5" />
-              <span className="hidden sm:inline">{item.label}</span>
+        <nav className="flex items-center gap-2">
+           <Button variant="ghost" size="icon" asChild className={cn(pathname === "/saved" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground")}>
+            <Link href="/saved" aria-label="Saved Articles">
+              <Heart className="h-6 w-6" />
             </Link>
-          ))}
+          </Button>
+          <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme" className="text-muted-foreground hover:text-foreground">
+            <Sun className="h-6 w-6" />
+          </Button>
         </nav>
       </div>
     </header>

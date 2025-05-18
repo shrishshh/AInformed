@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { Geist, Geist_Mono } from 'next/font/google';
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = Geist({
@@ -17,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NewsWise - Your Smart News Aggregator",
-  description: "AI-powered news aggregation and summarization by NewsWise.",
+  title: "AInformed - Your Smart News Aggregator",
+  description: "AI-powered news aggregation and summarization by AInformed.",
 };
 
 export default function RootLayout({
@@ -27,12 +28,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
+    <html lang="en" className="dark"> {/* Apply dark class for ShadCN components */}
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen bg-background text-foreground`}>
         <Header />
         <div className="flex-grow">
           {children}
         </div>
+        <Footer />
         <Toaster />
       </body>
     </html>

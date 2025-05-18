@@ -6,18 +6,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GenerateNewsFeedInput } from "@/ai/flows/generate-news-feed";
-import { useState } from "react";
+import { Search } from "lucide-react";
+import React from "react";
 
+// Simplified schema based on the new UI
 const formSchema = z.object({
-  keywords: z.string().min(1, "Keywords are required.").transform(val => val.split(',').map(k => k.trim()).filter(k => k.length > 0)),
-  topics: z.string().min(1, "Topics are required.").transform(val => val.split(',').map(t => t.trim()).filter(t => t.length > 0)),
-  reliabilityScore: z.number().min(0).max(1).default(0.7),
-  numberOfArticles: z.number().min(1).max(10).default(5),
+  searchQuery: z.string().min(1, "Search query is required."),
+  // Sort functionality is mocked visually
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -25,109 +23,77 @@ type FormData = z.infer<typeof formSchema>;
 interface FeedCustomizationFormProps {
   onSubmit: (data: GenerateNewsFeedInput) => void;
   isLoading: boolean;
-  initialValues?: Partial<GenerateNewsFeedInput>;
+  initialValues?: Partial<GenerateNewsFeedInput>; // Keep for potential initial search query
 }
 
 export function FeedCustomizationForm({ onSubmit, isLoading, initialValues }: FeedCustomizationFormProps) {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      keywords: initialValues?.keywords?.join(', ') || "technology, AI",
-      topics: initialValues?.topics?.join(', ') || "latest advancements, ethical AI",
-      reliabilityScore: initialValues?.reliabilityScore || 0.7,
-      numberOfArticles: initialValues?.numberOfArticles || 5,
+      searchQuery: initialValues?.keywords?.join(", ") || "",
     },
   });
 
-  const [reliabilityValue, setReliabilityValue] = useState<number>(initialValues?.reliabilityScore || 0.7);
-
   const handleSubmit: SubmitHandler<FormData> = (data) => {
-    onSubmit(data as GenerateNewsFeedInput);
+    // Adapt the simplified form data to the GenerateNewsFeedInput structure
+    const backendInput: GenerateNewsFeedInput = {
+      keywords: data.searchQuery.split(',').map(k => k.trim()).filter(k => k.length > 0),
+      topics: data.searchQuery.split(',').map(k => k.trim()).filter(k => k.length > 0), // Use search query for topics too, or define default
+      reliabilityScore: initialValues?.reliabilityScore || 0.7, // Keep previous or default
+      numberOfArticles: initialValues?.numberOfArticles || 5, // Keep previous or default
+    };
+    onSubmit(backendInput);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      form.handleSubmit(handleSubmit)();
+    }
   };
 
   return (
-    <Card className="mb-8 shadow-md">
-      <CardHeader>
-        <CardTitle className="text-xl">Customize Your News Feed</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="keywords"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Keywords (comma-separated)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., AI, space exploration, climate change" {...field} />
-                  </FormControl>
-                  <FormDescription>Enter keywords to find relevant articles.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="topics"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Topics (comma-separated)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., innovation, global politics, health breakthroughs" {...field} />
-                  </FormControl>
-                  <FormDescription>Specify topics you are interested in.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="reliabilityScore"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Minimum Reliability Score: {reliabilityValue.toFixed(2)}</FormLabel>
-                  <FormControl>
-                     <Slider
-                        defaultValue={[field.value]}
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        onValueChange={(value) => {
-                          field.onChange(value[0]);
-                          setReliabilityValue(value[0]);
-                        }}
-                        disabled={isLoading}
-                      />
-                  </FormControl>
-                  <FormDescription>Set the minimum trustworthiness of news sources.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="numberOfArticles"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Number of Articles (1-10)</FormLabel>
-                  <FormControl>
-                    <Input type="number" min="1" max="10" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))}/>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
-              {isLoading ? "Generating Feed..." : "Generate Feed"}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+    <div className="mb-8">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col sm:flex-row items-center gap-4">
+          <FormField
+            control={form.control}
+            name="searchQuery"
+            render={({ field }) => (
+              <FormItem className="flex-grow w-full sm:w-auto">
+                <FormControl>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input 
+                      placeholder="Search articles..." 
+                      {...field} 
+                      className="pl-10 h-12 text-base bg-input border-border focus:bg-card"
+                      onKeyDown={handleKeyDown}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <Select defaultValue="latest" disabled={isLoading}>
+            <SelectTrigger className="w-full sm:w-[180px] h-12 bg-input border-border focus:bg-card text-base">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-border">
+              <SelectItem value="latest">Latest</SelectItem>
+              <SelectItem value="relevant">Relevant</SelectItem>
+              <SelectItem value="popular">Popular</SelectItem>
+            </SelectContent>
+          </Select>
+          {/* Hidden submit button, form submitted on Enter in search input */}
+           <Button type="submit" className="hidden" disabled={isLoading}>
+            Search
+          </Button>
+        </form>
+      </Form>
+    </div>
   );
 }

@@ -12,15 +12,15 @@ export function ReliabilityBadge({ score }: ReliabilityBadgeProps) {
   let IconComponent = ShieldAlert;
 
   if (score >= 0.8) {
-    colorClass = "bg-accent text-accent-foreground hover:bg-accent/90"; // Muted Green
+    colorClass = "bg-[hsl(var(--status-high))] text-[hsl(var(--status-high-foreground))] hover:bg-[hsl(var(--status-high))]_/_90";
     text = "High Reliability";
     IconComponent = ShieldCheck;
   } else if (score >= 0.5) {
-    colorClass = "bg-yellow-400 text-yellow-900 hover:bg-yellow-400/90"; // Yellow - using direct Tailwind color
+    colorClass = "bg-[hsl(var(--status-medium))] text-[hsl(var(--status-medium-foreground))] hover:bg-[hsl(var(--status-medium))]_/_90";
     text = "Medium Reliability";
     IconComponent = ShieldAlert;
   } else {
-    colorClass = "bg-red-500 text-white hover:bg-red-500/90"; // Red - using direct Tailwind color
+    colorClass = "bg-[hsl(var(--status-low))] text-[hsl(var(--status-low-foreground))] hover:bg-[hsl(var(--status-low))]_/_90";
     text = "Low Reliability";
     IconComponent = ShieldX;
   }
