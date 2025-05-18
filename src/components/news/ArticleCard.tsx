@@ -4,9 +4,8 @@
 import type { NewsArticle } from "@/lib/types";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ReliabilityBadge } from "./ReliabilityBadge";
-import { Bookmark, BookmarkCheck, ExternalLink, FileText, Hourglass } from "lucide-react";
+import { Bookmark, BookmarkCheck, ExternalLink, FileText } from "lucide-react";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { summarizeArticle, SummarizeArticleInput } from "@/ai/flows/summarize-article";
@@ -30,7 +29,18 @@ export function ArticleCard({ article, isSaved, onToggleSave }: ArticleCardProps
     setIsSummarizing(true);
     setAiSummary(null);
     try {
-      const input: SummarizeArticleInput = { articleContent: article.summary }; // Summarizing the existing summary
+      // Use full article summary for better AI summarization if available, else title as fallback
+      const contentToSummarize = article.summary || article.title;
+      if (!contentToSummarize) {
+        toast({
+          title: "Summarization Failed",
+          description: "Article content is missing.",
+          variant: "destructive",
+        });
+        setIsSummarizing(false);
+        return;
+      }
+      const input: SummarizeArticleInput = { articleContent: contentToSummarize };
       const result = await summarizeArticle(input);
       setAiSummary(result.summary);
       setShowSummaryModal(true);
@@ -51,23 +61,22 @@ export function ArticleCard({ article, isSaved, onToggleSave }: ArticleCardProps
   };
 
   return (
-    <Card className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-      {article.imageUrl && (
+    <Card className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 bg-card">
+      {article.imageUrl && ( // Check if imageUrl exists
         <div className="relative w-full h-48">
           <Image
-            src={article.imageUrl}
+            src={article.imageUrl} // This will now be a data URI
             alt={article.title}
             fill={true}
             className="object-cover"
-            data-ai-hint={article.dataAiHint || "news article"}
-            priority={false} // It's okay to set priority false for many images on a page
+            priority={false} 
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         </div>
       )}
       <CardHeader>
         <div className="flex justify-between items-start gap-2">
-          <CardTitle className="text-lg font-semibold leading-tight">{article.title}</CardTitle>
+          <CardTitle className="text-lg font-semibold leading-tight text-foreground">{article.title}</CardTitle>
           <Button
             variant="ghost"
             size="icon"
@@ -86,10 +95,10 @@ export function ArticleCard({ article, isSaved, onToggleSave }: ArticleCardProps
       <CardContent className="flex-grow">
         <p className="text-sm text-muted-foreground line-clamp-4">{article.summary}</p>
       </CardContent>
-      <CardFooter className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border-t">
+      <CardFooter className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border-t border-border">
         <ReliabilityBadge score={article.reliabilityScore} />
         <div className="flex gap-2 mt-2 sm:mt-0">
-          <Button variant="outline" size="sm" onClick={handleSummarize} disabled={isSummarizing}>
+          <Button variant="outline" size="sm" onClick={handleSummarize} disabled={isSummarizing || !article.summary}>
             {isSummarizing ? <LoadingSpinner size={16} className="mr-2" /> : <FileText className="mr-2 h-4 w-4" />}
             Summarize
           </Button>
@@ -104,10 +113,10 @@ export function ArticleCard({ article, isSaved, onToggleSave }: ArticleCardProps
 
       {showSummaryModal && aiSummary && (
          <AlertDialog open={showSummaryModal} onOpenChange={setShowSummaryModal}>
-          <AlertDialogContent>
+          <AlertDialogContent className="bg-background border-border">
             <AlertDialogHeader>
-              <AlertDialogTitle>AI Generated Summary</AlertDialogTitle>
-              <AlertDialogDescription className="max-h-[60vh] overflow-y-auto text-sm text-foreground py-2">
+              <AlertDialogTitle className="text-foreground">AI Generated Summary</AlertDialogTitle>
+              <AlertDialogDescription className="max-h-[60vh] overflow-y-auto text-sm text-muted-foreground py-2">
                 {aiSummary}
               </AlertDialogDescription>
             </AlertDialogHeader>

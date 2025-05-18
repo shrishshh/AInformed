@@ -1,14 +1,14 @@
 
 export interface NewsArticle {
-  id: string; // Add an ID for managing saved articles, can be URL or generated
+  id: string; 
   title: string;
   summary: string;
   source: string;
   url: string;
   reliabilityScore: number;
-  publishedDate?: string; // Optional: good for sorting/display
-  imageUrl?: string; // Optional: for article cards
-  dataAiHint?: string; // Optional: for placeholder image hints
+  publishedDate?: string; 
+  imageUrl?: string; // Will now store a data URI for generated images or a fallback
+  // dataAiHint is no longer needed as images will be generated
 }
 
 export interface SummarizedArticle extends NewsArticle {

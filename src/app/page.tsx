@@ -8,17 +8,21 @@ import { FeedCustomizationForm } from "@/components/news/FeedCustomizationForm";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { PageWrapper } from "@/components/layout/PageWrapper";
 import { generateNewsFeed, GenerateNewsFeedInput, GenerateNewsFeedOutput } from "@/ai/flows/generate-news-feed";
+import { generateArticleImage, GenerateArticleImageInput } from "@/ai/flows/generate-article-image-flow";
 import { useToast } from "@/hooks/use-toast";
 import { useSavedArticles } from "@/hooks/useSavedArticles";
-import { AlertTriangle, ListX } from "lucide-react"; // Changed to AlertTriangle
+import { AlertTriangle, ListX } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-const FEED_PREFERENCES_KEY = "AInformedFeedPreferences_v2"; // Updated key for new form structure
+const FEED_PREFERENCES_KEY = "AInformedFeedPreferences_v2";
+
+const DEFAULT_NUMBER_OF_ARTICLES = 15;
 
 export default function HomePage() {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Generating your personalized feed...");
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { savedArticles, saveArticle, unsaveArticle, isArticleSaved } = useSavedArticles();
@@ -34,9 +38,9 @@ export default function HomePage() {
             keywords: parsedPrefs.keywords || ["AI", "technology"],
             topics: parsedPrefs.topics || ["latest news", "innovations"],
             reliabilityScore: parsedPrefs.reliabilityScore || 0.7,
-            numberOfArticles: parsedPrefs.numberOfArticles || 5,
+            numberOfArticles: parsedPrefs.numberOfArticles || DEFAULT_NUMBER_OF_ARTICLES,
           });
-          fetchNews(parsedPrefs);
+          // fetchNews(parsedPrefs); // Don't auto-fetch on load to avoid immediate long load
         } catch (e) {
           console.error("Failed to parse stored preferences", e);
           localStorage.removeItem(FEED_PREFERENCES_KEY);
@@ -44,7 +48,7 @@ export default function HomePage() {
             keywords: ["AI", "technology"], 
             topics: ["latest news", "innovations"], 
             reliabilityScore: 0.7,
-            numberOfArticles: 5 
+            numberOfArticles: DEFAULT_NUMBER_OF_ARTICLES 
           });
         }
       } else {
@@ -52,10 +56,9 @@ export default function HomePage() {
           keywords: ["AI", "technology"], 
           topics: ["latest news", "innovations"], 
           reliabilityScore: 0.7,
-          numberOfArticles: 5 
+          numberOfArticles: DEFAULT_NUMBER_OF_ARTICLES
         };
         setInitialFormValues(defaultPrefs);
-        // fetchNews(defaultPrefs); // Optionally fetch with default on first load
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -66,48 +69,45 @@ export default function HomePage() {
     setIsLoading(true);
     setError(null);
     setArticles([]); 
+    setLoadingMessage("Generating news feed content...");
 
     try {
       if (typeof window !== "undefined") {
         localStorage.setItem(FEED_PREFERENCES_KEY, JSON.stringify(input));
       }
-      const result: GenerateNewsFeedOutput = await generateNewsFeed(input);
-      if (result.articles && result.articles.length > 0) {
-        const articlesWithPlaceholders: NewsArticle[] = result.articles.map((article, index) => {
-          let hint = "news article"; // Default hint
-          const titleWords = article.title?.toLowerCase().match(/\b(\w+)\b/g) || [];
-          // Filter out common short/stop words and prefer longer words for hints
-          const significantTitleWords = titleWords.filter(w => w.length > 3 && !['the', 'a', 'is', 'of', 'for', 'on', 'in', 'to', 'new', 'top', 'how', 'why', 'what', 'and', 'but'].includes(w));
-
-          if (significantTitleWords.length >= 2) {
-            hint = `${significantTitleWords[0]} ${significantTitleWords[1]}`;
-          } else if (significantTitleWords.length === 1) {
-            hint = significantTitleWords[0];
-          } else if (input.keywords && input.keywords.length > 0) {
-            hint = input.keywords.slice(0, 2).join(" ");
-          } else if (input.topics && input.topics.length > 0) {
-             hint = input.topics.slice(0,2).join(" ");
+      const feedResult: GenerateNewsFeedOutput = await generateNewsFeed(input);
+      
+      if (feedResult.articles && feedResult.articles.length > 0) {
+        const articlesWithImages: NewsArticle[] = [];
+        for (let i = 0; i < feedResult.articles.length; i++) {
+          const article = feedResult.articles[i];
+          setLoadingMessage(`Generating image ${i + 1} of ${feedResult.articles.length} for "${article.title.substring(0,30)}..."`);
+          try {
+            const imageInput: GenerateArticleImageInput = { title: article.title, summary: article.summary };
+            const imageResult = await generateArticleImage(imageInput);
+            articlesWithImages.push({
+              ...article,
+              id: article.url || `article-${Date.now()}-${i}`,
+              imageUrl: imageResult.imageDataUri, // Use generated image data URI
+              publishedDate: new Date().toISOString(), // Placeholder, ideally from news source
+            });
+          } catch (imgError: any) {
+            console.error(`Failed to generate image for article "${article.title}":`, imgError);
+            toast({
+              title: "Image Generation Issue",
+              description: `Could not generate image for "${article.title.substring(0,30)}...". Using a fallback.`,
+              variant: "destructive",
+            });
+            articlesWithImages.push({ // Add article with fallback image
+              ...article,
+              id: article.url || `article-${Date.now()}-${i}`,
+              imageUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', // Fallback transparent pixel
+              publishedDate: new Date().toISOString(),
+            });
           }
-          
-          // Ensure hint is max 2 words and not empty
-          const finalHintWords = hint.split(" ").filter(Boolean);
-          if (finalHintWords.length > 2) {
-            hint = `${finalHintWords[0]} ${finalHintWords[1]}`;
-          } else if (finalHintWords.length === 0) {
-            hint = "news article"; // Fallback if all attempts fail
-          } else {
-            hint = finalHintWords.join(" ");
-          }
-
-          return {
-            ...article,
-            id: article.url || `article-${Date.now()}-${index}`,
-            imageUrl: `https://placehold.co/600x400.png?t=${Date.now()}-${index}`,
-            publishedDate: new Date().toISOString(),
-            dataAiHint: hint,
-          };
-        });
-        setArticles(articlesWithPlaceholders);
+          setArticles([...articlesWithImages]); // Update articles incrementally to show progress
+        }
+        // setArticles(articlesWithImages); // Set all at once if incremental update is not preferred
       } else {
         setArticles([]);
         toast({
@@ -126,6 +126,7 @@ export default function HomePage() {
       });
     } finally {
       setIsLoading(false);
+      setLoadingMessage("Generating your personalized feed..."); // Reset message
     }
   };
 
@@ -139,7 +140,7 @@ export default function HomePage() {
             keywords: ["AI", "technology"], 
             topics: ["latest news", "innovations"], 
             reliabilityScore: 0.7,
-            numberOfArticles: 5 
+            numberOfArticles: DEFAULT_NUMBER_OF_ARTICLES
           });
       }
     }
@@ -162,7 +163,7 @@ export default function HomePage() {
       {isLoading && (
         <div className="flex flex-col items-center justify-center my-12">
           <LoadingSpinner size={48} />
-          <p className="mt-4 text-lg text-muted-foreground">Generating your personalized feed...</p>
+          <p className="mt-4 text-lg text-muted-foreground">{loadingMessage}</p>
         </div>
       )}
 
@@ -175,7 +176,7 @@ export default function HomePage() {
             <CardTitle className="text-xl text-foreground">Connection Error</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">{error.includes("Failed to generate news feed.") ? error.split("Failed to generate news feed.")[1].trim().split("Please try again later.")[0].trim() : "Failed to fetch"}</p>
+            <p className="text-muted-foreground">{error.includes("Failed to generate news feed.") ? error.split("Failed to generate news feed.")[1].trim().split("Please try again later.")[0].trim() : "Failed to fetch news. Please check your connection or AI service configuration."}</p>
           </CardContent>
           <CardFooter className="flex justify-center">
             <Button onClick={handleRetryFetch} variant="default" className="bg-primary text-primary-foreground hover:bg-primary/90">
@@ -186,13 +187,15 @@ export default function HomePage() {
       )}
 
       {!isLoading && !error && articles.length === 0 && (
+         initialFormValues && ( // Only show "No Articles Yet" if form has loaded, not on initial page visit before any search
         <div className="flex flex-col items-center justify-center my-12 text-center">
           <ListX className="h-16 w-16 text-muted-foreground mb-4" />
           <h2 className="text-2xl font-semibold mb-2 text-foreground">No Articles Yet</h2>
           <p className="text-muted-foreground">
-            Customize your feed preferences above and search to see articles.
+            Enter search terms above and press Enter to generate your feed.
           </p>
         </div>
+        )
       )}
 
       {!isLoading && !error && articles.length > 0 && (

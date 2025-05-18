@@ -24,8 +24,8 @@ const GenerateNewsFeedInputSchema = z.object({
   numberOfArticles: z
     .number()
     .min(1)
-    .max(10)
-    .default(5) // Default to 5 articles
+    .max(20) // Increased max to 20
+    .default(15) // Default to 15 articles
     .describe('The number of news articles to generate in the feed.'),
 });
 
@@ -34,8 +34,8 @@ export type GenerateNewsFeedInput = z.infer<typeof GenerateNewsFeedInputSchema>;
 const NewsArticleSchema = z.object({
   title: z.string().describe('Title of the news article.'),
   summary: z.string().describe('Brief summary of the news article.'),
-  source: z.string().describe('Source of the news article.'),
-  url: z.string().describe('URL of the news article.'), // Removed .url()
+  source: z.string().describe('Source of the news article (e.g., BBC News, Reuters).'),
+  url: z.string().describe('Full URL of the news article. Should be from a real, well-known news domain if possible.'),
   reliabilityScore: z.number().min(0).max(1).describe('Reliability score of the news source.'),
 });
 
@@ -62,8 +62,11 @@ const prompt = ai.definePrompt({
   Minimum Reliability Score: {{reliabilityScore}}
 
   Each article in the feed should include the title, a brief summary, the source, the URL, and the reliability score of the source.
+  For the source, use well-known and reputable news organizations (e.g., Reuters, Associated Press, BBC News, CNN, The New York Times, etc.).
+  For the URL, construct a plausible URL that belongs to the domain of the source. While the specific article path may be generated, the domain should be real.
 
   Ensure that the generated news feed aligns with the specified keywords, topics, and reliability score, so the user can stay informed about what matters most to them from trustworthy sources.
+  The articles should sound like real news items.
 
   Output the news feed as a JSON object, structured as an array of news articles, where each article has the following structure:
   {
