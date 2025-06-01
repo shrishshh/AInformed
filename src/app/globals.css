@@ -8,6 +8,55 @@ body {
 
 @layer base {
   :root {
+    /* Light theme variables */
+    --background: 0 0% 100%; /* White */
+    --foreground: 222 47% 11%; /* Dark Blue/Slate */
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 217 91% 60%; /* Bright Blue */
+    --primary-foreground: 0 0% 100%; /* White */
+
+    --secondary: 220 14% 95%; /* Light grey */
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 220 14% 96%; /* Lighter grey */
+    --muted-foreground: 220 8.9% 46.1%; /* Grey text */
+
+    --accent: 330 80% 60%; /* Pinkish accent */
+    --accent-foreground: 0 0% 100%; /* White */
+
+    --destructive: 0 84% 60%; /* Red */
+    --destructive-foreground: 0 0% 98%; /* Almost white */
+
+    --border: 214.3 31.8% 91.4%; /* Light grey border */
+    --input: 210 20% 98%; /* Very light grey */
+    --ring: 217 91% 60%; /* Bright Blue */
+
+    --radius: 0.5rem;
+
+    /* Status colors (light theme) */
+    --status-high: 142 76% 36%; /* Green */
+    --status-high-foreground: 0 0% 100%;
+    --status-medium: 48 96% 48%; /* Yellow */
+    --status-medium-foreground: 240 10% 3.9%; /* Dark text */
+    --status-low: 0 84% 60%; /* Red (same as destructive) */
+    --status-low-foreground: 0 0% 98%;
+
+     /* Chart colors - light theme */
+    --chart-1: 210 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 45 90% 55%;
+    --chart-5: 340 75% 55%;
+  }
+
+  .dark {
+    /* Dark theme variables */
     --background: 222 47% 11%; /* Dark Blue/Slate e.g., #111827 */
     --foreground: 210 40% 98%; /* Almost White e.g., #f8fafc */
 
@@ -36,9 +85,7 @@ body {
     --input: 222 30% 20%; /* Darker input background e.g., #242d3e */
     --ring: 217 91% 65%; /* Brighter blue for rings */
 
-    --radius: 0.5rem;
-
-    /* Status colors */
+    /* Status colors (dark theme) */
     --status-high: 130 60% 50%; /* Green */
     --status-high-foreground: 0 0% 100%;
     --status-medium: 45 90% 55%; /* Yellow */
@@ -46,16 +93,13 @@ body {
     --status-low: 0 72% 51%; /* Red (same as destructive) */
     --status-low-foreground: 0 0% 98%;
 
-    /* Chart colors - updated for dark theme */
+    /* Chart colors - dark theme */
     --chart-1: 210 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 45 90% 55%; /* Using status-medium yellow */
     --chart-5: 340 75% 55%;
   }
-
-  /* Remove .dark selector as :root now contains the dark theme by default */
-  /* If a light theme is still desired, it would need its own set of variables and a toggle mechanism */
 }
 
 @layer base {

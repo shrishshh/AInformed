@@ -1,5 +1,3 @@
-"use client";
-
 import { Badge as FooterBadge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Github, Twitter, Linkedin, Rss } from "lucide-react"
@@ -28,7 +26,7 @@ export function Footer() {
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
                 <span className="text-white font-bold text-sm">AI</span>
               </div>
-              <span className="font-bold text-xl">AInformed</span>
+              <span className="font-bold text-xl">AI News Hub</span>
             </div>
             <p className="text-muted-foreground max-w-md">
               Your trusted source for the latest artificial intelligence news, research, and insights. Stay informed
@@ -68,13 +66,13 @@ export function Footer() {
         <Separator className="my-8" />
 
         <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-          <div className="text-sm text-muted-foreground">© 2025 AInformed. All rights reserved.</div>
+          <div className="text-sm text-muted-foreground">© 2024 AI News Hub. All rights reserved.</div>
           <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-            <span>Made with ❤️ for the AI community by ZUCU & NINJUDI</span>
+            <span>Made with ❤️ for the AI community</span>
             <FooterBadge variant="outline">v2.1.0</FooterBadge>
           </div>
         </div>
       </div>
     </footer>
   )
-}
+} 

@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A Genkit tool to fetch real news articles from NewsAPI.org.
@@ -8,94 +7,70 @@
  * - FetchRealNewsArticlesToolOutput - Output type for the tool.
  */
 
-import {ai} from '@/ai/genkit';
-import {z}
-from 'genkit';
+import { z } from 'genkit';
+import { ai } from '@/ai/genkit';
 
-const NewsApiArticleSchema = z.object({
-  title: z.string().nullable(),
-  description: z.string().nullable(), // This will be mapped to 'summary'
-  url: z.string().url().nullable(),
-  urlToImage: z.string().url().nullable(),
-  publishedAt: z.string().datetime({ message: "Invalid datetime string" }).nullable(), // ISO 8601 format
-  source: z.object({
-    id: z.string().nullable(),
-    name: z.string().nullable(),
-  }).nullable(),
-  // content: z.string().nullable(), // NewsAPI sometimes provides full content, could be used for summarization
+const FetchRealNewsArticlesToolInputSchema = z.object({
+  keywords: z.string().describe('Keywords or a phrase to search for news articles.'),
+  numberOfArticles: z.number().min(1).max(20).default(15).describe('The number of news articles to fetch.'),
 });
 
-// Define the Zod schema for the tool's input locally. DO NOT EXPORT THIS CONST.
-const FetchRealNewsArticlesToolInputSchemaInternal = z.object({
-  keywords: z.string().describe('Keywords or a phrase to search for in articles. Corresponds to the "q" parameter in NewsAPI.'),
-  numberOfArticles: z.number().min(1).max(100).default(20).describe('Number of articles to fetch.'),
-});
-// Export the TypeScript type derived from the schema.
-export type FetchRealNewsArticlesToolInput = z.infer<typeof FetchRealNewsArticlesToolInputSchemaInternal>;
+export type FetchRealNewsArticlesToolInput = z.infer<typeof FetchRealNewsArticlesToolInputSchema>;
 
-// Define the Zod schema for the tool's output locally. DO NOT EXPORT THIS CONST.
-const FetchRealNewsArticlesToolOutputSchemaInternal = z.object({
-  articles: z.array(
-    z.object({
+const NewsArticleSchema = z.object({
       title: z.string(),
-      summary: z.string(), // Mapped from description
-      source: z.string(), // Mapped from source.name
-      url: z.string().url(),
-      imageUrl: z.string().url().optional().nullable(), // Mapped from urlToImage
-      publishedDate: z.string(), // Mapped from publishedAt (should be ISO string)
-    })
-  ),
+  summary: z.string(),
+  source: z.string(),
+  url: z.string(),
+  imageUrl: z.string().url().optional().nullable(),
+  publishedDate: z.string(),
 });
-// Export the TypeScript type derived from the schema.
-export type FetchRealNewsArticlesToolOutput = z.infer<typeof FetchRealNewsArticlesToolOutputSchemaInternal>;
+
+const FetchRealNewsArticlesToolOutputSchema = z.object({
+  articles: z.array(NewsArticleSchema),
+});
 
 export const fetchRealNewsArticlesTool = ai.defineTool(
   {
     name: 'fetchRealNewsArticlesTool',
-    description: 'Fetches live news articles from NewsAPI.org based on keywords.',
-    inputSchema: FetchRealNewsArticlesToolInputSchemaInternal, // Use the local schema definition
-    outputSchema: FetchRealNewsArticlesToolOutputSchemaInternal, // Use the local schema definition
+    description: 'Fetches real news articles from GNews API based on keywords.',
+    inputSchema: FetchRealNewsArticlesToolInputSchema,
+    outputSchema: FetchRealNewsArticlesToolOutputSchema,
   },
-  async (input: FetchRealNewsArticlesToolInput): Promise<FetchRealNewsArticlesToolOutput> => {
-    const apiKey = process.env.NEWS_API_KEY;
-    if (!apiKey) {
-      throw new Error('NEWS_API_KEY environment variable is not set. Please obtain an API key from NewsAPI.org and add it to your .env file.');
+  async (input: FetchRealNewsArticlesToolInput) => {
+    const API_KEY = process.env.GNEWS_API_KEY;
+    
+    if (!API_KEY) {
+      throw new Error('GNEWS_API_KEY is not configured in environment variables. Please add it to your .env.local file.');
     }
 
-    const newsApiUrl = new URL('https://newsapi.org/v2/everything');
-    newsApiUrl.searchParams.append('q', input.keywords);
-    newsApiUrl.searchParams.append('pageSize', input.numberOfArticles.toString());
-    newsApiUrl.searchParams.append('language', 'en'); // Fetch English articles
-    newsApiUrl.searchParams.append('sortBy', 'publishedAt'); // Sort by published date for "latest"
-    newsApiUrl.searchParams.append('apiKey', apiKey);
+    const gnewsUrl = `https://gnews.io/api/v4/search?q=${encodeURIComponent(input.keywords || 'AI OR technology')}&lang=en&max=${input.numberOfArticles}&token=${API_KEY}`;
 
     try {
-      const response = await fetch(newsApiUrl.toString());
+      const response = await fetch(gnewsUrl);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('NewsAPI Error:', errorData);
-        throw new Error(`NewsAPI request failed with status ${response.status}: ${errorData.message || response.statusText}`);
+        console.error(`GNews API request failed with status ${response.status}`);
+        const errorBody = await response.text();
+        console.error('GNews API error response body:', errorBody);
+        throw new Error(`GNews API request failed: ${response.statusText}`);
       }
 
-      const data = await response.json() as { articles: z.infer<typeof NewsApiArticleSchema>[] };
+      const data = await response.json();
 
-      const mappedArticles = data.articles
-      .filter(article => article.title && article.url && article.source?.name && article.description && article.publishedAt) // Filter out articles with missing essential fields
-      .map(article => ({
-        title: article.title!,
-        summary: article.description!,
-        source: article.source!.name!,
-        url: article.url!,
-        imageUrl: article.urlToImage,
-        publishedDate: article.publishedAt!,
+      const articles = (data.articles || []).map((article: any) => ({
+        title: article.title,
+        summary: article.description,
+        source: article.source.name,
+        url: article.url,
+        imageUrl: article.image || null,
+        publishedDate: article.publishedAt,
       }));
 
-      return { articles: mappedArticles };
+      return { articles };
     } catch (error: any) {
-      console.error('Error fetching or processing news from NewsAPI:', error);
-      // Provide more context in the error message if possible
-      const detail = error.cause || error.message || 'Unknown error';
-      throw new Error(`Failed to fetch news from NewsAPI: ${detail}`);
+      console.error('Error fetching news from GNews:', error);
+      throw new Error(`Failed to fetch news from GNews: ${error.message}`);
     }
   }
 );

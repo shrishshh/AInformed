@@ -1,4 +1,3 @@
-
 // src/ai/flows/generate-news-feed.ts
 'use server';
 
@@ -55,31 +54,48 @@ const generateNewsFeedFlow = ai.defineFlow(
     name: 'generateNewsFeedFlow',
     inputSchema: GenerateNewsFeedInputSchema,
     outputSchema: GenerateNewsFeedOutputSchema,
-    // The tool is not explicitly "called by an LLM" in this flow's current implementation.
-    // Instead, the flow's logic directly invokes the tool.
-    // If an LLM were to decide *whether* or *how* to call the tool, it would be listed in `tools`
-    // and the prompt would instruct the LLM accordingly.
-    // tools: [fetchRealNewsArticlesTool], 
+    // We are explicitly calling the AI model within the flow logic, not relying on tool calling by the LLM.
   },
   async (flowInput: GenerateNewsFeedInput): Promise<GenerateNewsFeedOutput> => {
     // Prepare the input for the fetchRealNewsArticlesTool using the imported TypeScript type
     const toolInput: FetchRealNewsArticlesToolInput = {
-        keywords: flowInput.searchQuery,
+        keywords: flowInput.searchQuery || 'AI OR technology', // Use the updated default query here as well
         numberOfArticles: flowInput.numberOfArticles,
     };
 
-    // Directly call the tool.
+    // Directly call the GNews fetching tool.
     const toolResult = await fetchRealNewsArticlesTool(toolInput);
 
-    // Map tool output to flow output schema
-    // Assign a default reliability score or leave it undefined
-    const articlesWithDefaults = toolResult.articles.map(article => ({
-      ...article,
-      // Assign a default reliability score or leave it undefined/null as NewsAPI doesn't provide it.
-      // Example: Assign a default score if source exists, otherwise null.
-      reliabilityScore: article.source ? 0.75 : undefined, 
-    }));
+    const relevantArticles = [];
 
-    return { articles: articlesWithDefaults };
+    // Use the AI model to filter the articles for relevance to AI and Technology advancements.
+    for (const article of toolResult.articles) {
+      try {
+        const prompt = `Review the following news article and determine if it is primarily about Artificial Intelligence (AI) or Technology advancements. Respond with ONLY 'YES' if it is relevant, and ONLY 'NO' if it is not.\\n\\nTitle: ${article.title}\\nSummary: ${article.summary}`;
+        
+        // Use the configured Google AI model (Gemini)
+        const response = await ai.generate({
+          model: 'gemini-1.5-flash-latest', // Or the specific model configured in genkit/dev.ts
+          prompt: prompt,
+          config: { temperature: 0 }, // Use low temperature for deterministic filtering
+        });
+
+        const modelOutput = response.text.trim().toUpperCase();
+
+        if (modelOutput === 'YES') {
+          // Map tool output to flow output schema and add default reliability score
+          relevantArticles.push({
+      ...article,
+            reliabilityScore: article.source ? 0.75 : undefined, // Assign a default score or leave it undefined/null
+          });
+        }
+      } catch (error) {
+        console.error(`Error processing article with AI for relevance: ${article.title}`, error);
+        // Optionally, include the article if AI filtering fails, or skip it.
+        // For now, we'll skip to ensure only confidently relevant articles are included.
+      }
+    }
+
+    return { articles: relevantArticles };
   }
 );

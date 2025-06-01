@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useForm, SubmitHandler } from "react-hook-form";
@@ -56,7 +55,7 @@ export function FeedCustomizationForm({ onSubmit, isLoading, initialValues }: Fe
   };
 
   return (
-    <div className="mb-8">
+    <div className="mb-8 bg-background/80 backdrop-blur-md py-4 px-4">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <FormField
