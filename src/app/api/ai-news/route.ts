@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get('q') || 'AI OR technology'; // Changed default query to use explicit OR operator for GNews
+  const query = searchParams.get('q');
+  const category = searchParams.get('category');
 
   const API_KEY = process.env.GNEWS_API_KEY;
   
@@ -14,9 +15,17 @@ export async function GET(request: Request) {
     );
   }
 
+  let q = query || 'AI OR technology';
+  if (category) {
+    q = category;
+    if (query) {
+      q = `${category} ${query}`;
+    }
+  }
+
   try {
     const response = await fetch(
-      `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=en&token=${API_KEY}`
+      `https://gnews.io/api/v4/search?q=${encodeURIComponent(q)}&lang=en&token=${API_KEY}`
     );
 
     if (!response.ok) {

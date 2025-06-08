@@ -1,0 +1,42 @@
+[
+  {
+    "id": "spending-review",
+    "title": "Spending Review 2025: Faster drug treatments and longer-lasting batteries to come from £86bn science and tech package",
+    "summary": "Each region in England will be handed up to £500m to spend on science and technology projects of their choice, the Department for Science, Innovation and Technology says.",
+    "imageUrl": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80",
+    "source": "Sky News",
+    "date": "2025-06-07",
+    "category": "AI Research",
+    "content": "Full article content for Spending Review 2025..."
+  },
+  {
+    "id": "technology-complement",
+    "title": "Technology Must Complement, Not Replace, Human Mind In Judicial Decision-Making: CJI Gaval",
+    "summary": "The CJI said that complex legal issues often require an understanding of human context, societal implications, and ethical dilemmas that AI, in its current form, cannot fully grasp.",
+    "imageUrl": "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=600&q=80",
+    "source": "Reuters",
+    "date": "2025-06-07",
+    "category": "Ethics",
+    "content": "Full article content for Technology Must Complement..."
+  },
+  {
+    "id": "rachel-reeves",
+    "title": "Rachel Reeves Unveils Landmark R&D Investment",
+    "summary": "British finance minister Rachel Reeves plans to allocate 86 billion pounds for research and development. This move by the Labour government aims to drive new jobs and economic growth.",
+    "imageUrl": "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=600&q=80",
+    "source": "DealSource",
+    "date": "2025-06-07",
+    "category": "Business",
+    "content": "Full article content for Rachel Reeves Unveils..."
+  },
+  {
+    "id": "agent-computing",
+    "title": "Agent-based computing is outgrowing the web as we know it",
+    "summary": "AI agents are moving from passive assistants to active participants. Today, we ask them to do. Tomorrow, we'll authorize them to act.",
+    "imageUrl": "https://images.unsplash.com/photo-1467987506553-8f3916508521?auto=format&fit=crop&w=600&q=80",
+    "source": "VentureBeat",
+    "date": "2025-06-07",
+    "category": "Robotics",
+    "content": "Full article content for Agent-based computing..."
+  }
+] 

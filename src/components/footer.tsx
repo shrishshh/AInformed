@@ -1,6 +1,7 @@
-import { Badge as FooterBadge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Github, Twitter, Linkedin, Rss } from "lucide-react"
+import { Badge as FooterBadge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Github, Twitter, Linkedin, Rss } from "lucide-react";
+import Link from "next/link";
 
 export function Footer() {
   const footerLinks = {
@@ -12,67 +13,115 @@ export function Footer() {
       "Ethics & Policy",
       "Industry News",
     ],
-    Resources: ["Research Papers", "AI Tools", "Datasets", "Tutorials", "Glossary", "Events"],
-    Company: ["About Us", "Our Team", "Careers", "Contact", "Press Kit", "Partnerships"],
-    Legal: ["Privacy Policy", "Terms of Service", "Cookie Policy", "GDPR", "Accessibility", "Disclaimer"],
-  }
+    Resources: [
+      "Research Papers",
+      "AI Tools",
+      "Datasets",
+      "Tutorials",
+      "Glossary",
+      "Events",
+    ],
+  };
+
+  const socialLinks = [
+    { icon: Github, href: "https://github.com/", label: "GitHub" },
+    { icon: Twitter, href: "https://twitter.com/", label: "Twitter" },
+    { icon: Linkedin, href: "https://linkedin.com/", label: "LinkedIn" },
+    { icon: Rss, href: "/rss.xml", label: "RSS" },
+  ];
 
   return (
-    <footer className="bg-slate-50 dark:bg-slate-900 border-t">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
-          <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-                <span className="text-white font-bold text-sm">AI</span>
-              </div>
-              <span className="font-bold text-xl">AI News Hub</span>
-            </div>
-            <p className="text-muted-foreground max-w-md">
-              Your trusted source for the latest artificial intelligence news, research, and insights. Stay informed
-              about the rapidly evolving world of AI.
-            </p>
-            <div className="flex items-center space-x-4">
-              <FooterBadge variant="secondary" className="flex items-center space-x-1">
-                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                <span>Live</span>
-              </FooterBadge>
-              <span className="text-sm text-muted-foreground">Updated every hour</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Twitter className="h-5 w-5 text-muted-foreground hover:text-blue-500 cursor-pointer transition-colors" />
-              <Linkedin className="h-5 w-5 text-muted-foreground hover:text-blue-600 cursor-pointer transition-colors" />
-              <Github className="h-5 w-5 text-muted-foreground hover:text-gray-900 dark:hover:text-white cursor-pointer transition-colors" />
-              <Rss className="h-5 w-5 text-muted-foreground hover:text-orange-500 cursor-pointer transition-colors" />
-            </div>
+    <footer className="bg-card border-t border-border mt-12">
+      <div className="container mx-auto px-4 py-10 grid grid-cols-1 md:grid-cols-6 gap-8">
+        <div className="md:col-span-1 flex flex-col gap-3">
+          <Link href="/" className="flex items-center gap-2 mb-2">
+            <FooterBadge variant="secondary" className="text-lg px-3 py-1">AI</FooterBadge>
+            <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">AInformed</span>
+          </Link>
+          <p className="text-muted-foreground text-sm">
+            Stay updated with the latest AI news, research, and resources.
+          </p>
+          <div className="flex gap-3 mt-2">
+            {socialLinks.map(({ icon: Icon, href, label }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={label}
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Icon className="h-5 w-5" />
+              </a>
+            ))}
           </div>
-
-          {Object.entries(footerLinks).map(([category, links]) => (
-            <div key={category} className="space-y-4">
-              <h3 className="font-semibold text-sm uppercase tracking-wider">{category}</h3>
-              <ul className="space-y-2">
-                {links.map((link) => (
-                  <li key={link}>
-                    <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                      {link}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
         </div>
-
-        <Separator className="my-8" />
-
-        <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-          <div className="text-sm text-muted-foreground">© 2024 AI News Hub. All rights reserved.</div>
-          <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-            <span>Made with ❤️ for the AI community</span>
-            <FooterBadge variant="outline">v2.1.0</FooterBadge>
-          </div>
+        <div>
+          <h4 className="font-semibold mb-3">Categories</h4>
+          <ul className="space-y-2">
+            {footerLinks.Categories.map((cat) => (
+              <li key={cat}>
+                <Link href={`/categories?cat=${encodeURIComponent(cat)}`} className="hover:text-primary transition-colors text-sm">
+                  {cat}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-semibold mb-3">Resources</h4>
+          <ul className="space-y-2">
+            {footerLinks.Resources.map((res) => (
+              <li key={res}>
+                <Link href={`/resources?type=${encodeURIComponent(res)}`} className="hover:text-primary transition-colors text-sm">
+                  {res}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-semibold mb-3">Legal</h4>
+          <ul className="space-y-2">
+            <li><Link href="/terms" className="hover:text-primary transition-colors text-sm">Terms of Service</Link></li>
+            <li><Link href="/privacy" className="hover:text-primary transition-colors text-sm">Privacy Policy</Link></li>
+            <li><Link href="/cookies" className="hover:text-primary transition-colors text-sm">Cookie Policy</Link></li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-semibold mb-3">About</h4>
+          <ul className="space-y-2">
+            <li><Link href="/about" className="hover:text-primary transition-colors text-sm">About Me</Link></li>
+            <li><Link href="/contact" className="hover:text-primary transition-colors text-sm">Contact</Link></li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-semibold mb-3">Newsletter</h4>
+          <p className="text-sm text-muted-foreground mb-2">Get the latest AI news delivered to your inbox.</p>
+          <form className="flex flex-col gap-2">
+            <input
+              type="email"
+              placeholder="Your email"
+              className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              required
+            />
+            <button
+              type="submit"
+              className="rounded-md bg-gradient-to-r from-purple-600 to-blue-600 px-4 py-2 text-white text-sm font-medium hover:from-purple-700 hover:to-blue-700 transition-colors w-full"
+            >
+              Subscribe
+            </button>
+          </form>
+        </div>
+      </div>
+      <Separator />
+      <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between text-xs text-muted-foreground">
+        <span>&copy; {new Date().getFullYear()} AInformed. All rights reserved.</span>
+        <div className="flex gap-4 mt-2 md:mt-0">
+          <Link href="/terms" className="hover:text-primary">Terms of Service</Link>
+          <Link href="/privacy" className="hover:text-primary">Privacy Policy</Link>
         </div>
       </div>
     </footer>
-  )
+  );
 } 
