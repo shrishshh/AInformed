@@ -1,13 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { formatDistanceToNow } from "date-fns"
-import { Bookmark, Share2, MessageSquare, ExternalLink } from "lucide-react"
+import { Bookmark, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
 interface NewsCardProps {
   id: string
@@ -15,26 +15,39 @@ interface NewsCardProps {
   summary: string
   imageUrl: string
   source: string
-  date: Date
+  date: Date | string
   url: string
   readTime?: number
+  isBookmarked?: boolean
+  onToggleBookmark?: (article: any) => void
 }
 
-export function NewsCard({ id, title, summary, imageUrl, source, date, url, readTime = 3 }: NewsCardProps) {
-  const [isBookmarked, setIsBookmarked] = useState(false)
-
+export function NewsCard({ id, title, summary, imageUrl, source, date, url, readTime = 3, isBookmarked, onToggleBookmark }: NewsCardProps) {
   // Ensure date is a Date object
   const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const [showSummary, setShowSummary] = useState(false);
+
+  // Card click handler
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Prevent click if clicking on bookmark or read more
+    if ((e.target as HTMLElement).closest('.bookmark-btn, .readmore-btn')) return;
+    window.open(url, '_blank');
+  };
 
   return (
-    <Card className="overflow-hidden transition-all duration-200 hover:shadow-md border-0 bg-card">
+    <Card className="overflow-hidden transition-all duration-200 hover:shadow-md border-0 bg-card cursor-pointer" onClick={handleCardClick}>
       <div className="relative aspect-[16/9] overflow-hidden">
         <Image
-          src={imageUrl || "/placeholder.svg?height=400&width=600"}
+          src={imageUrl || "/placeholder.jpg"}
           alt={title}
           fill
           className="object-cover transition-transform duration-300 hover:scale-105"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          priority={false}
+          onError={e => {
+            console.warn(`Failed to load image for article: ${title} from ${imageUrl}. Using fallback.`);
+            e.currentTarget.src = "/placeholder.jpg";
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300">
           <div className="absolute bottom-3 right-3">
@@ -57,68 +70,36 @@ export function NewsCard({ id, title, summary, imageUrl, source, date, url, read
           <span>{readTime} min read</span>
         </div>
 
-        <Link href={`/article/${id}`}>
-          <h3 className="text-lg font-semibold leading-tight mb-2 hover:text-primary transition-colors line-clamp-2">
-            {title}
-          </h3>
-        </Link>
+        <h3 className="text-lg font-semibold leading-tight mb-2 hover:text-primary transition-colors line-clamp-2">
+          {title}
+        </h3>
 
         <p className="text-sm text-muted-foreground line-clamp-3">{summary}</p>
       </CardContent>
 
       <CardFooter className="p-4 pt-0 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => setIsBookmarked(!isBookmarked)}
-                >
-                  <Bookmark className={`h-4 w-4 ${isBookmarked ? "fill-primary text-primary" : ""}`} />
-                  <span className="sr-only">Bookmark</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{isBookmarked ? "Remove bookmark" : "Save for later"}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <MessageSquare className="h-4 w-4" />
-                  <span className="sr-only">Comments</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>View comments</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <Share2 className="h-4 w-4" />
-                  <span className="sr-only">Share</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Share article</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-
-        <Button variant="ghost" size="sm" asChild>
-          <Link href={`/article/${id}`}>Read More</Link>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="bookmark-btn"
+          onClick={e => { e.stopPropagation(); onToggleBookmark?.({ id, title, summary, imageUrl, source, date, url, readTime }); }}
+          aria-label={isBookmarked ? "Unsave article" : "Save article"}
+        >
+          <Bookmark className={`h-5 w-5 ${isBookmarked ? "fill-primary text-primary" : "text-muted-foreground"}`} />
         </Button>
+        <Dialog open={showSummary} onOpenChange={open => { setShowSummary(open); }}>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="sm" className="readmore-btn" onClick={e => e.stopPropagation()}>
+              Read More
+            </Button>
+          </DialogTrigger>
+          <DialogContent onClick={e => e.stopPropagation()}>
+            <DialogHeader>
+              <DialogTitle>{title}</DialogTitle>
+            </DialogHeader>
+            <div className="text-sm text-muted-foreground whitespace-pre-line">{summary}</div>
+          </DialogContent>
+        </Dialog>
       </CardFooter>
     </Card>
   )

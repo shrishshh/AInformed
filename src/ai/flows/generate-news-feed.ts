@@ -38,6 +38,7 @@ const NewsArticleSchema = z.object({
 
 const GenerateNewsFeedOutputSchema = z.object({
   articles: z.array(NewsArticleSchema).describe('Array of news articles.'),
+  timestamp: z.string().describe('Timestamp of when the news was fetched.'),
 });
 
 export type GenerateNewsFeedOutput = z.infer<typeof GenerateNewsFeedOutputSchema>;
@@ -85,7 +86,7 @@ const generateNewsFeedFlow = ai.defineFlow(
         if (modelOutput === 'YES') {
           // Map tool output to flow output schema and add default reliability score
           relevantArticles.push({
-      ...article,
+            ...article,
             reliabilityScore: article.source ? 0.75 : undefined, // Assign a default score or leave it undefined/null
           });
         }
@@ -96,6 +97,9 @@ const generateNewsFeedFlow = ai.defineFlow(
       }
     }
 
-    return { articles: relevantArticles };
+    return { 
+      articles: relevantArticles,
+      timestamp: toolResult.timestamp
+    };
   }
 );

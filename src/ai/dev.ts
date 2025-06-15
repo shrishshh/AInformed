@@ -1,6 +1,9 @@
-
 import { config } from 'dotenv';
-config(); // Ensures .env variables are loaded
+import path from 'path';
+
+config({ path: path.resolve(process.cwd(), '.env.local') }); // Ensures .env variables are loaded from the project root
+
+console.log('GEMINI_API_KEY:', process.env.GEMINI_API_KEY);
 
 import '@/ai/flows/summarize-article.ts';
 import '@/ai/flows/generate-news-feed.ts';

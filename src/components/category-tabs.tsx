@@ -2,13 +2,31 @@
 
 import { useState } from "react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import Link from "next/link"
 
-interface CategoryTabsProps {
-  categories: string[]
-  onCategoryChange: (category: string) => void
-}
+// interface CategoryTabsProps {
+//   categories: string[]
+//   onCategoryChange: (category: string) => void
+// }
 
-export function CategoryTabs({ categories, onCategoryChange }: CategoryTabsProps) {
+export function CategoryTabs({ onCategoryChange }: { onCategoryChange: (category: string) => void }) {
+  const categories = [
+    "All",
+    "Artificial Intelligence",
+    "Machine Learning",
+    "Deep Learning",
+    "Natural Language Processing",
+    "Computer Vision",
+    "Robotics",
+    "Data Science",
+    "Cybersecurity",
+    "Quantum Computing",
+    "AI Ethics",
+    "Neural Networks",
+    "Big Data",
+    "Automation",
+  ];
+
   const [activeCategory, setActiveCategory] = useState("All")
 
   const handleCategoryChange = (category: string) => {
@@ -20,7 +38,7 @@ export function CategoryTabs({ categories, onCategoryChange }: CategoryTabsProps
     <div className="w-full overflow-auto pb-2 mb-6">
       <Tabs defaultValue="All" className="w-full">
         <TabsList className="inline-flex h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground w-fit min-w-full sm:min-w-0">
-          {["All", ...categories].map((category) => (
+          {categories.map((category) => (
             <TabsTrigger
               key={category}
               value={category}

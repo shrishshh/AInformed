@@ -8,13 +8,13 @@ interface TrendingTopic {
   id: string
   name: string
   posts: number
-  change: string
 }
 
 interface RecentUpdate {
   id: string
   title: string
   date: string
+  url: string
 }
 
 interface TrendingSidebarProps {
@@ -35,7 +35,7 @@ export function TrendingSidebar({ trendingTopics, recentUpdates }: TrendingSideb
         <CardContent className="pt-0">
           <div className="space-y-4">
             {trendingTopics.map((topic, index) => (
-              <Link key={topic.id} href={`/topic/${topic.id}`} className="flex items-center justify-between group">
+              <Link key={topic.id} href={`/categories/${encodeURIComponent(topic.name)}`} className="flex items-center justify-between group">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs font-medium">
                     #{index + 1}
@@ -45,22 +45,12 @@ export function TrendingSidebar({ trendingTopics, recentUpdates }: TrendingSideb
                     <p className="text-xs text-muted-foreground">{topic.posts} posts</p>
                   </div>
                 </div>
-                <Badge
-                  variant={topic.change.startsWith("+") ? "default" : "secondary"}
-                  className={`${
-                    topic.change.startsWith("+")
-                      ? "bg-green-100 text-green-800 hover:bg-green-200"
-                      : "bg-blue-100 text-blue-800 hover:bg-blue-200"
-                  }`}
-                >
-                  {topic.change}
-                </Badge>
               </Link>
             ))}
           </div>
 
           <Button variant="ghost" size="sm" className="w-full mt-4" asChild>
-            <Link href="/topics">
+            <Link href="/trending">
               View all topics
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
@@ -78,7 +68,7 @@ export function TrendingSidebar({ trendingTopics, recentUpdates }: TrendingSideb
         <CardContent className="pt-0">
           <div className="space-y-3">
             {recentUpdates.map((update) => (
-              <Link key={update.id} href={`/article/${update.id}`} className="block group">
+              <Link key={update.id} href={update.url} target="_blank" rel="noopener noreferrer" className="block group">
                 <p className="text-sm font-medium line-clamp-2 group-hover:text-primary transition-colors">
                   {update.title}
                 </p>

@@ -57,7 +57,9 @@ const nextConfig: NextConfig = {
     ],
     // Data URIs are still supported for fallbacks or other uses.
     dangerouslyAllowSVG: true, // If you use SVG data URIs as fallbacks
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;", // Basic CSP for images
+    // Temporarily relax Content Security Policy for image loading from external sources.
+    // For production, consider a more strict policy with explicit image domains.
+    contentSecurityPolicy: "default-src 'self'; img-src *; script-src 'none'; sandbox;",
   },
 };
 

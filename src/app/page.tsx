@@ -9,42 +9,64 @@ import { NewsletterSignup } from '@/components/newsletter-signup';
 
 export default function Home() {
   const [news, setNews] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
   const [trendingTopics, setTrendingTopics] = useState<any[]>([]);
   const [recentUpdates, setRecentUpdates] = useState<any[]>([]);
+  const [bookmarks, setBookmarks] = useState<any[]>([]);
   const router = useRouter();
 
+  // Load bookmarks from localStorage
+  useEffect(() => {
+    const loadBookmarks = () => {
+      const saved = localStorage.getItem('bookmarks');
+      if (saved) setBookmarks(JSON.parse(saved));
+    };
+    loadBookmarks();
+    window.addEventListener('storage', loadBookmarks);
+    return () => window.removeEventListener('storage', loadBookmarks);
+  }, []);
+
+  // Save bookmarks to localStorage
+  useEffect(() => {
+    localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+  }, [bookmarks]);
+
+  // Deduplicate by title+source
   useEffect(() => {
     fetch('/api/ai-news')
       .then(res => res.json())
       .then(data => {
         const articles = data.articles || [];
-        // Deduplicate by URL
         const uniqueArticles: any[] = [];
         const seen = new Set();
         for (const article of articles) {
-          if (!seen.has(article.url)) {
+          const key = article.title + '|' + article.source.name;
+          if (!seen.has(key)) {
             uniqueArticles.push(article);
-            seen.add(article.url);
+            seen.add(key);
           }
         }
         setNews(uniqueArticles);
-        setCategories([
-          ...new Set(uniqueArticles.map((item: any) => item.source.name))
-        ]);
-        setTrendingTopics(
-          uniqueArticles.slice(0, 5).map((item: any, idx: number) => ({
-            id: item.url,
-            name: item.source.name,
-            posts: Math.floor(Math.random() * 1000) + 100,
-            change: `+${Math.floor(Math.random() * 25) + 1}%`,
-          }))
-        );
+
+        // Calculate trending topics based on source frequency
+        const sourceCounts: { [key: string]: number } = {};
+        uniqueArticles.forEach((article: any) => {
+          const sourceName = article.source.name;
+          sourceCounts[sourceName] = (sourceCounts[sourceName] || 0) + 1;
+        });
+
+        const sortedSources = Object.entries(sourceCounts)
+          .map(([name, posts]) => ({ id: name, name, posts }))
+          .sort((a, b) => b.posts - a.posts)
+          .slice(0, 5); // Get top 5 trending sources
+
+        setTrendingTopics(sortedSources);
+        
         setRecentUpdates(
           uniqueArticles.slice(0, 4).map((item: any) => ({
             id: item.url,
             title: item.title,
             date: item.publishedAt,
+            url: item.url,
           }))
         );
       });
@@ -52,6 +74,23 @@ export default function Home() {
 
   const handleCategoryChange = (category: string) => {
     router.push(`/categories/${encodeURIComponent(category)}`);
+  };
+
+  const handleToggleBookmark = (article: any) => {
+    const exists = bookmarks.some((a) => a.url === article.url);
+    if (exists) {
+      setBookmarks(bookmarks.filter((a) => a.url !== article.url));
+    } else {
+      // Normalize bookmark object
+      setBookmarks([
+        ...bookmarks,
+        {
+          ...article,
+          image: article.image || article.imageUrl,
+          source: article.source?.name || article.source,
+        },
+      ]);
+    }
   };
 
   return (
@@ -66,7 +105,6 @@ export default function Home() {
           </div>
 
           <CategoryTabs
-            categories={categories}
             onCategoryChange={handleCategoryChange}
           />
 
@@ -82,6 +120,8 @@ export default function Home() {
                 date={article.publishedAt}
                 url={article.url}
                 readTime={4}
+                isBookmarked={bookmarks.some((a) => a.url === article.url)}
+                onToggleBookmark={handleToggleBookmark}
               />
             ))}
           </div>

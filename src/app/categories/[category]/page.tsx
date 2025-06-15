@@ -10,7 +10,7 @@ export default function CategoryPage() {
 
   useEffect(() => {
     if (category) {
-      fetch(`/api/ai-news?category=${encodeURIComponent(category as string)}`)
+      fetch(`/api/ai-news?category=${category as string}`)
         .then(res => res.json())
         .then(data => {
           const articles = data.articles || [];
@@ -29,7 +29,7 @@ export default function CategoryPage() {
 
   return (
     <div className="container px-4 py-8 mx-auto">
-      <h1 className="text-3xl font-bold mb-6">{category} News</h1>
+      <h1 className="text-3xl font-bold mb-6">{decodeURIComponent(category as string)} News</h1>
       {news.length === 0 ? (
         <p className="text-muted-foreground">No articles found for this category.</p>
       ) : (

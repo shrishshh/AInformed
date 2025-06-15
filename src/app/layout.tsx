@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/ui/theme-provider"
 import Header from "@/components/header"
 import { Footer } from "@/components/footer"
 import "./globals.css"
+import { Toaster } from "sonner"
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -29,6 +30,7 @@ export default function RootLayout({
           <Header />
           <main>{children}</main>
           <Footer />
+          <Toaster richColors position="top-center" />
         </ThemeProvider>
       </body>
     </html>
