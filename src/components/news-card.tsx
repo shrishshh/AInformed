@@ -51,7 +51,7 @@ export function NewsCard({ id, title, summary, imageUrl, source, date, url, read
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300">
           <div className="absolute bottom-3 right-3">
-            <Button variant="secondary" size="sm" className="bg-white/90 hover:bg-white" asChild>
+            <Button variant="secondary" size="sm" asChild>
               <Link href={url} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="h-4 w-4 mr-1" />
                 Read Original

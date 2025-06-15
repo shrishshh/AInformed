@@ -16,20 +16,6 @@ export default function ContactPage() {
   const [subject, setSubject] = useState("")
   const [message, setMessage] = useState("")
 
-  // You can customize these details for your team members
-  const teamSocialLinks = [
-    {
-      name: "Shrish",
-      github: "https://github.com/shrishshh",
-      linkedin: "https://linkedin.com/in/shrishshh",
-    },
-    {
-      name: "Aryaman", // Replace with your teammate's name
-      github: "https://github.com/kachrooaryaman", // Replace with your teammate's GitHub URL
-      linkedin: "https://linkedin.com/in/kachrooaryaman", // Replace with your teammate's LinkedIn URL
-    },
-  ];
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -87,17 +73,10 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-medium">Links</h3>
                   <div className="flex gap-4 mt-2">
-                    {teamSocialLinks.map((member) => (
-                      <div key={member.name} className="flex items-center gap-2">
-                        <a href={member.github} target="_blank" rel="noopener noreferrer" className="hover:text-primary">
-                          <Github className="w-5 h-5" />
-                        </a>
-                        <a href={member.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-primary">
-                          <Linkedin className="w-5 h-5" />
-                        </a>
-                        <span className="text-sm">{member.name}</span>
-                      </div>
-                    ))}
+                    <a href="https://www.linkedin.com/company/sidemindlabs" target="_blank" rel="noopener noreferrer" className="hover:text-primary">
+                      <Linkedin className="w-5 h-5" />
+                    </a>
+                    <span className="text-sm">SideMindLabs</span>
                   </div>
                 </div>
               </div>

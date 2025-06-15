@@ -1,5 +1,5 @@
 import { Separator } from "@/components/ui/separator";
-import { Github, Linkedin } from "lucide-react";
+import { Linkedin } from "lucide-react";
 import Link from "next/link";
 
 export function Footer() {
@@ -19,8 +19,7 @@ export function Footer() {
   };
 
   const socialLinks = [
-    { icon: Github, href: "https://github.com/shrishshh", label: "GitHub" },
-    { icon: Linkedin, href: "https://linkedin.com/in/shrishshh", label: "LinkedIn" },
+    { icon: Linkedin, href: "https://www.linkedin.com/company/sidemindlabs", label: "SideMindLabs LinkedIn" },
   ];
 
   return (
