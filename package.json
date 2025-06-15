@@ -7,7 +7,7 @@
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "build": "next build",
-    "start": "next start",
+    "start": "concurrently \"npm run genkit:dev\" \"npm run dev\"",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
@@ -43,6 +43,7 @@
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "concurrently": "^9.1.2",
     "date-fns": "^3.6.0",
     "dotenv": "^16.5.0",
     "express-validator": "^7.2.1",
