@@ -6,6 +6,11 @@ import User from '@/models/User';
 
 const client_id = process.env.GOOGLE_CLIENT_ID;
 const client_secret = process.env.GOOGLE_CLIENT_SECRET;
+
+// Add these logs for debugging
+console.log('NEXT_PUBLIC_APP_URL (in route.js):', process.env.NEXT_PUBLIC_APP_URL);
+console.log('GOOGLE_REDIRECT_URI (in route.js):', process.env.GOOGLE_REDIRECT_URI);
+
 const redirect_uri = process.env.GOOGLE_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/google/callback`;
 
 const oauth2Client = new google.auth.OAuth2(
@@ -52,6 +57,7 @@ export async function GET(req) {
 
     // Redirect to frontend with token
     const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/redirect?token=${token}`;
+    console.log('Redirecting to:', redirectTo); // Add this log as well
     return NextResponse.redirect(redirectTo);
   } catch (error) {
     console.error('Google OAuth error:', error);

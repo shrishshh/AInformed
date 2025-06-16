@@ -30,6 +30,21 @@ const nextConfig = {
     BREVO_SMTP_PASS: process.env.BREVO_SMTP_PASS,
   },
   
+  // Ensure server-only packages are not bundled for client/edge runtime
+  // These packages use Node.js APIs not available in Edge Runtime.
+  experimental: {
+    serverComponentsExternalPackages: [
+      'jsonwebtoken',
+      'handlebars',
+      '@opentelemetry/sdk-node',
+      '@opentelemetry/api',
+      '@opentelemetry/exporter-jaeger',
+      'dotprompt',
+      'genkit',
+      'require-in-the-middle',
+    ],
+  },
+
   // Webpack configuration to handle problematic modules
   webpack: (config, { isServer }) => {
     if (!isServer) {
