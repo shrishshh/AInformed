@@ -12,10 +12,10 @@ export default function AboutPage() {
         alt="shrish"
         className="w-40 h-40 rounded-full mb-6 border-4 border-primary shadow-lg object-cover object-center"
       />
-      <h1 className="text-3xl font-bold mb-2">DE JIGGLE</h1>
+      <h1 className="text-3xl font-bold mb-2">SideMindLabs</h1>
       <p className="text-muted-foreground text-center max-w-2xl mb-6">
-        Hi! I'm Ninnn JA and ZUCU, an AI enthusiast and developer passionate about building modern web apps and sharing the latest in artificial intelligence. I love exploring new technologies, collaborating on open source, and making AI accessible to everyone.<br /><br />
-        <span className="font-semibold">Fun Fact:</span> I can code for hours with just coffee and lo-fi beats!
+        Hi! I'm Shrish & Aryaman, AI enthusiasts and developers passionate about building modern web apps and sharing the latest in artificial intelligence. We love exploring new technologies, collaborating on open source, and making AI accessible to everyone.<br /><br />
+        <span className="font-semibold">Fun Fact:</span> We can code for hours with just coffee and lo-fi beats!
       </p>
       <div className="mb-8">
         <h3 className="text-xl font-semibold mb-2 text-primary">Skills & Technologies</h3>
