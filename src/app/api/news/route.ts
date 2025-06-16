@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/navigation';
 import newsData from '@/data/news.json';
 
 export async function GET(request: Request) {
