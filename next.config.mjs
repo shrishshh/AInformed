@@ -1,8 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable standalone output for Docker
-  output: 'standalone',
-  
   // Disable telemetry
   telemetry: false,
   
@@ -19,15 +16,8 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   
-  // Experimental features
-  experimental: {
-    // This was causing issues in your build
-    outputFileTracingRoot: undefined,
-  },
-  
   // Webpack configuration to handle problematic modules
-  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    // Handle genkit and opentelemetry issues
+  webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -45,13 +35,6 @@ const nextConfig = {
         path: false,
       };
     }
-    
-    // Ignore problematic modules during build
-    config.externals = config.externals || [];
-    config.externals.push({
-      '@opentelemetry/exporter-jaeger': 'commonjs @opentelemetry/exporter-jaeger',
-    });
-    
     return config;
   },
   
