@@ -6,7 +6,7 @@ import User from '@/models/User';
 
 const client_id = process.env.GOOGLE_CLIENT_ID;
 const client_secret = process.env.GOOGLE_CLIENT_SECRET;
-const redirect_uri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:9002/api/auth/google/callback';
+const redirect_uri = process.env.GOOGLE_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/google/callback`;
 
 const oauth2Client = new google.auth.OAuth2(
   client_id,
@@ -57,7 +57,7 @@ export async function GET(req) {
     console.log('JWT token generated for user:', user.email);
 
     // Redirect to frontend with token
-    const redirectTo = `http://localhost:9002/redirect?token=${token}`;
+    const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/redirect?token=${token}`;
     return NextResponse.redirect(redirectTo);
   } catch (error) {
     console.error('Google OAuth error:', error);

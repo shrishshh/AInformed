@@ -25,7 +25,7 @@ export default function AuthPage() {
   const { login } = useAuthStatus()
 
   const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""
-  const GOOGLE_REDIRECT_URI = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI || "http://localhost:9002/redirect"
+  const GOOGLE_REDIRECT_URI = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/redirect`
 
   function getGoogleAuthUrl() {
     const rootUrl = "https://accounts.google.com/o/oauth2/v2/auth"
