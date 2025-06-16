@@ -33,8 +33,10 @@ ENV BREVO_SMTP_PORT=587
 ENV BREVO_SMTP_USER=your-brevo-email
 ENV BREVO_SMTP_PASS=your-brevo-api-key
 
-# Build the application with better error handling
-RUN npm run build || (echo "Build failed. Checking what we have:" && ls -la && ls -la .next 2>/dev/null || echo "No .next directory" && exit 1)
+# Build the application
+RUN echo "Checking MONGODB_URI: $MONGODB_URI" && \
+    echo "Checking JWT_SECRET: $JWT_SECRET" && \
+    npm run build || (echo "Build failed. Checking what we have:" && ls -la && ls -la .next 2>/dev/null || echo "No .next directory" && exit 1)
 
 # Expose port 3000
 EXPOSE 3000
