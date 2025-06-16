@@ -19,27 +19,40 @@ RUN npm install @opentelemetry/exporter-jaeger --legacy-peer-deps
 # Copy source code
 COPY . .
 
-# Set build-time environment variables
+# Set build-time environment variables received as ARG and then set as ENV
 ARG NEXT_PUBLIC_APP_URL
+ARG MONGODB_URI
+ARG JWT_SECRET
+ARG GOOGLE_CLIENT_ID
+ARG GOOGLE_CLIENT_SECRET
+ARG GOOGLE_REDIRECT_URI
+ARG BREVO_SMTP_HOST
+ARG BREVO_SMTP_PORT
+ARG BREVO_SMTP_USER
+ARG BREVO_SMTP_PASS
+
 ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+ENV MONGODB_URI=${MONGODB_URI}
+ENV JWT_SECRET=${JWT_SECRET}
+ENV GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+ENV GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+ENV GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+ENV BREVO_SMTP_HOST=${BREVO_SMTP_HOST}
+ENV BREVO_SMTP_PORT=${BREVO_SMTP_PORT}
+ENV BREVO_SMTP_USER=${BREVO_SMTP_USER}
+ENV BREVO_SMTP_PASS=${BREVO_SMTP_PASS}
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV MONGODB_URI=mongodb+srv://your-mongodb-uri
-ENV JWT_SECRET=your-jwt-secret-key
-ENV GOOGLE_CLIENT_ID=your-google-client-id
-ENV GOOGLE_CLIENT_SECRET=your-google-client-secret
-ENV GOOGLE_REDIRECT_URI=${NEXT_PUBLIC_APP_URL}/api/auth/google/callback
-ENV BREVO_SMTP_HOST=smtp-relay.brevo.com
-ENV BREVO_SMTP_PORT=587
-ENV BREVO_SMTP_USER=your-brevo-email
-ENV BREVO_SMTP_PASS=your-brevo-api-key
 
-# Build the application
+# Build the application with explicit build arguments for Next.js
 RUN echo "Checking MONGODB_URI: $MONGODB_URI" && \
     echo "Checking JWT_SECRET: $JWT_SECRET" && \
     echo "Checking NEXT_PUBLIC_APP_URL: $NEXT_PUBLIC_APP_URL" && \
     echo "Checking GOOGLE_REDIRECT_URI: $GOOGLE_REDIRECT_URI" && \
-    npm run build || (echo "Build failed. Checking what we have:" && ls -la && ls -la .next 2>/dev/null || echo "No .next directory" && exit 1)
+    npm run build -- \
+    NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
+    MONGODB_URI=$MONGODB_URI || (echo "Build failed. Checking what we have:" && ls -la && ls -la .next 2>/dev/null || echo "No .next directory" && exit 1)
 
 # Expose port 3000
 EXPOSE 3000
