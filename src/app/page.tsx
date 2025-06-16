@@ -7,6 +7,8 @@ import { NewsCard } from '@/components/news-card';
 import { TrendingSidebar } from '@/components/trending-sidebar';
 import { NewsletterSignup } from '@/components/newsletter-signup';
 
+const DEFAULT_NEWS_IMAGE = "/placeholder.jpg";
+
 export default function Home() {
   const [news, setNews] = useState<any[]>([]);
   const [trendingTopics, setTrendingTopics] = useState<any[]>([]);
@@ -37,12 +39,11 @@ export default function Home() {
       .then(data => {
         const articles = data.articles || [];
         const uniqueArticles: any[] = [];
-        const seen = new Set();
+        const seenUrls = new Set();
         for (const article of articles) {
-          const key = article.title + '|' + article.source.name;
-          if (!seen.has(key)) {
+          if (article.url && !seenUrls.has(article.url)) {
             uniqueArticles.push(article);
-            seen.add(key);
+            seenUrls.add(article.url);
           }
         }
         setNews(uniqueArticles);
@@ -115,7 +116,7 @@ export default function Home() {
                 id={article.url}
                 title={article.title}
                 summary={article.description}
-                imageUrl={article.image}
+                imageUrl={article.image || DEFAULT_NEWS_IMAGE}
                 source={article.source.name}
                 date={article.publishedAt}
                 url={article.url}
