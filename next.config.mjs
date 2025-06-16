@@ -16,6 +16,20 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   
+  // Environment variables that should be available at build time
+  env: {
+    MONGODB_URI: process.env.MONGODB_URI,
+    JWT_SECRET: process.env.JWT_SECRET,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    BREVO_SMTP_HOST: process.env.BREVO_SMTP_HOST,
+    BREVO_SMTP_PORT: process.env.BREVO_SMTP_PORT,
+    BREVO_SMTP_USER: process.env.BREVO_SMTP_USER,
+    BREVO_SMTP_PASS: process.env.BREVO_SMTP_PASS,
+  },
+  
   // Webpack configuration to handle problematic modules
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -36,11 +50,6 @@ const nextConfig = {
       };
     }
     return config;
-  },
-  
-  // Environment variables
-  env: {
-    NEXT_TELEMETRY_DISABLED: '1',
   },
 }
 
