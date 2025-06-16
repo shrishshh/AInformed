@@ -20,14 +20,15 @@ RUN npm install @opentelemetry/exporter-jaeger --legacy-peer-deps
 COPY . .
 
 # Set build-time environment variables
+ARG NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV MONGODB_URI=mongodb+srv://your-mongodb-uri
 ENV JWT_SECRET=your-jwt-secret-key
 ENV GOOGLE_CLIENT_ID=your-google-client-id
 ENV GOOGLE_CLIENT_SECRET=your-google-client-secret
-ENV GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
-ENV NEXT_PUBLIC_APP_URL=http://localhost:3000
+ENV GOOGLE_REDIRECT_URI=${NEXT_PUBLIC_APP_URL}/api/auth/google/callback
 ENV BREVO_SMTP_HOST=smtp-relay.brevo.com
 ENV BREVO_SMTP_PORT=587
 ENV BREVO_SMTP_USER=your-brevo-email
@@ -36,6 +37,8 @@ ENV BREVO_SMTP_PASS=your-brevo-api-key
 # Build the application
 RUN echo "Checking MONGODB_URI: $MONGODB_URI" && \
     echo "Checking JWT_SECRET: $JWT_SECRET" && \
+    echo "Checking NEXT_PUBLIC_APP_URL: $NEXT_PUBLIC_APP_URL" && \
+    echo "Checking GOOGLE_REDIRECT_URI: $GOOGLE_REDIRECT_URI" && \
     npm run build || (echo "Build failed. Checking what we have:" && ls -la && ls -la .next 2>/dev/null || echo "No .next directory" && exit 1)
 
 # Expose port 3000
