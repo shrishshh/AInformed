@@ -13,7 +13,8 @@
     "build": "next build",
     "start": "next start -p ${PORT:-3000}",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "postinstall": "next telemetry disable"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.8.0",
