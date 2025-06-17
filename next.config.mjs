@@ -45,28 +45,15 @@ const nextConfig = {
     ],
   },
 
-  // Image optimization configuration
+  // Image optimization configuration (allowing all HTTPS hostnames for debugging)
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'fcdn.co', // Found in your error logs
+        hostname: '**',
         port: '',
         pathname: '/**',
       },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com', // Used in your mock data
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'example.com', // Used in your mock data
-        port: '',
-        pathname: '/**',
-      },
-      // Add other image domains here as you identify them from your news sources
     ],
   },
 
