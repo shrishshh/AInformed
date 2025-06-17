@@ -171,7 +171,17 @@ export async function GET(request: Request) {
       throw new Error('Invalid response from GNews API');
     }
 
-    const articles = data.articles.map((article: any) => ({
+    // Deduplicate articles by URL directly in the API route
+    const seenUrls = new Set();
+    const uniqueArticles = data.articles.filter((article: any) => {
+      if (article.url && !seenUrls.has(article.url)) {
+        seenUrls.add(article.url);
+        return true;
+      }
+      return false;
+    });
+
+    const articles = uniqueArticles.map((article: any) => ({
       title: article.title,
       description: article.description,
       url: article.url,

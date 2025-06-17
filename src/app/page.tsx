@@ -7,7 +7,7 @@ import { NewsCard } from '@/components/news-card';
 import { TrendingSidebar } from '@/components/trending-sidebar';
 import { NewsletterSignup } from '@/components/newsletter-signup';
 
-const DEFAULT_NEWS_IMAGE = "/placeholder.jpg";
+const DEFAULT_NEWS_IMAGE = "/placeholder.svg";
 
 export default function Home() {
   const [news, setNews] = useState<any[]>([]);
