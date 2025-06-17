@@ -45,6 +45,31 @@ const nextConfig = {
     ],
   },
 
+  // Image optimization configuration
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'fcdn.co', // Found in your error logs
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com', // Used in your mock data
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'example.com', // Used in your mock data
+        port: '',
+        pathname: '/**',
+      },
+      // Add other image domains here as you identify them from your news sources
+    ],
+  },
+
   // Webpack configuration to handle problematic modules
   webpack: (config, { isServer }) => {
     if (!isServer) {
