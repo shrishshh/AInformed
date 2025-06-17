@@ -38,7 +38,7 @@ export function NewsCard({ id, title, summary, imageUrl, source, date, url, read
     <Card className="overflow-hidden transition-all duration-200 hover:shadow-md border-0 bg-card cursor-pointer" onClick={handleCardClick}>
       <div className="relative aspect-[16/9] overflow-hidden">
         <Image
-          src={imageUrl || "/placeholder.jpg"}
+          src={imageUrl || "/placeholder.svg"}
           alt={title}
           fill
           className="object-cover transition-transform duration-300 hover:scale-105"
@@ -46,7 +46,7 @@ export function NewsCard({ id, title, summary, imageUrl, source, date, url, read
           priority={false}
           onError={e => {
             console.warn(`Failed to load image for article: ${title} from ${imageUrl}. Using fallback.`);
-            e.currentTarget.src = "/placeholder.jpg";
+            e.currentTarget.src = "/placeholder.svg";
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300">
