@@ -39,11 +39,12 @@ export default function Home() {
       .then(data => {
         const articles = data.articles || [];
         const uniqueArticles: any[] = [];
-        const seenUrls = new Set();
+        const seen = new Set();
         for (const article of articles) {
-          if (article.url && !seenUrls.has(article.url)) {
+          const key = (article.title?.toLowerCase() || '') + '|' + (article.source?.name?.toLowerCase() || '');
+          if (!seen.has(key)) {
             uniqueArticles.push(article);
-            seenUrls.add(article.url);
+            seen.add(key);
           }
         }
         setNews(uniqueArticles);

@@ -66,7 +66,7 @@ export default function ContactPage() {
                 <MapPin className="w-5 h-5 text-purple-600 mt-1" />
                 <div>
                   <h3 className="font-medium">Location</h3>
-                  <p className="text-muted-foreground">NewDelhi, IN | Charlotte, US</p>
+                  <p className="text-muted-foreground">Vellore, IN | Charlotte, US</p>
                 </div>
               </div>
               <div className="flex items-start space-x-4">
