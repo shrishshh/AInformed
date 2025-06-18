@@ -32,7 +32,7 @@ export default function Home() {
     localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
   }, [bookmarks]);
 
-  // Deduplicate by title+source
+  // Deduplicate by title
   useEffect(() => {
     fetch('/api/ai-news')
       .then(res => res.json())
@@ -41,10 +41,10 @@ export default function Home() {
         const uniqueArticles: any[] = [];
         const seen = new Set();
         for (const article of articles) {
-          const key = (article.title?.toLowerCase() || '') + '|' + (article.source?.name?.toLowerCase() || '');
-          if (!seen.has(key)) {
+          const normTitle = (article.title || '').toLowerCase().replace(/[^a-z0-9 ]/gi, '').trim();
+          if (!seen.has(normTitle)) {
             uniqueArticles.push(article);
-            seen.add(key);
+            seen.add(normTitle);
           }
         }
         setNews(uniqueArticles);

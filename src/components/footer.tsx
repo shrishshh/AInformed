@@ -24,67 +24,72 @@ export function Footer() {
 
   return (
     <footer className="bg-card border-t border-border mt-12 min-h-[120px] flex flex-col justify-end">
-      <div className="container mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-        <div className="md:col-span-3 flex flex-col gap-3">
-          <Link href="/" className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center mr-2">
-              <span className="text-white font-bold text-sm">AI</span>
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">AInformed</span>
-          </Link>
-          <p className="text-muted-foreground text-sm">
-            Stay updated with the latest AI news, research, and resources.
-          </p>
-          <div className="flex gap-3 mt-2">
-            {socialLinks.map(({ icon: Icon, href, label }) => (
-              <a
-                key={label}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={label}
-                className="text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Icon className="h-5 w-5" />
-              </a>
-            ))}
-          </div>
-        </div>
-
-        <div className="md:col-span-3">
-          <h4 className="font-semibold mb-3 text-left">Categories</h4>
-          <ul className="space-y-2">
-            {footerLinks.Categories.map((cat) => (
-              <li key={cat}>
-                <Link href={`/categories/${encodeURIComponent(cat)}`} className="hover:text-primary transition-colors text-sm">
-                  {cat}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="md:col-span-3 border-l-2 border-border pl-4">
-          <h4 className="font-semibold mb-3 text-left">Resources</h4>
-          <ul className="space-y-2 mb-4">
-            {footerLinks.Resources.map((res) => (
-              <li key={res}>
-                <Link 
-                  href={res === "Research Papers" ? "/research-papers" : res === "AI Tools" ? "/ai-tools" : "#"}
-                  className="hover:text-primary transition-colors text-sm"
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
+          <div className="flex flex-col gap-3">
+            <Link href="/" className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center mr-2">
+                <span className="text-white font-bold text-sm">AI</span>
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">AInformed</span>
+            </Link>
+            <p className="text-muted-foreground text-sm">
+              Stay updated with the latest AI news, research, and resources.
+            </p>
+            <div className="flex gap-3 mt-2">
+              {socialLinks.map(({ icon: Icon, href, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="text-muted-foreground hover:text-primary transition-colors"
                 >
-                  {res}
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <h4 className="font-semibold mb-3 text-left">Legal & About</h4>
-          <ul className="space-y-2">
-            <li><Link href="/terms" className="hover:text-primary transition-colors text-sm">Terms of Service</Link></li>
-            <li><Link href="/privacy" className="hover:text-primary transition-colors text-sm">Privacy Policy</Link></li>
-            <li><Link href="/about" className="hover:text-primary transition-colors text-sm">About Us</Link></li>
-            <li><Link href="/contact" className="hover:text-primary transition-colors text-sm">Contact</Link></li>
-          </ul>
+                  <Icon className="h-5 w-5" />
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-semibold mb-3 text-left">Categories</h4>
+            <ul className="space-y-2">
+              {footerLinks.Categories.map((cat) => (
+                <li key={cat}>
+                  <Link href={`/categories/${encodeURIComponent(cat)}`} className="hover:text-primary transition-colors text-sm">
+                    {cat}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold mb-3 text-left">Resources</h4>
+            <ul className="space-y-2 mb-4">
+              {footerLinks.Resources.map((res) => (
+                <li key={res}>
+                  <Link 
+                    href={res === "Research Papers" ? "/research-papers" : res === "AI Tools" ? "/ai-tools" : "#"}
+                    className="hover:text-primary transition-colors text-sm"
+                  >
+                    {res}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold mb-3 text-left">Legal & About</h4>
+            <ul className="space-y-2">
+              <li><Link href="/terms" className="hover:text-primary transition-colors text-sm">Terms of Service</Link></li>
+              <li><Link href="/privacy" className="hover:text-primary transition-colors text-sm">Privacy Policy</Link></li>
+              <li><Link href="/about" className="hover:text-primary transition-colors text-sm">About Us</Link></li>
+              <li><Link href="/contact" className="hover:text-primary transition-colors text-sm">Contact</Link></li>
+            </ul>
+          </div>
         </div>
       </div>
       <Separator />
