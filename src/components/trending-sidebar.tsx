@@ -76,13 +76,6 @@ export function TrendingSidebar({ trendingTopics, recentUpdates }: TrendingSideb
               </Link>
             ))}
           </div>
-
-          <Button variant="ghost" size="sm" className="w-full mt-4" asChild>
-            <Link href="/recent">
-              View all updates
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
         </CardContent>
       </Card>
     </div>
