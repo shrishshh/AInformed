@@ -1,5 +1,11 @@
 import type {NextConfig} from 'next';
 
+/**
+ * Why do you have next.config.mjs AND next.config.ts?
+ * 
+ * Have one or the other, but note that next.config.ts is not supported until you upgrade to NextJS 15
+ * I recommend using next.config.mjs for now, and then upgrading to next.config.ts when you upgrade to NextJS 15
+ */
 const nextConfig: NextConfig = {
   /* config options here */
   typescript: {

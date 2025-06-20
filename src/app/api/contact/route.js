@@ -2,6 +2,12 @@ console.log("Contact API route called");
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 
+/**
+ * If you want an alternative for email, you can use:
+ * https://resend.com
+ * 
+ * This will also let you create beautiful emails using React for your users.
+ */
 export async function POST(req) {
   const { name, email, subject, message } = await req.json();
 

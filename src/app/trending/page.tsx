@@ -5,6 +5,10 @@ import Link from "next/link";
 export default function TrendingPage() {
   const [topics, setTopics] = useState<any[]>([]);
 
+  /**
+   * Same feedback as what I mentioned on /src/app/page.tsx
+   * Ideally, use an async server component with caching here
+   */
   useEffect(() => {
     fetch('/api/ai-news')
       .then(res => res.json())

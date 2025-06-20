@@ -47,7 +47,7 @@ body {
     --status-low: 0 84% 60%; /* Red (same as destructive) */
     --status-low-foreground: 0 0% 98%;
 
-     /* Chart colors - light theme */
+    /* Chart colors - light theme */
     --chart-1: 210 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -75,9 +75,14 @@ body {
     --muted: 222 47% 20%; /* Darker muted color e.g., #283246 */
     --muted-foreground: 220 25% 65%; /* Lighter muted text e.g., #8a99b8 */
 
+    /*
+      The accent color is also used for the button hover state.
+      You can just use a static color like "text-pink-500" or similar for your logo instead,
+      and then just use a less saturated color for the button hover state
+    */
     --accent: 330 80% 60%; /* Pinkish accent from logo e.g., #ef5da8 */
     --accent-foreground: 0 0% 100%; /* White text on accent */
-    
+
     --destructive: 0 72% 51%; /* Red for destructive actions e.g., #e53e3e */
     --destructive-foreground: 0 0% 98%;
 
@@ -90,14 +95,14 @@ body {
     --status-high-foreground: 0 0% 100%;
     --status-medium: 45 90% 55%; /* Yellow */
     --status-medium-foreground: 0 0% 10%; /* Dark text for yellow */
-    --status-low: 0 72% 51%; /* Red (same as destructive) */
+    --status-low: var(--destructive);
     --status-low-foreground: 0 0% 98%;
 
     /* Chart colors - dark theme */
     --chart-1: 210 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
-    --chart-4: 45 90% 55%; /* Using status-medium yellow */
+    --chart-4: var(--status-medium);
     --chart-5: 340 75% 55%;
   }
 }
@@ -109,6 +114,6 @@ body {
   body {
     @apply bg-background text-foreground;
     /* Ensures clean sans-serif font is applied */
-    font-feature-settings: "rlig" 1, "calt" 1; 
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }

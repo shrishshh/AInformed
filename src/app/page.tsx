@@ -9,7 +9,58 @@ import { NewsletterSignup } from '@/components/newsletter-signup';
 
 const DEFAULT_NEWS_IMAGE = "/placeholder.svg";
 
+/**
+ * If you can eliminate the use of "useState", "useEffect", and "useRouter" from this file,
+ * you can remove "use client" from this file and make this an async server component.
+ * 
+ * Benefit is that you can change your /api/ai-news useEffect to just:
+ *   ```tsx
+ *   const news = await fetch('/api/ai-news', {
+ *     next: {
+ *       revalidate: 900, // 15 mins 
+ *     },
+ *   });
+ *   const data = await news.json();
+ *   const articles = data.articles || [];
+ *   ```
+ * 
+ * With this, you:
+ * 1. Don't have to handle the loading state
+ * 2. First user may have a longer load time, but subsequent users will have a faster load time
+ * 3. You can limit the number of redundant requests you are making to gnews api (saving your daily limit)
+ * 
+ */
 export default function Home() {
+  /**
+   * The use of "any" in a TypeScript codebase makes me sad :(
+   * 
+   * Using "any" disables all typechecking for that variable and attributes derived from it.
+   * This means that you might each a scenario in your app where you expected news[0].title to be present,
+   * but it's actually undefined and your app crashes.
+   * 
+   * The solution? Use `zod` to specify a schema you expect the data to be in, and use that to
+   * guarantee that your data is always in the shape you expect it to be *after* you fetch & parse it.
+   * 
+   * e.g.
+   *
+   * const NewsArticleSchema = z.object({
+   *   title: z.string(),
+   *   summary: z.string(),
+   *   source: z.string(),
+   *   url: z.string(),
+   *   imageUrl: z.string().url().optional().nullable(),
+   *   publishedDate: z.string(),
+   * });
+   * 
+   * const news = await fetch('/api/ai-news')
+   *  .then(res => res.json())
+   *  .then(data => z.array(NewsArticleSchema).parse(data))
+   *  .catch(err => {
+   *    // if the data is not in the shape you expect, you can return an empty array, or handle it in a way that makes sense for your app
+   *    console.error(err);
+   *    return [];
+   *  });
+   */
   const [news, setNews] = useState<any[]>([]);
   const [trendingTopics, setTrendingTopics] = useState<any[]>([]);
   const [recentUpdates, setRecentUpdates] = useState<any[]>([]);
@@ -17,7 +68,18 @@ export default function Home() {
   const router = useRouter();
 
   // Load bookmarks from localStorage
+  /**
+   * NOTE: If you do turn this into an async server component, you'll need to move this useEffect
+   * to a client component. That means that maybe the list of <NewsCard> components will need to be
+   * something like `news-card-list.tsx` which can have this hook to load from localStorage.
+   * 
+   * Using Browser APIs like localStorage necessarily means you need a client component, so that is
+   * why this would need to be moved out and cannot be something like `await localStorage.getItem('bookmarks')`
+   * like you can do with `fetch`.
+   */
   useEffect(() => {
+    // Make sure that if we are on the server, we don't try to access localStorage (will error)
+    if (typeof window === "undefined") return;
     const loadBookmarks = () => {
       const saved = localStorage.getItem('bookmarks');
       if (saved) setBookmarks(JSON.parse(saved));
@@ -29,11 +91,20 @@ export default function Home() {
 
   // Save bookmarks to localStorage
   useEffect(() => {
+    // Make sure that if we are on the server, we don't try to access localStorage (will error)
+    if (typeof window === "undefined") return;
     localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
   }, [bookmarks]);
 
   // Deduplicate by title
+  /**
+   * If you are fetching data from the client-side, you should do so using React Query.
+   * While it seems simple to just use useEffect, it's not.
+   * Read: https://tkdodo.eu/blog/why-you-want-react-query
+   */
   useEffect(() => {
+    // Make sure that if we are on the server, we don't try to access localStorage (will error)
+    if (typeof window === "undefined") return;
     fetch('/api/ai-news')
       .then(res => res.json())
       .then(data => {

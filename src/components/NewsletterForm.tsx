@@ -2,7 +2,12 @@ import { useState } from "react";
 
 export default function NewsletterForm() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState("");
+  /**
+   * If you have specific strings you expect, using a literal union type is better because
+   * if you accidentally mistype "sucess" somewhere else in the code, for example, you'll
+   * see a type error in your IDE to tell you this is wrong.
+   */
+  const [status, setStatus] = useState<"loading" | "success" | "error" | "">("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

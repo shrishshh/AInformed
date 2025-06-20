@@ -8,6 +8,11 @@ const configs = [
       service: 'gmail',
       auth: {
         user: 'sidemindlabs@gmail.com',
+        // !!! PLEASE tell me this isn't the actual password
+        // If it is, please change this to be something from your .env or .env.local file and nuke this history
+        // for this file so that even if someone looks through the commit history, they cannot find it.
+        // Use chatgpt, cursor, or whatever if you need help figuring out how to do this.
+        // Keeping this password here will mean anyone with visibility on this repo could send an email as you.
         pass: 'kgwqobwaspfouwwr'
       }
     }

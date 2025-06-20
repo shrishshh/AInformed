@@ -136,6 +136,7 @@ export async function GET(request: Request) {
           'Pragma': 'no-cache',
           'Expires': '0',
         },
+        // why disable nextjs cache here?
         next: { revalidate: 0 } // Disable Next.js cache
       }
     );
