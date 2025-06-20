@@ -33,7 +33,7 @@ export default function TrendingPage() {
       <ul className="space-y-4">
         {topics.map((topic, idx) => (
           <li key={topic.name} className="flex items-center gap-4">
-            <span className ="text-lg font-semibold">#{idx + 1}</span>
+            <span className="text-lg font-semibold">#{idx + 1}</span>
             <Link href={`/categories/${encodeURIComponent(topic.name)}`} className="text-primary hover:underline text-lg">
               {topic.name}
             </Link>
