@@ -1,3 +1,7 @@
+/**
+ * If you want more flexibility for AI stuff, I would recommend using:
+ * https://ai-sdk.dev/docs/introduction
+ */
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 

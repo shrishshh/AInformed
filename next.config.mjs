@@ -14,6 +14,16 @@ const nextConfig = {
   },
   
   // Environment variables that should be available at build time
+  /**
+   * I recommend using https://env.t3.gg for validating you have all your environment variables set up correctly.
+   * There's nothing that prevents me from starting the app with `NEXT_PUBLIC_APP_URL=not-a-url`, and your
+   * app will fail in a place that might be harder to debug.
+   * 
+   * Using t3-env will let you define a `zod` schema for your environment variables, and then validate them at build time.
+   * 
+   * Example from the create-t3-turbo repo:
+   * https://github.com/t3-oss/create-t3-turbo/blob/main/apps/nextjs/src/env.ts
+   */
   env: {
     MONGODB_URI: process.env.MONGODB_URI,
     JWT_SECRET: process.env.JWT_SECRET,
@@ -55,6 +65,7 @@ const nextConfig = {
   },
 
   // Webpack configuration to handle problematic modules
+  // Why do you need this?
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {

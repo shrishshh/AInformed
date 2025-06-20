@@ -20,6 +20,7 @@
     "@genkit-ai/googleai": "^1.8.0",
     "@genkit-ai/next": "^1.8.0",
     "@hookform/resolvers": "^4.1.3",
+    // Not sure if this is a replacement, but you can try out https://posthog.com/ for analytics or traces for your app
     "@opentelemetry/exporter-jaeger": "^2.0.1",
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
@@ -42,7 +43,9 @@
     "@radix-ui/react-toast": "^1.2.6",
     "@radix-ui/react-tooltip": "^1.1.8",
     "@tanstack-query-firebase/react": "^1.0.5",
+    // GOOD, You have this installed! ... but you're not using it :(
     "@tanstack/react-query": "^5.66.0",
+    // Just use `fetch` for your API calls -- axios is not needed and might cause you more pain with NextJS for caching & other features
     "axios": "^1.9.0",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
@@ -57,13 +60,18 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.475.0",
     "mongoose": "^8.15.2",
+    // Recommend upgrading to latest (^15.3.4) -- This disabled caching by default on most things so if you've opted out before, you can remove or opt-in where needed.
     "next": "^14.2.0",
+    // https://github.com/t3-oss/create-t3-turbo has a better setup using BetterAuth -- https://www.better-auth.com
     "next-auth": "^4.24.11",
     "next-themes": "^0.4.6",
     "nodemailer": "^6.9.0",
+    // Remove -- you're not using and this should anyway be in devDependencies
     "patch-package": "^8.0.0",
+    // Upgrade to ^19.1.0 if you upgrade to NextJS 15
     "react": "^18.2.0",
     "react-day-picker": "^8.10.1",
+    // Upgrade to ^19.1.0 if you upgrade to NextJS 15
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.54.2",
     "recharts": "^2.15.1",
@@ -71,6 +79,7 @@
     "sonner": "^2.0.5",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
+    // Good, you have this installed! ... but you're hardly using it :(
     "zod": "^3.24.2"
   },
   "devDependencies": {
@@ -82,8 +91,10 @@
     "@types/react-dom": "^18",
     "genkit-cli": "^1.8.0",
     "postcss": "^8",
+    // Recommend upgrading to latest (^4.1.10) -- Run: `npx @tailwindcss/upgrade`
     "tailwindcss": "^3.4.1",
     "tsx": "^4.0.0",
+    // Typescript does not follow semver -- you should just specify a specific version (e.g. "^5.8.3")
     "typescript": "^5"
   }
 }

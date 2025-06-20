@@ -1,4 +1,16 @@
 {
     "IDX.aI.enableInlineCompletion": true,
-    "IDX.aI.enableCodebaseIndexing": true
+    "IDX.aI.enableCodebaseIndexing": true,
+    // You should add some shared VSCode settings for your team here.
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true, // ensure the codebase has a consistent format
+    "editor.quickSuggestions": {
+      "strings": true // for slightly better tailwindcss VSCode extension classname autocomplete
+    },
+    "prettier.ignorePath": ".gitignore",
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+    "typescript.tsdk": "node_modules/typescript/lib"
 }

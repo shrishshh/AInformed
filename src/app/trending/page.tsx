@@ -5,6 +5,10 @@ import Link from "next/link";
 export default function TrendingPage() {
   const [topics, setTopics] = useState<any[]>([]);
 
+  /**
+   * Same feedback as what I mentioned on /src/app/page.tsx
+   * Ideally, use an async server component with caching here
+   */
   useEffect(() => {
     fetch('/api/ai-news')
       .then(res => res.json())
@@ -29,7 +33,7 @@ export default function TrendingPage() {
       <ul className="space-y-4">
         {topics.map((topic, idx) => (
           <li key={topic.name} className="flex items-center gap-4">
-            <span className="text-lg font-semibold">#{idx + 1}</span>
+            <span className ="text-lg font-semibold">#{idx + 1}</span>
             <Link href={`/categories/${encodeURIComponent(topic.name)}`} className="text-primary hover:underline text-lg">
               {topic.name}
             </Link>

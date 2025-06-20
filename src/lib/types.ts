@@ -1,4 +1,8 @@
 
+/**
+ * You have this type which is good.
+ * Why not use it in places like /src/app/page.tsx instead of "any"?
+ */
 export interface NewsArticle {
   id: string; // This will be typically the URL or a generated ID
   title: string;

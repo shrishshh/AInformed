@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
+/**
+ * This component is not used. I had some feedback to use next-themes instead, but I see that
+ * `src/components/header.tsx` is used instead and already is using next-themes instead.
+ * 
+ * I would recommend going through your codebase and removing any components that are not used anymore.
+ */
 export function Header() {
   const pathname = usePathname();
 
