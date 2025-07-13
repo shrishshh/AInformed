@@ -1,16 +1,20 @@
 "use client";
 import Link from "next/link";
 import { Github, Linkedin } from "lucide-react";
+import Image from "next/image";
 
 export default function AboutPage() {
   return (
     <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-[60vh]">
       <h2 className="text-4xl font-extrabold mb-2 tracking-tight text-primary">About Us</h2>
       <p className="text-lg text-muted-foreground mb-8">Meet the creators behind AInformed</p>
-      <img
+      <Image
         src="/profile.jpg"
         alt="shrish"
+        width={160}
+        height={160}
         className="w-40 h-40 rounded-full mb-6 border-4 border-primary shadow-lg object-cover object-center"
+        priority={true}
       />
       <h1 className="text-3xl font-bold mb-2">SideMindLabs</h1>
       <p className="text-muted-foreground text-center max-w-2xl mb-6">

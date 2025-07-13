@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { formatDistanceToNow } from "date-fns"
+import TimeAgo from "@/components/common/TimeAgo"
 import { Bookmark, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
@@ -51,7 +51,7 @@ export function NewsCard({ id, title, summary, imageUrl, source, date, url, read
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300">
           <div className="absolute bottom-3 right-3">
-            <Button variant="secondary" size="sm" asChild>
+            <Button variant="default" size="sm" asChild>
               <Link href={url} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="h-4 w-4 mr-1" />
                 Read Original
@@ -65,7 +65,9 @@ export function NewsCard({ id, title, summary, imageUrl, source, date, url, read
         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
           <span className="font-medium">{source}</span>
           <span>•</span>
-          <time dateTime={dateObj.toISOString()}>{formatDistanceToNow(dateObj, { addSuffix: true })}</time>
+          <time dateTime={dateObj.toISOString()}>
+            <TimeAgo date={dateObj} />
+          </time>
           <span>•</span>
           <span>{readTime} min read</span>
         </div>
@@ -79,17 +81,17 @@ export function NewsCard({ id, title, summary, imageUrl, source, date, url, read
 
       <CardFooter className="p-4 pt-0 flex items-center justify-between">
         <Button
-          variant="ghost"
+          variant="default"
           size="icon"
           className="bookmark-btn"
           onClick={e => { e.stopPropagation(); onToggleBookmark?.({ id, title, summary, imageUrl, source, date, url, readTime }); }}
           aria-label={isBookmarked ? "Unsave article" : "Save article"}
         >
-          <Bookmark className={`h-5 w-5 ${isBookmarked ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+          <Bookmark className={`h-5 w-5 ${isBookmarked ? "fill-primary text-primary" : "text-white"}`} />
         </Button>
         <Dialog open={showSummary} onOpenChange={open => { setShowSummary(open); }}>
           <DialogTrigger asChild>
-            <Button variant="ghost" size="sm" className="readmore-btn" onClick={e => e.stopPropagation()}>
+            <Button variant="default" size="sm" className="readmore-btn" onClick={e => e.stopPropagation()}>
               Read More
             </Button>
           </DialogTrigger>

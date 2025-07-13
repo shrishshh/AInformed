@@ -16,7 +16,30 @@ const fontSans = FontSans({
 export const metadata: Metadata = {
   title: "AInformed - AI News & Insights",
   description: "Stay updated with the latest AI news, trends, and insights",
-}
+  openGraph: {
+    title: "AInformed - AI News & Insights",
+    description: "Stay updated with the latest AI news, trends, and insights",
+    url: process.env.NEXT_PUBLIC_APP_URL || "https://ainformed.app/",
+    siteName: "AInformed",
+    images: [
+      {
+        url: "/profile.jpg",
+        width: 800,
+        height: 600,
+        alt: "AInformed logo"
+      }
+    ],
+    locale: "en_US",
+    type: "website"
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AInformed - AI News & Insights",
+    description: "Stay updated with the latest AI news, trends, and insights",
+    images: ["/profile.jpg"],
+    creator: "@ainformedapp"
+  }
+};
 
 export default function RootLayout({
   children,

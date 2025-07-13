@@ -1,99 +1,61 @@
-'use client'
-
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { CategoryTabs } from '@/components/category-tabs';
 import { NewsCard } from '@/components/news-card';
 import { TrendingSidebar } from '@/components/trending-sidebar';
 import { NewsletterSignup } from '@/components/newsletter-signup';
 
 const DEFAULT_NEWS_IMAGE = "/placeholder.svg";
 
-export default function Home() {
-  const [news, setNews] = useState<any[]>([]);
-  const [trendingTopics, setTrendingTopics] = useState<any[]>([]);
-  const [recentUpdates, setRecentUpdates] = useState<any[]>([]);
-  const [bookmarks, setBookmarks] = useState<any[]>([]);
-  const router = useRouter();
-
-  // Load bookmarks from localStorage
-  useEffect(() => {
-    const loadBookmarks = () => {
-      const saved = localStorage.getItem('bookmarks');
-      if (saved) setBookmarks(JSON.parse(saved));
-    };
-    loadBookmarks();
-    window.addEventListener('storage', loadBookmarks);
-    return () => window.removeEventListener('storage', loadBookmarks);
-  }, []);
-
-  // Save bookmarks to localStorage
-  useEffect(() => {
-    localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
-  }, [bookmarks]);
-
-  // Deduplicate by title
-  useEffect(() => {
-    fetch('/api/ai-news')
-      .then(res => res.json())
-      .then(data => {
-        const articles = data.articles || [];
-        const uniqueArticles: any[] = [];
-        const seen = new Set();
-        for (const article of articles) {
-          const normTitle = (article.title || '').toLowerCase().replace(/[^a-z0-9 ]/gi, '').trim();
-          if (!seen.has(normTitle)) {
-            uniqueArticles.push(article);
-            seen.add(normTitle);
-          }
-        }
-        setNews(uniqueArticles);
-
-        // Calculate trending topics based on source frequency
-        const sourceCounts: { [key: string]: number } = {};
-        uniqueArticles.forEach((article: any) => {
-          const sourceName = article.source.name;
-          sourceCounts[sourceName] = (sourceCounts[sourceName] || 0) + 1;
-        });
-
-        const sortedSources = Object.entries(sourceCounts)
-          .map(([name, posts]) => ({ id: name, name, posts }))
-          .sort((a, b) => b.posts - a.posts)
-          .slice(0, 5); // Get top 5 trending sources
-
-        setTrendingTopics(sortedSources);
-        
-        setRecentUpdates(
-          uniqueArticles.slice(0, 4).map((item: any) => ({
-            id: item.url,
-            title: item.title,
-            date: item.publishedAt,
-            url: item.url,
-          }))
-        );
-      });
-  }, []);
-
-  const handleCategoryChange = (category: string) => {
-    router.push(`/categories/${encodeURIComponent(category)}`);
-  };
-
-  const handleToggleBookmark = (article: any) => {
-    const exists = bookmarks.some((a) => a.url === article.url);
-    if (exists) {
-      setBookmarks(bookmarks.filter((a) => a.url !== article.url));
-    } else {
-      // Normalize bookmark object
-      setBookmarks([
-        ...bookmarks,
-        {
-          ...article,
-          image: article.image || article.imageUrl,
-          source: article.source?.name || article.source,
-        },
-      ]);
+async function getNews(): Promise<any[]> {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/ai-news`, { cache: 'no-store' });
+  const data = await res.json();
+  // Deduplicate by normalized title
+  const uniqueArticles: any[] = [];
+  const seen = new Set<string>();
+  for (const article of (data.articles || []) as any[]) {
+    const normTitle = (article.title || '').toLowerCase().replace(/[^a-z0-9 ]/gi, '').trim();
+    if (!seen.has(normTitle)) {
+      uniqueArticles.push(article);
+      seen.add(normTitle);
     }
-  };
+  }
+  return uniqueArticles;
+}
+
+interface TrendingTopic {
+  id: string;
+  name: string;
+  posts: number;
+}
+
+interface RecentUpdate {
+  id: string;
+  title: string;
+  date: string;
+  url: string;
+}
+
+async function getTrendingAndUpdates(articles: any[]): Promise<{ trendingTopics: TrendingTopic[]; recentUpdates: RecentUpdate[] }> {
+  // Trending topics by source frequency
+  const sourceCounts: Record<string, number> = {};
+  articles.forEach((article: any) => {
+    const sourceName = article.source?.name || article.source;
+    sourceCounts[sourceName] = (sourceCounts[sourceName] || 0) + 1;
+  });
+  const sortedSources: TrendingTopic[] = Object.entries(sourceCounts)
+    .map(([name, posts]) => ({ id: name, name, posts: posts as number }))
+    .sort((a, b) => b.posts - a.posts)
+    .slice(0, 5);
+  const recentUpdates: RecentUpdate[] = articles.slice(0, 4).map((item: any) => ({
+    id: item.url,
+    title: item.title,
+    date: item.publishedAt,
+    url: item.url,
+  }));
+  return { trendingTopics: sortedSources, recentUpdates };
+}
+
+export default async function Home() {
+  const news = await getNews();
+  const { trendingTopics, recentUpdates } = await getTrendingAndUpdates(news);
 
   return (
     <div className="container px-4 py-8 mx-auto">
@@ -106,24 +68,18 @@ export default function Home() {
             </p>
           </div>
 
-          <CategoryTabs
-            onCategoryChange={handleCategoryChange}
-          />
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {news.map((article: any) => (
+            {news.map((article) => (
               <NewsCard
                 key={article.url}
                 id={article.url}
                 title={article.title}
                 summary={article.description}
                 imageUrl={article.image || DEFAULT_NEWS_IMAGE}
-                source={article.source.name}
+                source={article.source?.name || article.source}
                 date={article.publishedAt}
                 url={article.url}
                 readTime={4}
-                isBookmarked={bookmarks.some((a) => a.url === article.url)}
-                onToggleBookmark={handleToggleBookmark}
               />
             ))}
           </div>

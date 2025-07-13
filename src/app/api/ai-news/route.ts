@@ -132,11 +132,11 @@ export async function GET(request: Request) {
       `https://gnews.io/api/v4/search?${params.toString()}`,
       {
         headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Cache-Control': process.env.NODE_ENV === 'development' ? 'no-store, must-revalidate' : 'public, max-age=60, stale-while-revalidate=120',
           'Pragma': 'no-cache',
           'Expires': '0',
         },
-        next: { revalidate: 0 } // Disable Next.js cache
+        next: { revalidate: process.env.NODE_ENV === 'development' ? 0 : 60 }
       }
     );
 
@@ -196,7 +196,7 @@ export async function GET(request: Request) {
       timestamp: new Date().toISOString()
     }, {
       headers: {
-        'Cache-Control': 'no-store, must-revalidate',
+        'Cache-Control': process.env.NODE_ENV === 'development' ? 'no-store, must-revalidate' : 'public, max-age=60, stale-while-revalidate=120',
         'Pragma': 'no-cache',
         'Expires': '0'
       }

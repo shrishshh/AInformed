@@ -16,5 +16,9 @@ export async function GET(request: Request) {
       article.summary.toLowerCase().includes(q.toLowerCase())
     );
   }
-  return NextResponse.json(filtered);
+  return NextResponse.json(filtered, {
+    headers: {
+      'Cache-Control': 'public, max-age=300, stale-while-revalidate=600'
+    }
+  });
 } 
