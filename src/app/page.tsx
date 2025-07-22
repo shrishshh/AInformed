@@ -1,6 +1,9 @@
 import { NewsCard } from '@/components/news-card';
-import { TrendingSidebar } from '@/components/trending-sidebar';
+import AIStocksSidebar from '@/components/AIStocksSidebar';
+import TrendingAIJobs from '@/components/TrendingAIJobs';
+import LatestArxivPapers from '@/components/LatestArxivPapers';
 import { NewsletterSignup } from '@/components/newsletter-signup';
+import HeroSection from '@/components/HeroSection';
 
 const DEFAULT_NEWS_IMAGE = "/placeholder.svg";
 
@@ -59,6 +62,7 @@ export default async function Home() {
 
   return (
     <div className="container px-4 py-8 mx-auto">
+      <HeroSection />
       <div className="flex flex-col md:flex-row gap-8">
         <div className="w-full md:w-2/3">
           <div className="mb-8">
@@ -90,7 +94,9 @@ export default async function Home() {
         </div>
 
         <div className="w-full md:w-1/3">
-          <TrendingSidebar trendingTopics={trendingTopics} recentUpdates={recentUpdates} />
+          <AIStocksSidebar />
+          <TrendingAIJobs />
+          <LatestArxivPapers />
         </div>
       </div>
     </div>

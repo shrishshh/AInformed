@@ -43,7 +43,7 @@
     "@radix-ui/react-tooltip": "^1.1.8",
     "@tanstack-query-firebase/react": "^1.0.5",
     "@tanstack/react-query": "^5.66.0",
-    "axios": "^1.9.0",
+    "axios": "1.10.0",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -52,8 +52,10 @@
     "dotenv": "^16.5.0",
     "express-validator": "^7.2.1",
     "firebase": "^11.7.3",
+    "framer-motion": "12.23.6",
     "genkit": "^1.8.0",
     "googleapis": "^150.0.1",
+    "gsap": "3.13.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.475.0",
     "mongoose": "^8.15.2",
@@ -71,6 +73,7 @@
     "sonner": "^2.0.5",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
+    "xml2js": "0.6.2",
     "zod": "^3.24.2"
   },
   "devDependencies": {

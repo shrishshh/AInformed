@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { Search, Menu, X, Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useTheme } from "next-themes"
 import { useAuthStatus } from "@/hooks/useAuthStatus"
+import GooeyNav, { GooeyNavItem } from "./GooeyNav"
 
 export default function Header() {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false)
@@ -18,6 +19,7 @@ export default function Header() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const { isLoggedIn, logout } = useAuthStatus();
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
@@ -51,20 +53,24 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6 ml-6">
-            <Link href="/" className="text-sm font-medium hover:text-primary transition-colors">
-              Home
-            </Link>
-            <Link href="/categories" className="text-sm font-medium hover:text-primary transition-colors">
-              Categories
-            </Link>
-            <Link href="/trending" className="text-sm font-medium hover:text-primary transition-colors">
-              Trending
-            </Link>
-            <Link href="/bookmarks" className="text-sm font-medium hover:text-primary transition-colors">
-              Bookmarks
-            </Link>
-          </nav>
+          <div className="hidden md:flex ml-6">
+            <GooeyNav
+              items={[
+                { label: "Home", href: "/" },
+                { label: "Categories", href: "/categories" },
+                { label: "Trending", href: "/trending" },
+                { label: "Bookmarks", href: "/bookmarks" },
+              ]}
+              particleCount={15}
+              particleDistances={[90, 10]}
+              particleR={100}
+              initialActiveIndex={0}
+              animationTime={600}
+              timeVariance={300}
+              colors={[1, 2, 3, 1, 2, 3, 1, 4]}
+              activeHref={pathname}
+            />
+          </div>
         </div>
 
         {/* Desktop Search & Actions */}
@@ -80,11 +86,6 @@ export default function Header() {
         </form>
 
         {/* Theme Toggle - Conditionally rendered after mount */}
-        {mounted && (
-          <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
-        )}
 
         {isLoggedIn ? (
           <Button
@@ -167,12 +168,6 @@ export default function Header() {
           </nav>
 
           <div className="pt-4 border-t flex items-center justify-between">
-            {/* Theme Toggle - Conditionally rendered after mount */}
-            {mounted && (
-              <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-                {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </Button>
-            )}
 
             {isLoggedIn ? (
               <Button
