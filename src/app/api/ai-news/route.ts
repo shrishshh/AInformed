@@ -1,179 +1,142 @@
 import { NextResponse } from 'next/server';
 import mockNews from '@/data/news.json';
+import { fetchAllRSSFeeds, filterRSSArticlesByCategory, convertRSSToNewsFormat } from '@/lib/rssFetcher';
+import { getCachedRSSArticles, getCachedGDELTArticles, getCachedHNArticles } from '@/lib/rssCron';
+import { fetchGDELTArticles, convertGDELTToNewsFormat } from '@/lib/gdeltFetcher';
+import { fetchHNStories, convertHNToNewsFormat } from '@/lib/hnFetcher';
 
-interface MockArticle {
-  id: string;
-  title: string;
-  summary: string;
-  imageUrl: string;
-  source: string;
-  date: string;
-  category: string;
-  content: string;
-}
-
-// Mock data for fallback
+// Mock news data for fallback
 const mockNewsData = {
-  articles: [
-    {
-      title: "OpenAI Announces GPT-5 Development",
-      description: "OpenAI has begun development of GPT-5, promising significant improvements in reasoning and safety.",
-      content: "OpenAI has officially announced the development of GPT-5, their next-generation language model...",
-      url: "https://example.com/gpt5-announcement",
-      image: "https://images.unsplash.com/photo-1677442136019-21780ecad995",
-      publishedAt: new Date().toISOString(),
-      source: { name: "AI News" }
-    },
-    {
-      title: "Google DeepMind's New AI Breakthrough",
-      description: "DeepMind researchers have developed a new AI system that can solve complex mathematical problems.",
-      content: "Google's DeepMind has made a significant breakthrough in AI research...",
-      url: "https://example.com/deepmind-math",
-      image: "https://images.unsplash.com/photo-1677442136019-21780ecad995",
-      publishedAt: new Date().toISOString(),
-      source: { name: "Tech Daily" }
-    },
-    {
-      title: "Microsoft's AI Copilot Expands to More Applications",
-      description: "Microsoft is expanding its AI Copilot integration to more Office applications and services.",
-      content: "Microsoft has announced the expansion of its AI Copilot feature...",
-      url: "https://example.com/microsoft-copilot",
-      image: "https://images.unsplash.com/photo-1677442136019-21780ecad995",
-      publishedAt: new Date().toISOString(),
-      source: { name: "Tech News" }
-    }
-  ]
+  articles: mockNews || [],
+  _isMockData: true,
+  _sources: {
+    gnews: 0,
+    rss: 0,
+    gdelt: 0,
+    hn: 0,
+    total: mockNews?.length || 0
+  },
+  timestamp: new Date().toISOString()
 };
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get('q');
   const category = searchParams.get('category');
-
-  console.log('API Route - Received category:', category);
+  const query = searchParams.get('q') || 'AI';
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '50');
 
   const API_KEY = process.env.GNEWS_API_KEY;
-  
   if (!API_KEY) {
-    console.error('GNEWS_API_KEY not configured');
-    return NextResponse.json(
-      { error: 'API key not configured' },
-      { status: 500 }
-    );
+    console.error('GNews API key not found');
+    return NextResponse.json(mockNewsData);
   }
-
-  // Base query for AI and technology news, always present
-  let mainFocusQuery = 'AI OR "Artificial Intelligence" OR Technology OR "Computer Science" OR "Latest AI Updates"';
-  let finalQuery = mainFocusQuery;
-
-  // If user provides a search query, it should refine the main focus, not override it.
-  if (query) {
-    finalQuery = `(${mainFocusQuery}) AND (${query})`; 
-  }
-
-  // GNews has a 'topic' parameter for categories. If a specific category is provided,
-  // we can use it, but for general AI news, the `q` parameter is more flexible.
-  let gnewsTopic = '';
-  if (category) {
-    const decodedCategory = decodeURIComponent(category as string); // Decode category first
-    // If the decoded category contains spaces, enclose it in double quotes for GNews
-    const formattedCategory = decodedCategory.includes(' ') ? `\"${decodedCategory}\"` : decodedCategory;
-
-    console.log('API Route - Decoded category:', decodedCategory);
-    console.log('API Route - Formatted category for GNews:', formattedCategory);
-
-    // Map generic categories to GNews topics if possible, or include in query
-    switch (decodedCategory.toLowerCase()) { // Use decoded category for switch
-      case 'artificial intelligence':
-      case 'machine learning':
-      case 'deep learning':
-      case 'natural language processing':
-      case 'computer vision':
-      case 'robotics':
-      case 'data science':
-      case 'cybersecurity':
-      case 'quantum computing':
-      case 'ai ethics':
-      case 'neural networks':
-      case 'big data':
-      case 'automation':
-        gnewsTopic = 'technology'; // GNews often groups these under 'technology'
-        // If a tech-related category is selected, refine the query further
-        finalQuery = `${finalQuery} AND ${formattedCategory}`;
-        break;
-      case 'business':
-        gnewsTopic = 'business';
-        finalQuery = `${finalQuery} AND ${formattedCategory}`;
-        break;
-      // Add more cases for other categories as needed
-      default:
-        finalQuery = `${finalQuery} AND ${formattedCategory}`;
-    }
-  }
-
-  console.log('API Route - Final query string before URLSearchParams:', finalQuery);
 
   try {
-    const params = new URLSearchParams({
-      token: API_KEY,
-      lang: 'en',
-      max: '10',
-      q: finalQuery, // Use the combined finalQuery
-    });
+    // Get cached RSS, GDELT, and HN articles first (fast)
+    let rssArticlesFormatted = getCachedRSSArticles();
+    let gdeltArticlesFormatted = getCachedGDELTArticles();
+    let hnArticlesFormatted = getCachedHNArticles(); // Get cached HN
 
-    // Only add topic if a specific one was mapped
-    if (gnewsTopic) {
-      params.append('topic', gnewsTopic);
+    // Fetch from all four sources (GNews, RSS, GDELT, HN) in parallel
+    const [gnewsResponse, freshRSSResponse, freshGDELTResponse, freshHNResponse] = await Promise.allSettled([
+      // GNews API call
+      (async () => {
+        const gnewsUrl = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=en&country=us&max=50&apikey=${API_KEY}`;
+        console.log('Fetching from GNews API...');
+        
+        const response = await fetch(gnewsUrl, {
+          headers: {
+            'Accept': 'application/json',
+          },
+          next: { revalidate: 300 } // Cache for 5 minutes
+        });
+
+        if (!response.ok) {
+          throw new Error(`GNews API request failed: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.errors && data.errors.length > 0) {
+          console.error('GNews API errors:', data.errors);
+          // Check if it's a rate limit error
+          if (data.errors.some((error: any) => error.message?.includes('rate limit'))) {
+            console.log('GNews rate limit reached, returning empty array');
+            return { articles: [] };
+          }
+          throw new Error(`GNews API errors: ${JSON.stringify(data.errors)}`);
+        }
+
+        return data;
+      })(),
+
+      // Fresh RSS feeds fetch (only if cache is empty)
+      (async () => {
+        if (rssArticlesFormatted.length === 0) {
+          console.log('RSS cache empty, fetching fresh RSS feeds...');
+          const rssArticles = await fetchAllRSSFeeds();
+          rssArticlesFormatted = convertRSSToNewsFormat(rssArticles);
+        }
+        return rssArticlesFormatted;
+      })(),
+
+      // Fresh GDELT fetch (only if cache is empty)
+      (async () => {
+        if (gdeltArticlesFormatted.length === 0) {
+          console.log('GDELT cache empty, fetching fresh GDELT articles...');
+          const gdeltArticles = await fetchGDELTArticles();
+          gdeltArticlesFormatted = convertGDELTToNewsFormat(gdeltArticles);
+        }
+        return gdeltArticlesFormatted;
+      })(),
+
+      // Fresh HN fetch (only if cache is empty)
+      (async () => {
+        if (hnArticlesFormatted.length === 0) {
+          console.log('HN cache empty, fetching fresh HN stories...');
+          const hnStories = await fetchHNStories();
+          hnArticlesFormatted = convertHNToNewsFormat(hnStories);
+        }
+        return hnArticlesFormatted;
+      })()
+    ]);
+
+    // Process results
+    let gnewsArticles: any[] = [];
+
+    if (gnewsResponse.status === 'fulfilled') {
+      gnewsArticles = gnewsResponse.value.articles || [];
+      console.log(`GNews: Fetched ${gnewsArticles.length} articles`);
+    } else {
+      console.error('GNews fetch failed:', gnewsResponse.reason);
     }
 
-    console.log('Fetching news from GNews with params:', params.toString());
-
-    const response = await fetch(
-      `https://gnews.io/api/v4/search?${params.toString()}`,
-      {
-        headers: {
-          'Cache-Control': process.env.NODE_ENV === 'development' ? 'no-store, must-revalidate' : 'public, max-age=60, stale-while-revalidate=120',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
-        next: { revalidate: process.env.NODE_ENV === 'development' ? 0 : 60 }
+    if (freshRSSResponse.status === 'fulfilled') {
+      rssArticlesFormatted = freshRSSResponse.value;
+      console.log(`RSS: Using ${rssArticlesFormatted.length} articles (${rssArticlesFormatted.length === 0 ? 'from cache' : 'fresh fetch'})`);
+    } else {
+      console.error('RSS fetch failed:', freshRSSResponse.reason);
       }
-    );
 
-    if (!response.ok) {
-      const errorBody = await response.json();
-      console.error('GNews API request failed response:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorBody,
-        url: response.url
-      });
-
-      // If we hit the rate limit, return mock data
-      if (response.status === 403 && errorBody.errors?.[0]?.includes('request limit')) {
-        console.log('Rate limit reached, falling back to mock data');
-        return NextResponse.json(mockNewsData);
-      }
-
-      throw new Error(`GNews API request failed: ${errorBody.message || response.statusText}`);
+    if (freshGDELTResponse.status === 'fulfilled') {
+      gdeltArticlesFormatted = freshGDELTResponse.value;
+      console.log(`GDELT: Using ${gdeltArticlesFormatted.length} articles (${gdeltArticlesFormatted.length === 0 ? 'from cache' : 'fresh fetch'})`);
+    } else {
+      console.error('GDELT fetch failed:', freshGDELTResponse.reason);
     }
 
-    const data = await response.json();
-    console.log('Received GNews API response:', {
-      status: response.status,
-      totalArticles: data.totalArticles,
-      articleCount: data.articles?.length,
-      firstArticleDate: data.articles?.[0]?.publishedAt
-    });
-
-    if (!data.articles || !Array.isArray(data.articles)) {
-      console.error('Invalid response from GNews API:', data);
-      throw new Error('Invalid response from GNews API');
+    if (freshHNResponse.status === 'fulfilled') {
+      hnArticlesFormatted = freshHNResponse.value;
+      console.log(`HN: Using ${hnArticlesFormatted.length} stories (${hnArticlesFormatted.length === 0 ? 'from cache' : 'fresh fetch'})`);
+    } else {
+      console.error('HN fetch failed:', freshHNResponse.reason);
     }
 
-    // Deduplicate articles by URL directly in the API route
+    // Merge and deduplicate articles from all four sources
+    const allArticles = [...gnewsArticles, ...rssArticlesFormatted, ...gdeltArticlesFormatted, ...hnArticlesFormatted];
     const seenUrls = new Set();
-    const uniqueArticles = data.articles.filter((article: any) => {
+    const uniqueArticles = allArticles.filter((article: any) => {
       if (article.url && !seenUrls.has(article.url)) {
         seenUrls.add(article.url);
         return true;
@@ -181,18 +144,23 @@ export async function GET(request: Request) {
       return false;
     });
 
-    const articles = uniqueArticles.map((article: any) => ({
-      title: article.title,
-      description: article.description,
-      url: article.url,
-      image: article.image,
-      publishedAt: article.publishedAt,
-      source: { name: article.source.name },
-    }));
+    // Sort by date (newest first)
+    uniqueArticles.sort((a: any, b: any) =>
+      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+    );
+
+    console.log(`Total unique articles: ${uniqueArticles.length} (GNews: ${gnewsArticles.length}, RSS: ${rssArticlesFormatted.length}, GDELT: ${gdeltArticlesFormatted.length}, HN: ${hnArticlesFormatted.length})`);
 
     return NextResponse.json({ 
-      articles,
+      articles: uniqueArticles,
       _isMockData: false,
+      _sources: {
+        gnews: gnewsArticles.length,
+        rss: rssArticlesFormatted.length,
+        gdelt: gdeltArticlesFormatted.length,
+        hn: hnArticlesFormatted.length,
+        total: uniqueArticles.length
+      },
       timestamp: new Date().toISOString()
     }, {
       headers: {
@@ -203,7 +171,6 @@ export async function GET(request: Request) {
     });
   } catch (error: any) {
     console.error('Error fetching news in API route:', error);
-    // Return mock data on any error
     return NextResponse.json(mockNewsData);
   }
 } 

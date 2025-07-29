@@ -13,47 +13,130 @@ const nextConfig: NextConfig = {
       // Allowing all hostnames for development purposes.
       // WARNING: This is not recommended for production due to security risks.
       // In production, you should list only the specific hostnames you trust.
-      { hostname: '**' }
-      // Commenting out specific hostnames as wildcard is used:
-      // { hostname: 'media.cnn.com' },
-      // { hostname: 's.abcnews.com' },
-      // { hostname: 'image.cnbcfm.com' },
-      // { hostname: 'static.foxnews.com' },
-      // { hostname: 'storage.googleapis.com' }, // Google News, etc.
-      // { hostname: 'dims.apnews.com' }, // Associated Press
-      // { hostname: 'i.kinja-img.com' }, // Gizmodo, Kotaku, etc. (G/O Media)
-      // { hostname: '*.reutersmedia.net' }, // Reuters
-      // { hostname: 'images.wsj.net' }, // Wall Street Journal
-      // { hostname: 'static01.nyt.com' }, // New York Times
-      // { hostname: 'img.etimg.com' }, // Economic Times (India)
-      // { hostname: 'www.theblock.co' },
-      // { hostname: 'techcrunch.com' },
-      // { hostname: '*.google.com' }, // General Google images (news, etc.)
-      // { hostname: 's.yimg.com' }, // Yahoo News / Verizon Media
-      // { hostname: 'c.biztoc.com' }, // BizToc
-      // { hostname: 'images.axios.com' }, // Axios
-      // { hostname: 'media.wired.com' }, // Wired
-      // { hostname: 'assets.bwbx.io' }, // Bloomberg
-      // { hostname: 'images.unsplash.com' }, // If you use Unsplash for fallbacks
-      // { hostname: 'cdn.vox-cdn.com'}, // Vox Media (The Verge, etc.)
-      // { hostname: 'www.theverge.com'},
-      // { hostname: 'www.engadget.com'},
-      // { hostname: 's.aolcdn.com'}, // Engadget, TechCrunch (some assets)
-      // { hostname: 'www.aljazeera.com'},
-      // { hostname: 'www.reuters.com'},
-      // { hostname: 'www.euronews.com'},
-      // { hostname: 'ichef.bbci.co.uk'}, // BBC Images
-      // { hostname: 'news.google.com'},
-      // { hostname: 'www.indiewire.com' },
-      // { hostname: 'imageio.forbes.com' }, // Added to fix the error
-      // { hostname: 'www.androidauthority.com' }, // Added to fix the error
-      // { hostname: 'smartcdn.gprod.postmedia.digital' }, // Added to fix the error
-      // { hostname: 'd.ibtimes.com.au' }, // Added to fix the error
-      // { hostname: 'img.helpnetsecurity.com' }, // Added to fix the error
-      // { hostname: 'cdn.antaranews.com' }, // Added to fix the error
-      // Add more specific hostnames as you encounter them from NewsAPI
-      // Or, for wider but less secure coverage during development:
-      // { protocol: 'https', hostname: '**' } // Allows all HTTPS images
+      { hostname: '**' },
+      
+      // Explicit support for Unsplash fallback images
+      { 
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        port: '',
+        pathname: '/**',
+      },
+      
+      // GDELT and news image domains
+      { hostname: 'cdn1.miragenews.com' },
+      { hostname: 'cdn2.miragenews.com' },
+      { hostname: 'cdn3.miragenews.com' },
+      { hostname: '*.miragenews.com' },
+      { hostname: 'www.mondaq.com' }, // Added this specific domain
+      { hostname: '*.mondaq.com' }, // Added wildcard for mondaq
+      { hostname: 'media.cnn.com' },
+      { hostname: 's.abcnews.com' },
+      { hostname: 'image.cnbcfm.com' },
+      { hostname: 'static.foxnews.com' },
+      { hostname: 'storage.googleapis.com' },
+      { hostname: 'dims.apnews.com' },
+      { hostname: 'i.kinja-img.com' },
+      { hostname: '*.reutersmedia.net' },
+      { hostname: 'images.wsj.net' },
+      { hostname: 'static01.nyt.com' },
+      { hostname: 'img.etimg.com' },
+      { hostname: 'www.theblock.co' },
+      { hostname: 'techcrunch.com' },
+      { hostname: '*.google.com' },
+      { hostname: 's.yimg.com' },
+      { hostname: 'c.biztoc.com' },
+      { hostname: 'images.axios.com' },
+      { hostname: 'media.wired.com' },
+      { hostname: 'assets.bwbx.io' },
+      { hostname: 'cdn.vox-cdn.com'},
+      { hostname: 'www.theverge.com'},
+      { hostname: 'www.engadget.com'},
+      { hostname: 's.aolcdn.com'},
+      { hostname: 'www.aljazeera.com'},
+      { hostname: 'www.reuters.com'},
+      { hostname: 'www.euronews.com'},
+      { hostname: 'ichef.bbci.co.uk'},
+      { hostname: 'news.google.com'},
+      { hostname: 'www.indiewire.com' },
+      { hostname: 'imageio.forbes.com' },
+      { hostname: 'www.androidauthority.com' },
+      { hostname: 'smartcdn.gprod.postmedia.digital' },
+      { hostname: 'd.ibtimes.com.au' },
+      { hostname: 'img.helpnetsecurity.com' },
+      { hostname: 'cdn.antaranews.com' },
+      
+      // Additional common news image domains
+      { hostname: '*.yahoo.com' },
+      { hostname: '*.msn.com' },
+      { hostname: '*.nbcnews.com' },
+      { hostname: '*.cbsnews.com' },
+      { hostname: '*.abcnews.go.com' },
+      { hostname: '*.foxnews.com' },
+      { hostname: '*.usatoday.com' },
+      { hostname: '*.latimes.com' },
+      { hostname: '*.washingtonpost.com' },
+      { hostname: '*.nytimes.com' },
+      { hostname: '*.wsj.com' },
+      { hostname: '*.bloomberg.com' },
+      { hostname: '*.reuters.com' },
+      { hostname: '*.bbc.com' },
+      { hostname: '*.bbc.co.uk' },
+      { hostname: '*.theguardian.com' },
+      { hostname: '*.independent.co.uk' },
+      { hostname: '*.telegraph.co.uk' },
+      { hostname: '*.dailymail.co.uk' },
+      { hostname: '*.mirror.co.uk' },
+      { hostname: '*.express.co.uk' },
+      { hostname: '*.metro.co.uk' },
+      { hostname: '*.standard.co.uk' },
+      { hostname: '*.eveningstandard.co.uk' },
+      { hostname: '*.ft.com' },
+      { hostname: '*.economist.com' },
+      { hostname: '*.cnn.com' },
+      { hostname: '*.msnbc.com' },
+      { hostname: '*.npr.org' },
+      { hostname: '*.pbs.org' },
+      { hostname: '*.nbc.com' },
+      { hostname: '*.cbs.com' },
+      { hostname: '*.abc.com' },
+      { hostname: '*.fox.com' },
+      { hostname: '*.nbcuniversal.com' },
+      { hostname: '*.comcast.com' },
+      { hostname: '*.disney.com' },
+      { hostname: '*.warnerbros.com' },
+      { hostname: '*.paramount.com' },
+      { hostname: '*.viacom.com' },
+      { hostname: '*.time.com' },
+      { hostname: '*.newsweek.com' },
+      { hostname: '*.usnews.com' },
+      { hostname: '*.worldreport.com' },
+      { hostname: '*.globalpost.com' },
+      { hostname: '*.huffpost.com' },
+      { hostname: '*.buzzfeed.com' },
+      { hostname: '*.vice.com' },
+      { hostname: '*.motherjones.com' },
+      { hostname: '*.propublica.org' },
+      { hostname: '*.democracynow.org' },
+      { hostname: '*.truthout.org' },
+      { hostname: '*.commondreams.org' },
+      { hostname: '*.alternet.org' },
+      { hostname: '*.rawstory.com' },
+      { hostname: '*.salon.com' },
+      { hostname: '*.slate.com' },
+      { hostname: '*.theatlantic.com' },
+      { hostname: '*.newyorker.com' },
+      { hostname: '*.harpers.org' },
+      { hostname: '*.thenation.com' },
+      { hostname: '*.progressive.org' },
+      { hostname: '*.inquisitr.com' },
+      { hostname: '*.heavy.com' },
+      { hostname: '*.cheatsheet.com' },
+      { hostname: '*.screenrant.com' },
+      { hostname: '*.collider.com' },
+      { hostname: '*.movieweb.com' },
+      { hostname: '*.comingsoon.net' },
+      { hostname: '*.joblo.com' },
     ],
     // Data URIs are still supported for fallbacks or other uses.
     dangerouslyAllowSVG: true, // If you use SVG data URIs as fallbacks
