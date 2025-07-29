@@ -3,9 +3,9 @@ import { motion, useMotionValue, useSpring } from "framer-motion";
 import "./TiltedCard.css";
 
 const springValues = {
-  damping: 30,
-  stiffness: 100,
-  mass: 2,
+  damping: 50, // Increased from 30 for more stability
+  stiffness: 80, // Reduced from 100 for smoother movement
+  mass: 1.5, // Reduced from 2 for less inertia
 };
 
 interface TiltedCardProps {
@@ -50,9 +50,9 @@ export default function TiltedCard({
   const scale = useSpring(1, springValues);
   const opacity = useSpring(0);
   const rotateFigcaption = useSpring(0, {
-    stiffness: 350,
-    damping: 30,
-    mass: 1,
+    stiffness: 200, // Reduced from 350
+    damping: 40, // Increased from 30
+    mass: 0.8, // Reduced from 1
   });
 
   const [lastY, setLastY] = useState(0);
@@ -64,8 +64,9 @@ export default function TiltedCard({
     const offsetX = e.clientX - rect.left - rect.width / 2;
     const offsetY = e.clientY - rect.top - rect.height / 2;
 
-    const rotationX = (offsetY / (rect.height / 2)) * -rotateAmplitude;
-    const rotationY = (offsetX / (rect.width / 2)) * rotateAmplitude;
+    // Reduce the rotation amplitude for more subtle effect
+    const rotationX = (offsetY / (rect.height / 2)) * -rotateAmplitude * 0.5;
+    const rotationY = (offsetX / (rect.width / 2)) * rotateAmplitude * 0.5;
 
     rotateX.set(rotationX);
     rotateY.set(rotationY);
@@ -73,8 +74,9 @@ export default function TiltedCard({
     x.set(e.clientX - rect.left);
     y.set(e.clientY - rect.top);
 
+    // Reduce the velocity effect for more stability
     const velocityY = offsetY - lastY;
-    rotateFigcaption.set(-velocityY * 0.6);
+    rotateFigcaption.set(-velocityY * 0.3); // Reduced from 0.6
     setLastY(offsetY);
   }
 

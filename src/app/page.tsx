@@ -4,10 +4,11 @@ import TrendingAIJobs from '@/components/TrendingAIJobs';
 import LatestArxivPapers from '@/components/LatestArxivPapers';
 import { NewsletterSignup } from '@/components/newsletter-signup';
 import HeroSection from '@/components/HeroSection';
+import NewsSourceStats from '@/components/NewsSourceStats';
 
 const DEFAULT_NEWS_IMAGE = "/placeholder.svg";
 
-async function getNews(): Promise<any[]> {
+async function getNews(): Promise<{ articles: any[]; sources?: any }> {
   const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/ai-news`, { cache: 'no-store' });
   const data = await res.json();
   // Deduplicate by normalized title
@@ -20,44 +21,28 @@ async function getNews(): Promise<any[]> {
       seen.add(normTitle);
     }
   }
-  return uniqueArticles;
+  return { articles: uniqueArticles, sources: data._sources };
 }
 
-interface TrendingTopic {
-  id: string;
-  name: string;
-  posts: number;
-}
-
-interface RecentUpdate {
-  id: string;
-  title: string;
-  date: string;
-  url: string;
-}
-
-async function getTrendingAndUpdates(articles: any[]): Promise<{ trendingTopics: TrendingTopic[]; recentUpdates: RecentUpdate[] }> {
-  // Trending topics by source frequency
-  const sourceCounts: Record<string, number> = {};
-  articles.forEach((article: any) => {
-    const sourceName = article.source?.name || article.source;
-    sourceCounts[sourceName] = (sourceCounts[sourceName] || 0) + 1;
-  });
-  const sortedSources: TrendingTopic[] = Object.entries(sourceCounts)
-    .map(([name, posts]) => ({ id: name, name, posts: posts as number }))
-    .sort((a, b) => b.posts - a.posts)
-    .slice(0, 5);
-  const recentUpdates: RecentUpdate[] = articles.slice(0, 4).map((item: any) => ({
-    id: item.url,
-    title: item.title,
-    date: item.publishedAt,
-    url: item.url,
+async function getTrendingAndUpdates(news: any[]) {
+  // Extract trending topics from news titles
+  const topics = news.slice(0, 10).map(article => article.title);
+  
+  // Generate recent updates based on news
+  const updates = news.slice(0, 5).map(article => ({
+    title: article.title,
+    source: article.source?.name || article.source,
+    time: article.publishedAt
   }));
-  return { trendingTopics: sortedSources, recentUpdates };
+
+  return {
+    trendingTopics: topics,
+    recentUpdates: updates
+  };
 }
 
 export default async function Home() {
-  const news = await getNews();
+  const { articles: news, sources } = await getNews();
   const { trendingTopics, recentUpdates } = await getTrendingAndUpdates(news);
 
   return (
@@ -72,6 +57,8 @@ export default async function Home() {
             </p>
           </div>
 
+          <NewsSourceStats sources={sources} />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {news.map((article) => (
               <NewsCard
@@ -84,15 +71,17 @@ export default async function Home() {
                 date={article.publishedAt}
                 url={article.url}
                 readTime={4}
+                _isRSS={article._isRSS}
+                _isGNews={article._isGNews}
+                _isGDELT={article._isGDELT}
+                _isHN={article._isHN} // Added HN prop
               />
             ))}
           </div>
-
           <div className="mt-8">
             <NewsletterSignup />
           </div>
         </div>
-
         <div className="w-full md:w-1/3">
           <AIStocksSidebar />
           <TrendingAIJobs />
