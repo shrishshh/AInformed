@@ -9,7 +9,8 @@ import NewsSourceStats from '@/components/NewsSourceStats';
 const DEFAULT_NEWS_IMAGE = "/placeholder.svg";
 
 async function getNews(): Promise<{ articles: any[]; sources?: any }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/ai-news`, { cache: 'no-store' });
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  const res = await fetch(`${baseUrl}/api/ai-news`, { cache: 'no-store' });
   const data = await res.json();
   // Deduplicate by normalized title
   const uniqueArticles: any[] = [];
