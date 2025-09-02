@@ -1,14 +1,13 @@
 import { NewsCard } from '@/components/news-card';
 import AIStocksSidebar from '@/components/AIStocksSidebar';
-import TrendingAIJobs from '@/components/TrendingAIJobs';
 import LatestArxivPapers from '@/components/LatestArxivPapers';
 import { NewsletterSignup } from '@/components/newsletter-signup';
 import HeroSection from '@/components/HeroSection';
-import NewsSourceStats from '@/components/NewsSourceStats';
+import Pagination from '../components/Pagination';
 
 const DEFAULT_NEWS_IMAGE = "/placeholder.svg";
 
-async function getNews(): Promise<{ articles: any[]; sources?: any }> {
+async function getNews(): Promise<any[]> {
   const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/ai-news`, { cache: 'no-store' });
   const data = await res.json();
   // Deduplicate by normalized title
@@ -21,29 +20,57 @@ async function getNews(): Promise<{ articles: any[]; sources?: any }> {
       seen.add(normTitle);
     }
   }
-  return { articles: uniqueArticles, sources: data._sources };
+  return uniqueArticles;
 }
 
-async function getTrendingAndUpdates(news: any[]) {
-  // Extract trending topics from news titles
-  const topics = news.slice(0, 10).map(article => article.title);
-  
-  // Generate recent updates based on news
-  const updates = news.slice(0, 5).map(article => ({
-    title: article.title,
-    source: article.source?.name || article.source,
-    time: article.publishedAt
+interface TrendingTopic {
+  id: string;
+  name: string;
+  posts: number;
+}
+
+interface RecentUpdate {
+  id: string;
+  title: string;
+  date: string;
+  url: string;
+}
+
+async function getTrendingAndUpdates(articles: any[]): Promise<{ trendingTopics: TrendingTopic[]; recentUpdates: RecentUpdate[] }> {
+  // Trending topics by source frequency
+  const sourceCounts: Record<string, number> = {};
+  articles.forEach((article: any) => {
+    const sourceName = article.source?.name || article.source;
+    sourceCounts[sourceName] = (sourceCounts[sourceName] || 0) + 1;
+  });
+  const sortedSources: TrendingTopic[] = Object.entries(sourceCounts)
+    .map(([name, posts]) => ({ id: name, name, posts: posts as number }))
+    .sort((a, b) => b.posts - a.posts)
+    .slice(0, 5);
+  const recentUpdates: RecentUpdate[] = articles.slice(0, 4).map((item: any) => ({
+    id: item.url,
+    title: item.title,
+    date: item.publishedAt,
+    url: item.url,
   }));
-
-  return {
-    trendingTopics: topics,
-    recentUpdates: updates
-  };
+  return { trendingTopics: sortedSources, recentUpdates };
 }
 
-export default async function Home() {
-  const { articles: news, sources } = await getNews();
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: { page?: string };
+}) {
+  const news = await getNews();
   const { trendingTopics, recentUpdates } = await getTrendingAndUpdates(news);
+  
+  // Pagination logic
+  const currentPage = parseInt(searchParams.page || '1');
+  const itemsPerPage = 20;
+  const totalPages = Math.ceil(news.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedNews = news.slice(startIndex, endIndex);
 
   return (
     <div className="container px-4 py-8 mx-auto">
@@ -57,10 +84,8 @@ export default async function Home() {
             </p>
           </div>
 
-          <NewsSourceStats sources={sources} />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {news.map((article) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr">
+            {paginatedNews.map((article) => (
               <NewsCard
                 key={article.url}
                 id={article.url}
@@ -71,20 +96,36 @@ export default async function Home() {
                 date={article.publishedAt}
                 url={article.url}
                 readTime={4}
-                _isRSS={article._isRSS}
-                _isGNews={article._isGNews}
-                _isGDELT={article._isGDELT}
-                _isHN={article._isHN} // Added HN prop
               />
             ))}
           </div>
+
+          {/* Pagination */}
+          <div className="mt-8">
+            <div className="text-sm text-muted-foreground mb-4">
+              Debug: Total news: {news.length}, Current page: {currentPage}, Total pages: {totalPages}, Items per page: {itemsPerPage}
+            </div>
+            {totalPages > 1 ? (
+              <Pagination 
+                currentPage={currentPage} 
+                totalPages={totalPages} 
+                totalItems={news.length}
+                itemsPerPage={itemsPerPage}
+              />
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                No pagination needed - all {news.length} articles fit on one page
+              </div>
+            )}
+          </div>
+
           <div className="mt-8">
             <NewsletterSignup />
           </div>
         </div>
-        <div className="w-full md:w-1/3">
+
+        <div className="w-full md:w-1/3 md:sticky md:top-24 h-fit space-y-6">
           <AIStocksSidebar />
-          <TrendingAIJobs />
           <LatestArxivPapers />
         </div>
       </div>
