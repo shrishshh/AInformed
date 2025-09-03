@@ -51,10 +51,10 @@ export default function TermsOfServicePage() {
           In no event shall AInformed or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on AInformed's website, even if AInformed or a AInformed authorized representative has been notified orally or in writing of the possibility of such damage.
         </p>
 
-        <h2 className="text-xl font-semibold mt-6 mb-2 text-foreground">7. Governing Law</h2>
+        {/* <h2 className="text-xl font-semibold mt-6 mb-2 text-foreground">7. Governing Law</h2>
         <p>
           These Terms are governed by and construed in accordance with the laws of [Your Jurisdiction] and you irrevocably submit to the exclusive jurisdiction of the courts in that State or location.
-        </p>
+        </p> */}
       </div>
     </div>
   );

@@ -284,10 +284,29 @@ export async function fetchAllRSSFeeds(): Promise<RSSArticle[]> {
     }
   }
 
-  // Sort by date (newest first)
-  allArticles.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+  // Stricter AI/tech filtering
+  const aiTechKeywords = [
+    'ai', 'artificial intelligence', 'machine learning', 'deep learning', 'neural network', 'computer vision',
+    'nlp', 'natural language', 'gpt', 'llm', 'openai', 'chatgpt', 'data science', 'robotics', 'automation',
+    'cloud', 'cyber', 'quantum', 'algorithm', 'software', 'hardware', 'developer', 'programming', 'code',
+    'research', 'startup', 'tech', 'technology', 'computing', 'data', 'big data', 'analytics', 'api', 'arxiv',
+    'tensorflow', 'pytorch', 'transformer', 'vision', 'speech', 'autonomous', 'self-driving', 'gpu', 'semiconductor',
+    'chip', 'internet', 'web', 'blockchain', 'crypto', 'security', 'privacy', 'cloud', 'edge', 'iot', 'virtual',
+    'augmented', 'metaverse', 'digital', 'platform', 'mobile', 'app', 'app development', 'devops', 'infra', 'infrastructure'
+  ];
 
-  return allArticles;
+  function isRelevantAIArticle(article: RSSArticle) {
+    const text = `${article.title} ${article.summary}`.toLowerCase();
+    return aiTechKeywords.some(keyword => text.includes(keyword));
+  }
+
+  // Filter strictly for AI/tech relevance
+  const filteredArticles = allArticles.filter(isRelevantAIArticle);
+
+  // Sort by date (newest first)
+  filteredArticles.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+
+  return filteredArticles;
 }
 
 // Filter RSS articles by category
