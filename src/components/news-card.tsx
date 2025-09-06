@@ -93,7 +93,7 @@ export function NewsCard({
   };
 
   return (
-    <SpotlightCard className="custom-spotlight-card" spotlightColor="rgba(0, 229, 255, 0.1)">
+    <SpotlightCard className="custom-spotlight-card h-full" spotlightColor="rgba(0, 229, 255, 0.1)">
       <TiltedCard
         containerHeight="100%"
         containerWidth="100%"
@@ -102,7 +102,7 @@ export function NewsCard({
         showMobileWarning={false}
         showTooltip={false}
       >
-    <Card className="overflow-hidden transition-all duration-200 hover:shadow-md border-0 bg-card cursor-pointer" onClick={handleCardClick}>
+    <Card className="h-full flex flex-col overflow-hidden transition-all duration-200 hover:shadow-md border-0 bg-card cursor-pointer" onClick={handleCardClick}>
       <div className="relative aspect-[16/9] overflow-hidden">
         <Image
               src={getFallbackImage()}
@@ -126,7 +126,7 @@ export function NewsCard({
         </div>
       </div>
 
-      <CardContent className="p-4">
+      <CardContent className="p-4 flex-1 flex flex-col">
         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
               <NewsSourceBadge 
                 source={source} 
@@ -148,6 +148,7 @@ export function NewsCard({
         </h3>
 
         <p className="text-sm text-muted-foreground line-clamp-3">{summary}</p>
+        <div className="mt-auto" />
       </CardContent>
 
       <CardFooter className="p-4 pt-0 flex items-center justify-between">
