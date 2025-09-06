@@ -85,26 +85,42 @@ export default function Header() {
           />
         </form>
 
-        {/* Theme Toggle - Conditionally rendered after mount */}
+        {/* Theme Toggle + Auth Actions */}
+        <div className="flex items-center gap-2">
+          {mounted && (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Toggle theme"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            >
+              {theme === "dark" ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+            </Button>
+          )}
 
-        {isLoggedIn ? (
-          <Button
-            variant="default"
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-            onClick={handleLogout}
-          >
-            Logout
-          </Button>
-        ) : (
-          <Link href="/auth">
+          {isLoggedIn ? (
             <Button
               variant="default"
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              onClick={handleLogout}
             >
-              Sign In
+              Logout
             </Button>
-          </Link>
-        )}
+          ) : (
+            <Link href="/auth">
+              <Button
+                variant="default"
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              >
+                Sign In
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Mobile Menu Button */}
@@ -168,6 +184,20 @@ export default function Header() {
           </nav>
 
           <div className="pt-4 border-t flex items-center justify-between">
+            {mounted && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Toggle theme"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              >
+                {theme === "dark" ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+              </Button>
+            )}
 
             {isLoggedIn ? (
               <Button

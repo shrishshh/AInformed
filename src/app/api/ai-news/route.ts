@@ -4,6 +4,15 @@ import { fetchAllRSSFeeds, filterRSSArticlesByCategory, convertRSSToNewsFormat }
 import { getCachedRSSArticles, getCachedGDELTArticles, getCachedHNArticles } from '@/lib/rssCron';
 import { fetchGDELTArticles, convertGDELTToNewsFormat } from '@/lib/gdeltFetcher';
 import { fetchHNStories, convertHNToNewsFormat } from '@/lib/hnFetcher';
+import { 
+  withCache, 
+  generateCacheKey, 
+  createCachedResponse, 
+  CACHE_CONFIG,
+  memoryCache 
+} from '@/lib/cacheService';
+import NewsCache from '@/models/NewsCache';
+import connectDB from '@/lib/mongodb';
 
 // Mock news data for fallback
 const mockNewsData = {
@@ -25,6 +34,30 @@ export async function GET(request: Request) {
   const query = searchParams.get('q') || 'AI';
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '50');
+
+  // Generate cache key based on request parameters
+  const cacheKey = generateCacheKey('news', { category, query, page, limit });
+  
+  // Try to get from memory cache first (fastest)
+  const memoryCached = memoryCache.get(cacheKey);
+  if (memoryCached) {
+    console.log(`Memory cache hit for: ${cacheKey}`);
+    return createCachedResponse(memoryCached, CACHE_CONFIG.API_CACHE_DURATION);
+  }
+
+  // Try to get from database cache
+  try {
+    await connectDB();
+    const dbCached = await NewsCache.findValidCache(cacheKey);
+    if (dbCached) {
+      console.log(`Database cache hit for: ${cacheKey}`);
+      // Store in memory cache for faster subsequent access
+      memoryCache.set(cacheKey, dbCached.data, CACHE_CONFIG.MEMORY_CACHE_DURATION);
+      return createCachedResponse(dbCached.data, CACHE_CONFIG.API_CACHE_DURATION);
+    }
+  } catch (error) {
+    console.error('Database cache error:', error);
+  }
 
   const API_KEY = process.env.GNEWS_API_KEY;
   if (!API_KEY) {
@@ -151,7 +184,7 @@ export async function GET(request: Request) {
 
     console.log(`Total unique articles: ${uniqueArticles.length} (GNews: ${gnewsArticles.length}, RSS: ${rssArticlesFormatted.length}, GDELT: ${gdeltArticlesFormatted.length}, HN: ${hnArticlesFormatted.length})`);
 
-    return NextResponse.json({ 
+    const responseData = { 
       articles: uniqueArticles,
       _isMockData: false,
       _sources: {
@@ -162,13 +195,29 @@ export async function GET(request: Request) {
         total: uniqueArticles.length
       },
       timestamp: new Date().toISOString()
-    }, {
-      headers: {
-        'Cache-Control': process.env.NODE_ENV === 'development' ? 'no-store, must-revalidate' : 'public, max-age=60, stale-while-revalidate=120',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
-    });
+    };
+
+    // Store in memory cache (fastest access)
+    memoryCache.set(cacheKey, responseData, CACHE_CONFIG.MEMORY_CACHE_DURATION);
+
+    // Store in database cache (persistent)
+    try {
+      await NewsCache.findOneAndUpdate(
+        { cacheKey },
+        { 
+          data: responseData,
+          sources: responseData._sources,
+          isMockData: false,
+          expiresAt: new Date(Date.now() + CACHE_CONFIG.DB_CACHE_DURATION)
+        },
+        { upsert: true, new: true }
+      );
+      console.log(`Stored in database cache: ${cacheKey}`);
+    } catch (error) {
+      console.error('Failed to store in database cache:', error);
+    }
+
+    return createCachedResponse(responseData, CACHE_CONFIG.API_CACHE_DURATION);
   } catch (error: any) {
     console.error('Error fetching news in API route:', error);
     return NextResponse.json(mockNewsData);

@@ -37,7 +37,7 @@ const HN_CONFIG = {
   query: 'AI OR "Artificial Intelligence" OR "Machine Learning" OR "Deep Learning" OR "Neural Networks" OR "OpenAI" OR "ChatGPT" OR "GPT" OR "LLM"',
   tags: 'story',
   hitsPerPage: 30,
-  timeRange: 'all' // or 'day', 'week', 'month', 'year'
+  // timeRange: 'all' // Algolia API does not support this param
 };
 
 // Build Hacker News API URL
@@ -45,10 +45,9 @@ function buildHNUrl(): string {
   const params = new URLSearchParams({
     query: HN_CONFIG.query,
     tags: HN_CONFIG.tags,
-    hitsPerPage: HN_CONFIG.hitsPerPage.toString(),
-    timeRange: HN_CONFIG.timeRange
+    hitsPerPage: HN_CONFIG.hitsPerPage.toString()
+    // DO NOT include timeRange, Algolia API does not support it
   });
-  
   return `${HN_CONFIG.baseUrl}?${params.toString()}`;
 }
 
@@ -138,8 +137,8 @@ export async function fetchHNStories(): Promise<HNStory[]> {
     const formattedStories = data.hits
       .filter(story => 
         story.title && 
-        story.title.length > 10 && // Filter out very short titles
-        story.points > 1 // Only stories with some points (filter out spam)
+        story.title.length > 10 // Filter out very short titles
+        // Removed points filter to allow fresh stories
       )
       .map(formatHNStory);
 
