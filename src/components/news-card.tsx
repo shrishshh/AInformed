@@ -10,7 +10,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import SpotlightCard from "./SpotlightCard";
 import TiltedCard from "./TiltedCard";
-import NewsSourceBadge from "./NewsSourceBadge";
+// import NewsSourceBadge from "./NewsSourceBadge";
 
 interface NewsCardProps {
   id: string
@@ -128,14 +128,6 @@ export function NewsCard({
 
       <CardContent className="p-4 flex-1 flex flex-col">
         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-              <NewsSourceBadge 
-                source={source} 
-                isRSS={_isRSS} 
-                isGNews={_isGNews}
-                isGDELT={_isGDELT}
-                isHN={_isHN}
-              />
-          <span>•</span>
           <time dateTime={dateObj.toISOString()}>
             <TimeAgo date={dateObj} />
           </time>
@@ -266,13 +258,6 @@ export function NewsCard({
 
         <CardContent className="p-4">
           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-            <NewsSourceBadge 
-              source={source} 
-              isRSS={_isRSS} 
-              isGNews={_isGNews}
-              isGDELT={_isGDELT}
-            />
-            <span>•</span>
             <time dateTime={dateObj.toISOString()}>
               <TimeAgo date={dateObj} />
             </time>
