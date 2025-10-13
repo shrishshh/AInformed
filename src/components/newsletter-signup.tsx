@@ -43,45 +43,5 @@ export function NewsletterSignup() {
     setIsSubmitting(false);
   }
 
-  return (
-    <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20">
-      <CardHeader>
-        <CardTitle className="text-xl">Stay Informed</CardTitle>
-        <CardDescription>Get the latest AI news and insights delivered to your inbox weekly.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isSubmitted ? (
-          <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-            <Check className="h-5 w-5" />
-            <p>Thank you! Your subscription has been confirmed.</p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <Input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="flex-1"
-            />
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Subscribing
-                </>
-              ) : (
-                "Subscribe"
-              )}
-            </Button>
-          </form>
-        )}
-      </CardContent>
-    </Card>
-  )
+  // Component removed as per user request
 }

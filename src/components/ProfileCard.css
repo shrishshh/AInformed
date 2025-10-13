@@ -147,9 +147,9 @@
   transform: none;
   object-fit: cover;
   object-position: center;
-  filter: grayscale(0.7) brightness(0.7) contrast(1.1) blur(0.5px);
-  mix-blend-mode: screen !important;
-  opacity: 0.85 !important;
+  filter: none;
+  mix-blend-mode: normal !important;
+  opacity: 1 !important;
   background: none !important;
 }
 
@@ -315,11 +315,11 @@
   margin: 0;
   font-size: min(5svh, 3em);
   margin: 0;
-  background-image: linear-gradient(to bottom, #fff, #6f6fbe);
-  background-size: 1em 1.5em;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  -webkit-background-clip: text;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 1px 0 #222;
+  background: rgba(0,0,0,0.35);
+  border-radius: 8px;
+  padding: 0.2em 0.6em;
 }
 
 .pc-details p {
@@ -330,11 +330,11 @@
   font-size: 16px;
   margin: 0 auto;
   width: min-content;
-  background-image: linear-gradient(to bottom, #fff, #4a4ac0);
-  background-size: 1em 1.5em;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  -webkit-background-clip: text;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 1px 0 #222;
+  background: rgba(0,0,0,0.25);
+  border-radius: 6px;
+  padding: 0.1em 0.5em;
 }
 
 @keyframes glow-bg {

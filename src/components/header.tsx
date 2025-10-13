@@ -102,24 +102,7 @@ export default function Header() {
             </Button>
           )}
 
-          {isLoggedIn ? (
-            <Button
-              variant="default"
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              onClick={handleLogout}
-            >
-              Logout
-            </Button>
-          ) : (
-            <Link href="/auth">
-              <Button
-                variant="default"
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              >
-                Sign In
-              </Button>
-            </Link>
-          )}
+          {/* Auth actions removed as requested */}
         </div>
       </div>
 

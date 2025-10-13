@@ -34,7 +34,7 @@ export default function NewsletterForm() {
       <button type="submit" disabled={status === "loading"} className="bg-blue-600 text-white rounded px-4 py-2">
         {status === "loading" ? "Subscribing..." : "Subscribe"}
       </button>
-      {status === "success" && <p className="text-green-600">Subscribed!</p>}
+      {/* Success message removed as requested */}
       {status && status !== "success" && status !== "loading" && <p className="text-red-600">{status}</p>}
     </form>
   );
