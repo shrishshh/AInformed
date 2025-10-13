@@ -101,9 +101,6 @@ export default async function Home({
 
           {/* Pagination */}
           <div className="mt-8">
-            <div className="text-sm text-muted-foreground mb-4">
-              Debug: Total news: {news.length}, Current page: {currentPage}, Total pages: {totalPages}, Items per page: {itemsPerPage}
-            </div>
             {totalPages > 1 ? (
               <Pagination 
                 currentPage={currentPage} 

@@ -177,22 +177,34 @@ export async function GET(request: Request) {
       return false;
     });
 
+
+    // Filter by query (q) if provided and not empty
+    let filteredArticles = uniqueArticles;
+    if (query && query.trim().length > 0) {
+      const qLower = query.trim().toLowerCase();
+      filteredArticles = uniqueArticles.filter((article: any) => {
+        const title = (article.title || '').toLowerCase();
+        const desc = (article.description || article.summary || '').toLowerCase();
+        return title.includes(qLower) || desc.includes(qLower);
+      });
+    }
+
     // Sort by date (newest first)
-    uniqueArticles.sort((a: any, b: any) =>
+    filteredArticles.sort((a: any, b: any) =>
       new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
     );
 
-    console.log(`Total unique articles: ${uniqueArticles.length} (GNews: ${gnewsArticles.length}, RSS: ${rssArticlesFormatted.length}, GDELT: ${gdeltArticlesFormatted.length}, HN: ${hnArticlesFormatted.length})`);
+    console.log(`Total unique articles: ${filteredArticles.length} (GNews: ${gnewsArticles.length}, RSS: ${rssArticlesFormatted.length}, GDELT: ${gdeltArticlesFormatted.length}, HN: ${hnArticlesFormatted.length})`);
 
     const responseData = { 
-      articles: uniqueArticles,
+      articles: filteredArticles,
       _isMockData: false,
       _sources: {
         gnews: gnewsArticles.length,
         rss: rssArticlesFormatted.length,
         gdelt: gdeltArticlesFormatted.length,
         hn: hnArticlesFormatted.length,
-        total: uniqueArticles.length
+        total: filteredArticles.length
       },
       timestamp: new Date().toISOString()
     };
