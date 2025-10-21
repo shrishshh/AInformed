@@ -59,7 +59,6 @@ export default function Header() {
                 { label: "Home", href: "/" },
                 { label: "Categories", href: "/categories" },
                 { label: "Trending", href: "/trending" },
-                { label: "Bookmarks", href: "/bookmarks" },
               ]}
               particleCount={15}
               particleDistances={[90, 10]}
@@ -157,13 +156,7 @@ export default function Header() {
             >
               Trending
             </Link>
-            <Link
-              href="/bookmarks"
-              className="flex items-center gap-2 text-sm font-medium"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Bookmarks
-            </Link>
+            {/* Bookmarks removed from mobile menu */}
           </nav>
 
           <div className="pt-4 border-t flex items-center justify-between">
