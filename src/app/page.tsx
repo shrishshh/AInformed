@@ -1,7 +1,6 @@
 import { NewsCard } from '@/components/news-card';
 import AIStocksSidebar from '@/components/AIStocksSidebar';
 import LatestArxivPapers from '@/components/LatestArxivPapers';
-import { NewsletterSignup } from '@/components/newsletter-signup';
 import HeroSection from '@/components/HeroSection';
 import Pagination from '../components/Pagination';
 
@@ -115,9 +114,7 @@ export default async function Home({
             )}
           </div>
 
-          <div className="mt-8">
-            <NewsletterSignup />
-          </div>
+          {/* Newsletter signup removed */}
         </div>
 
         <div className="w-full md:w-1/3 md:sticky md:top-24 h-fit space-y-6">
