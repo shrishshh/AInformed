@@ -8,6 +8,8 @@ export interface INewsCache extends Document {
     rss: number;
     gdelt: number;
     hn: number;
+    alphavantage: number;
+    remotive: number;
     total: number;
   };
   isMockData: boolean;
@@ -31,6 +33,8 @@ const newsCacheSchema = new Schema<INewsCache>({
     rss: { type: Number, default: 0 },
     gdelt: { type: Number, default: 0 },
     hn: { type: Number, default: 0 },
+    alphavantage: { type: Number, default: 0 },
+    remotive: { type: Number, default: 0 },
     total: { type: Number, default: 0 },
   },
   isMockData: { type: Boolean, default: false },

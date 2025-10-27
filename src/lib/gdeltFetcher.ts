@@ -21,10 +21,10 @@ interface GDELTResponse {
   }>;
 }
 
-// GDELT API configuration - fixed query format
+// GDELT API configuration - Enhanced query focused on AI innovations
 const GDELT_CONFIG = {
   baseUrl: 'https://api.gdeltproject.org/api/v2/doc/doc',
-  query: '(AI OR "Artificial Intelligence" OR "Machine Learning" OR "Deep Learning" OR "Neural Networks")',
+  query: '("Artificial Intelligence" OR "Machine Learning" OR "Deep Learning" OR "Neural Networks" OR GPT OR ChatGPT OR OpenAI OR "Large Language Model" OR "Computer Vision")',
   mode: 'ArtList',
   format: 'json',
   timespan: '24H', // Last 24 hours
@@ -239,13 +239,33 @@ export function filterGDELTArticlesByCategory(articles: GDELTArticle[], category
     const articleText = `${article.title} ${article.summary}`.toLowerCase();
     const categoryLower = category.toLowerCase();
     
-    // Simple keyword matching for categories
+    // Enhanced keyword matching for categories with specific AI focus
     const categoryKeywords: Record<string, string[]> = {
-      'artificial intelligence': ['ai', 'artificial intelligence', 'machine learning', 'deep learning'],
-      'machine learning': ['machine learning', 'ml', 'neural network', 'algorithm'],
-      'technology': ['tech', 'technology', 'software', 'hardware'],
-      'business': ['business', 'startup', 'company', 'market'],
-      'research': ['research', 'study', 'paper', 'academic']
+      'artificial intelligence': ['artificial intelligence', 'ai', 'neural network', 'deep learning', 
+                                  'machine learning', 'gpt', 'llm', 'chatgpt', 'openai', 
+                                  'generative ai', 'ai model', 'ai system'],
+      'machine learning': ['machine learning', 'ml', 'deep learning', 'neural network', 
+                          'training', 'model', 'algorithm', 'supervised learning', 
+                          'unsupervised learning', 'reinforcement learning'],
+      'data science': ['data science', 'big data', 'analytics', 'data analysis', 
+                       'data mining', 'machine learning model', 'predictive analytics', 
+                       'statistical modeling', 'data analytics'],
+      'cybersecurity': ['cybersecurity', 'cyber security', 'ai security', 'ai-powered security', 
+                        'ml security', 'adversarial machine learning', 'ai threat detection', 
+                        'security ai', 'fraud detection ai'],
+      'robotics': ['robotics', 'robot', 'autonomous', 'self-driving', 'autonomous vehicle', 
+                   'robotic automation', 'ai robots', 'machine learning robotics', 
+                   'intelligent automation', 'autonomous system'],
+      'natural language processing': ['nlp', 'natural language processing', 'language model', 
+                                      'text processing', 'speech recognition', 'chatbot', 
+                                      'ai assistant', 'nlu', 'natural language understanding'],
+      'computer vision': ['computer vision', 'image recognition', 'cv', 'image processing', 
+                         'visual ai', 'image ai', 'object detection', 'face recognition'],
+      'quantum computing': ['quantum computing', 'quantum ai', 'quantum machine learning', 
+                           'quantum computer', 'qubit'],
+      'technology': ['innovation', 'tech breakthrough', 'new technology', 'cutting edge'],
+      'business': ['ai startup', 'ai company', 'tech company', 'ai funding', 'ai investment'],
+      'research': ['ai research', 'ai breakthrough', 'research paper', 'academic research', 'ai study']
     };
     
     const keywords = categoryKeywords[categoryLower] || [categoryLower];

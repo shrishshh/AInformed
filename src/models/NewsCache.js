@@ -21,6 +21,8 @@ const newsCacheSchema = new mongoose.Schema({
     rss: { type: Number, default: 0 },
     gdelt: { type: Number, default: 0 },
     hn: { type: Number, default: 0 },
+    alphavantage: { type: Number, default: 0 },
+    remotive: { type: Number, default: 0 },
     total: { type: Number, default: 0 },
   },
   

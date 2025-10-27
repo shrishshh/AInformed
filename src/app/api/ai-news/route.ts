@@ -13,6 +13,7 @@ import {
 } from '@/lib/cacheService';
 import NewsCache from '@/models/NewsCache';
 import connectDB from '@/lib/mongodb';
+import { scoreAndSortArticles } from '@/lib/contentScoring';
 
 // Mock news data for fallback
 const mockNewsData = {
@@ -31,9 +32,29 @@ const mockNewsData = {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const category = searchParams.get('category');
-  const query = searchParams.get('q') || 'AI';
+  let query = searchParams.get('q') || 'AI';
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '50');
+  
+  // Block non-AI related searches to prevent irrelevant results
+  const blockedQueries = [
+    'bollywood', 'hollywood', 'movie', 'film', 'actor', 'actress',
+    'celebrity', 'music', 'sports', 'weather', 'politics',
+    'food', 'travel', 'fashion', 'entertainment'
+  ];
+  
+  const queryLower = query.toLowerCase().trim();
+  const isBlocked = blockedQueries.some(blocked => queryLower === blocked || queryLower.includes(blocked));
+  
+  if (isBlocked) {
+    return NextResponse.json({
+      articles: [],
+      _isMockData: false,
+      _sources: { gnews: 0, rss: 0, gdelt: 0, hn: 0, total: 0 },
+      timestamp: new Date().toISOString(),
+      message: 'Sorry, this search is not AI/tech focused. Please try searching for AI-related topics like "machine learning", "chatgpt", "artificial intelligence", etc.'
+    });
+  }
 
   // Generate cache key based on request parameters
   const cacheKey = generateCacheKey('news', { category, query, page, limit });
@@ -177,22 +198,29 @@ export async function GET(request: Request) {
       return false;
     });
 
-
+    // Score and sort articles by relevance
+    let scoredArticles = scoreAndSortArticles(uniqueArticles);
+    
     // Filter by query (q) if provided and not empty
-    let filteredArticles = uniqueArticles;
+    let filteredArticles = scoredArticles;
     if (query && query.trim().length > 0) {
       const qLower = query.trim().toLowerCase();
-      filteredArticles = uniqueArticles.filter((article: any) => {
+      filteredArticles = scoredArticles.filter((article: any) => {
         const title = (article.title || '').toLowerCase();
         const desc = (article.description || article.summary || '').toLowerCase();
         return title.includes(qLower) || desc.includes(qLower);
       });
     }
 
-    // Sort by date (newest first)
-    filteredArticles.sort((a: any, b: any) =>
-      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-    );
+    // Final sort: prioritize high-scoring recent articles
+    filteredArticles.sort((a: any, b: any) => {
+      // Primary sort: by score (highest first)
+      if (b.score.relevanceScore !== a.score.relevanceScore) {
+        return b.score.relevanceScore - a.score.relevanceScore;
+      }
+      // Secondary sort: by date (newest first)
+      return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+    });
 
     console.log(`Total unique articles: ${filteredArticles.length} (GNews: ${gnewsArticles.length}, RSS: ${rssArticlesFormatted.length}, GDELT: ${gdeltArticlesFormatted.length}, HN: ${hnArticlesFormatted.length})`);
 
