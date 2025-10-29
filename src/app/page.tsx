@@ -2,6 +2,7 @@ import { NewsCard } from '@/components/news-card';
 import AIStocksSidebar from '@/components/AIStocksSidebar';
 import LatestArxivPapers from '@/components/LatestArxivPapers';
 import HeroSection from '@/components/HeroSection';
+import AIToolsSection from '@/components/AIToolsSection';
 import Pagination from '../components/Pagination';
 
 const DEFAULT_NEWS_IMAGE = "/placeholder.svg";
@@ -71,18 +72,19 @@ export default async function Home({
   const paginatedNews = news.slice(startIndex, endIndex);
 
   return (
-    <div className="container px-4 py-8 mx-auto">
+    <div className="container px-4 py-8 mx-auto max-w-7xl">
       <HeroSection />
-      <div className="flex flex-col md:flex-row gap-8">
+      <AIToolsSection />
+      <div id="news-section" className="flex flex-col md:flex-row gap-12 mt-16 scroll-mt-24">
         <div className="w-full md:w-2/3">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Latest AI News</h1>
-            <p className="text-muted-foreground">
+          <div className="mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Latest AI News</h2>
+            <p className="text-lg text-muted-foreground">
               Stay updated with the most recent developments in artificial intelligence
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 auto-rows-fr">
             {paginatedNews.map((article) => (
               <NewsCard
                 key={article.url}

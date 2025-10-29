@@ -39,26 +39,26 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between px-4 md:px-6">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/70">
+      <div className="container flex h-16 items-center justify-between px-4 md:px-6 max-w-7xl mx-auto">
         {/* Logo */}
-        <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center mr-2">
-              <span className="text-white font-bold text-sm">AI</span>
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hidden sm:inline-block">
-              AInformed
-            </span>
-          </Link>
+        <Link href="/" className="flex items-center">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center mr-2">
+            <span className="text-white font-bold text-sm">AI</span>
+          </div>
+          <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hidden sm:inline-block">
+            AInformed
+          </span>
+        </Link>
 
+        {/* Everything else on the right */}
+        <div className="flex items-center gap-6 flex-1 justify-end ml-6">
           {/* Desktop Navigation */}
-          <div className="hidden md:flex ml-6">
+          <div className="hidden md:flex">
             <GooeyNav
               items={[
                 { label: "Home", href: "/" },
                 { label: "Categories", href: "/categories" },
-                { label: "Trending", href: "/trending" },
               ]}
               particleCount={15}
               particleDistances={[90, 10]}
@@ -70,38 +70,36 @@ export default function Header() {
               activeHref={pathname}
             />
           </div>
-        </div>
 
-        {/* Desktop Search & Actions */}
-        <form onSubmit={handleSearch} className="relative w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search AI news..."
-            className="pl-10 pr-4 w-full focus-visible:ring-purple-500"
-          />
-        </form>
+          {/* Desktop Search & Actions */}
+          <form onSubmit={handleSearch} className="relative max-w-md w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search AI news..."
+              className="pl-10 pr-4 w-full focus-visible:ring-purple-500"
+            />
+          </form>
 
-        {/* Theme Toggle + Auth Actions */}
-        <div className="flex items-center gap-2">
-          {mounted && (
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Toggle theme"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            >
-              {theme === "dark" ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-            </Button>
-          )}
-
-          {/* Auth actions removed as requested */}
+          {/* Theme Toggle */}
+          <div className="flex items-center gap-2">
+            {mounted && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Toggle theme"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              >
+                {theme === "dark" ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -149,14 +147,6 @@ export default function Header() {
             >
               Categories
             </Link>
-            <Link
-              href="/trending"
-              className="flex items-center gap-2 text-sm font-medium"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Trending
-            </Link>
-            {/* Bookmarks removed from mobile menu */}
           </nav>
 
           <div className="pt-4 border-t flex items-center justify-between">

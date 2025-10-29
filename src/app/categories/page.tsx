@@ -25,24 +25,23 @@ export default function CategoriesIndexPage() {
     "Quantum Computing",
     "AI Ethics",
     "Neural Networks",
-    "Big Data",
     "Automation",
   ];
 
   const categoryImages: Record<string, string> = {
-    "Artificial Intelligence": "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=600&q=80&sig=ai",
-    "Machine Learning": "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=600&q=80&sig=ml",
-    "Deep Learning": "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=600&q=80&sig=dl",
-    "Natural Language Processing": "https://images.unsplash.com/photo-1465101178521-c1a9136a3b99?auto=format&fit=crop&w=600&q=80&sig=nlp",
-    "Computer Vision": "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=600&q=80&sig=cv",
-    "Robotics": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80&sig=robotics",
-    "Data Science": "https://images.unsplash.com/photo-1467987506553-8f3916508521?auto=format&fit=crop&w=600&q=80&sig=data",
-    "Cybersecurity": "https://images.unsplash.com/photo-1510511459019-5dda7724fd87?auto=format&fit=crop&w=600&q=80&sig=cybersecurity",
-    "Quantum Computing": "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=600&q=80&sig=quantum",
-    "AI Ethics": "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=600&q=80&sig=ethics",
-    "Neural Networks": "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=600&q=80&sig=neural",
-    "Big Data": "https://images.unsplash.com/photo-1467987506553-8f3916508521?auto=format&fit=crop&w=600&q=80&sig=bigdata",
-    "Automation": "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=600&q=80&sig=automation",
+    // Local images from /public requested by user
+    "Artificial Intelligence": "/ASI-ANI-AGI-types-of-AI-1280x720.jpg",
+    "Machine Learning": "/Machine-Learning-Basics.jpg",
+    "Deep Learning": "/Dongang_Machine Learning_Theme Image-min_1.webp",
+    "Natural Language Processing": "/shutterstock_2317041353.webp",
+    "Computer Vision": "/39df04f3-6712-4d1a-a840-bbfd4f5152d0_computer+vision.avif",
+    "Robotics": "/efc290acf4d2f1573b4a87aa3999508b.png",
+    "Data Science": "/Career-In-Data-Science.webp",
+    "Cybersecurity": "/cybersecurity_NicoElNino-AlamyStockPhoto.jpg",
+    "Quantum Computing": "/CBcmkyZ8v4tAc8PSDcEgvM.jpg",
+    "AI Ethics": "/News_Image_-_2024-01-22T102627.569.png",
+    "Neural Networks": "/Neural_Networks.webp",
+    "Automation": "/Automation-image-for-blog-article.jpg",
   };
 
   const handleCategoryChange = (category: string) => {

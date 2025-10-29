@@ -111,4 +111,84 @@ body {
     /* Ensures clean sans-serif font is applied */
     font-feature-settings: "rlig" 1, "calt" 1; 
   }
+  
+  /* Smooth scroll behavior */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Enhanced focus visible */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  /* Letter animation for Viven.ai-style text */
+  .animate-letter-in {
+    animation: letterIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    opacity: 0;
+    transform: translateY(30px) rotateX(90deg);
+  }
+
+  @keyframes letterIn {
+    0% {
+      opacity: 0;
+      transform: translateY(30px) rotateX(90deg) scale(0.8);
+    }
+    50% {
+      transform: translateY(10px) rotateX(45deg) scale(1.1);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) rotateX(0deg) scale(1);
+    }
+  }
+
+  /* Marquee animation for horizontal scrolling */
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+  }
+
+  /* Pause on hover */
+  .group:hover .animate-marquee {
+    animation-play-state: paused;
+  }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  /* Slow spinning animation for circular tool icons */
+  .animate-spin-slow {
+    animation: spin-slow 20s linear infinite;
+  }
+
+  .animate-spin-reverse {
+    animation: spin-reverse 20s linear infinite;
+  }
+
+  @keyframes spin-slow {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes spin-reverse {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(-360deg);
+    }
+  }
 }

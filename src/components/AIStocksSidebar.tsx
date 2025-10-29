@@ -39,34 +39,36 @@ export default function AIStocksSidebar() {
 
   return (
     <div className="space-y-6">
-      <div className="border-0 shadow-sm rounded-xl bg-card/80">
-        <div className="pb-3 px-6 pt-6">
-          <h3 className="text-lg flex items-center gap-2 font-bold">AI Market Trends</h3>
+      <div className="border border-border shadow-lg rounded-xl bg-card overflow-hidden">
+        <div className="pb-4 px-6 pt-6 border-b border-border">
+          <h3 className="text-xl font-semibold">AI Market Trends</h3>
+          <p className="text-sm text-muted-foreground mt-1">Real-time stock prices</p>
         </div>
-        <div className="pt-0 px-6 pb-6">
-          {loading && <div className="text-muted-foreground">Loading...</div>}
-          {error && <div className="text-red-500">{error}</div>}
+        <div className="pt-4 px-6 pb-6">
+          {loading && <div className="text-muted-foreground text-center py-4">Loading market data...</div>}
+          {error && <div className="text-red-500 text-center py-4">{error}</div>}
           {!loading && !error && Array.isArray(stocks) && (
-            <div className="space-y-2">
-              {stocks.map((stock) => {
+            <div className="space-y-3">
+              {stocks.map((stock, index) => {
                 const isUp = stock.change >= 0;
                 return (
                   <div
                     key={stock.symbol}
-                    className="grid grid-cols-3 items-center gap-2"
+                    className={`grid grid-cols-3 items-center gap-4 py-2 px-3 rounded-lg transition-colors ${
+                      index % 2 === 0 ? 'bg-muted/30' : ''
+                    }`}
                   >
-                    <span className="font-bold text-left col-span-1 w-20">{stock.symbol}</span>
-                    <span className="font-bold text-left col-span-1 w-24">${stock.price.toFixed(2)}</span>
+                    <span className="font-semibold text-foreground">{stock.symbol}</span>
+                    <span className="font-medium text-foreground">${stock.price.toFixed(2)}</span>
                     <span
-                      className={
-                        (isUp ? 'text-green-500' : 'text-red-500') +
-                        ' font-semibold flex items-center justify-end col-span-1 w-24 ml-auto'
-                      }
+                      className={`font-semibold flex items-center justify-end ${
+                        isUp ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
+                      }`}
                     >
                       {isUp ? (
-                        <span className="mr-1">&#x25B2;</span>
+                        <span className="mr-1 text-sm">▲</span>
                       ) : (
-                        <span className="mr-1">&#x25BC;</span>
+                        <span className="mr-1 text-sm">▼</span>
                       )}
                       {formatPercentChange(stock.percentChange)}
                     </span>
