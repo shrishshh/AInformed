@@ -187,12 +187,32 @@ export async function GET(request: Request) {
       console.error('HN fetch failed:', freshHNResponse.reason);
     }
 
+    // Helper function to decode HTML entities in image URLs
+    const decodeHtmlEntities = (str: string): string => {
+      if (!str) return '';
+      return str
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&#x27;/g, "'")
+        .replace(/&#x2F;/g, '/');
+    };
+
     // Merge and deduplicate articles from all four sources
     const allArticles = [...gnewsArticles, ...rssArticlesFormatted, ...gdeltArticlesFormatted, ...hnArticlesFormatted];
     const seenUrls = new Set();
     const uniqueArticles = allArticles.filter((article: any) => {
       if (article.url && !seenUrls.has(article.url)) {
         seenUrls.add(article.url);
+        // Decode HTML entities in image URL if present
+        if (article.image) {
+          article.image = decodeHtmlEntities(article.image);
+        }
+        if (article.imageUrl) {
+          article.imageUrl = decodeHtmlEntities(article.imageUrl);
+        }
         return true;
       }
       return false;

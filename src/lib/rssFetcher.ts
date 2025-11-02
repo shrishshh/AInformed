@@ -25,7 +25,8 @@ const feeds: RSSFeed[] = [
   { name: 'Hugging Face Blog', url: 'https://huggingface.co/blog/feed.xml', category: 'ai' },
   { name: 'The Gradient', url: 'https://thegradient.pub/rss/', category: 'research' },
   { name: 'KDnuggets', url: 'https://www.kdnuggets.com/feed', category: 'data-science' },
-  { name: 'Google AI Blog', url: 'https://ai.googleblog.com/feeds/posts/default', category: 'ai' },
+  // Google AI Blog RSS feed is no longer available (404 error)
+  // { name: 'Google AI Blog', url: 'https://ai.googleblog.com/feeds/posts/default', category: 'ai' },
   
   // Mainstream Tech News (High Quality)
   { name: 'MIT Tech Review', url: 'https://www.technologyreview.com/feed/', category: 'technology' },
@@ -123,49 +124,65 @@ function decodeHtmlEntities(text: string): string {
 // Enhanced image extraction function
 function extractImageFromRSSItem(item: string): string | undefined {
   // Try multiple image extraction methods
+  let imageUrl: string | undefined;
   
   // 1. Look for media:content (standard RSS media)
   const mediaContentMatch = item.match(/<media:content[^>]+url="([^"]+)"/i);
   if (mediaContentMatch) {
-    return mediaContentMatch[1];
+    imageUrl = mediaContentMatch[1];
   }
   
   // 2. Look for media:thumbnail
-  const mediaThumbMatch = item.match(/<media:thumbnail[^>]+url="([^"]+)"/i);
-  if (mediaThumbMatch) {
-    return mediaThumbMatch[1];
+  if (!imageUrl) {
+    const mediaThumbMatch = item.match(/<media:thumbnail[^>]+url="([^"]+)"/i);
+    if (mediaThumbMatch) {
+      imageUrl = mediaThumbMatch[1];
+    }
   }
   
   // 3. Look for og:image meta tag
-  const ogImageMatch = item.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i);
-  if (ogImageMatch) {
-    return ogImageMatch[1];
+  if (!imageUrl) {
+    const ogImageMatch = item.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i);
+    if (ogImageMatch) {
+      imageUrl = ogImageMatch[1];
+    }
   }
   
   // 4. Look for image tag in content:encoded
-  const contentEncodedMatch = item.match(/<content:encoded[^>]*>([\s\S]*?)<\/content:encoded>/i);
-  if (contentEncodedMatch) {
-    const content = contentEncodedMatch[1];
-    const imgMatch = content.match(/<img[^>]+src="([^"]+)"/i);
-    if (imgMatch) {
-      return imgMatch[1];
+  if (!imageUrl) {
+    const contentEncodedMatch = item.match(/<content:encoded[^>]*>([\s\S]*?)<\/content:encoded>/i);
+    if (contentEncodedMatch) {
+      const content = contentEncodedMatch[1];
+      const imgMatch = content.match(/<img[^>]+src="([^"]+)"/i);
+      if (imgMatch) {
+        imageUrl = imgMatch[1];
+      }
     }
   }
   
   // 5. Look for image tag in description
-  const descMatch = item.match(/<description[^>]*>([\s\S]*?)<\/description>/i);
-  if (descMatch) {
-    const description = descMatch[1];
-    const imgMatch = description.match(/<img[^>]+src="([^"]+)"/i);
-    if (imgMatch) {
-      return imgMatch[1];
+  if (!imageUrl) {
+    const descMatch = item.match(/<description[^>]*>([\s\S]*?)<\/description>/i);
+    if (descMatch) {
+      const description = descMatch[1];
+      const imgMatch = description.match(/<img[^>]+src="([^"]+)"/i);
+      if (imgMatch) {
+        imageUrl = imgMatch[1];
+      }
     }
   }
   
   // 6. Look for enclosure (RSS standard)
-  const enclosureMatch = item.match(/<enclosure[^>]+url="([^"]+)"[^>]+type="image[^"]*"/i);
-  if (enclosureMatch) {
-    return enclosureMatch[1];
+  if (!imageUrl) {
+    const enclosureMatch = item.match(/<enclosure[^>]+url="([^"]+)"[^>]+type="image[^"]*"/i);
+    if (enclosureMatch) {
+      imageUrl = enclosureMatch[1];
+    }
+  }
+  
+  // Decode HTML entities in the image URL before returning
+  if (imageUrl) {
+    return decodeHtmlEntities(imageUrl);
   }
   
   return undefined;

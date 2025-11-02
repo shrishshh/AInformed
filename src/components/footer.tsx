@@ -1,7 +1,7 @@
 "use client";
 
 import { Separator } from "@/components/ui/separator";
-import { Linkedin, Twitter, Github, Rss } from "lucide-react";
+import { Linkedin } from "lucide-react";
 import Link from "next/link";
 
 export function Footer() {
@@ -21,10 +21,7 @@ export function Footer() {
   };
 
   const socialLinks = [
-    { icon: Twitter, href: "https://twitter.com/ainformedapp", label: "Twitter", color: "hover:text-blue-400" },
     { icon: Linkedin, href: "https://www.linkedin.com/company/sidemindlabs", label: "LinkedIn", color: "hover:text-blue-600" },
-    { icon: Github, href: "https://github.com", label: "GitHub", color: "hover:text-gray-900 dark:hover:text-white" },
-    { icon: Rss, href: "/rss", label: "RSS Feed", color: "hover:text-orange-500" },
   ];
 
   return (
@@ -110,7 +107,7 @@ export function Footer() {
             &copy; {new Date().getFullYear()} AInformed. All rights reserved.
           </div>
           <div className="flex items-center gap-6">
-            <span className="text-xs">Powered by AI • Made for the community</span>
+            <span className="text-xs">Powered by SideMindLabs • Made for the community</span>
           </div>
         </div>
       </div>

@@ -16,6 +16,10 @@ const fontSans = FontSans({
 export const metadata: Metadata = {
   title: "AInformed - AI News & Insights",
   description: "Stay updated with the latest AI news, trends, and insights",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
   openGraph: {
     title: "AInformed - AI News & Insights",
     description: "Stay updated with the latest AI news, trends, and insights",

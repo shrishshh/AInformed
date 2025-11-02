@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter, usePathname } from "next/navigation"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Search, Menu, X, Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -20,10 +20,19 @@ export default function Header() {
   const [mounted, setMounted] = useState(false);
   const { isLoggedIn, logout } = useAuthStatus();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Persist search query from URL when on search page
+  useEffect(() => {
+    if (pathname === '/search') {
+      const query = searchParams.get('q') || '';
+      setSearch(query);
+    }
+  }, [pathname, searchParams]);
 
   const handleLogout = () => {
     logout();
@@ -34,7 +43,7 @@ export default function Header() {
     e.preventDefault();
     if (search.trim()) {
       router.push(`/search?q=${encodeURIComponent(search.trim())}`);
-      setSearch("");
+      // Don't clear search - let it persist from URL
     }
   };
 
@@ -59,6 +68,7 @@ export default function Header() {
               items={[
                 { label: "Home", href: "/" },
                 { label: "Categories", href: "/categories" },
+                { label: "About Us", href: "/about" },
               ]}
               particleCount={15}
               particleDistances={[90, 10]}
@@ -122,10 +132,17 @@ export default function Header() {
       {/* Mobile Search Bar */}
       {isSearchExpanded && (
         <div className="p-4 border-t md:hidden">
-          <div className="relative">
+          <form onSubmit={handleSearch} className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input type="search" placeholder="Search AI news..." className="pl-10 pr-4 w-full" autoFocus />
-          </div>
+            <Input
+              type="search"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search AI news..."
+              className="pl-10 pr-4 w-full"
+              autoFocus
+            />
+          </form>
         </div>
       )}
 
@@ -146,6 +163,13 @@ export default function Header() {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Categories
+            </Link>
+            <Link
+              href="/about"
+              className="flex items-center gap-2 text-sm font-medium"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              About Us
             </Link>
           </nav>
 

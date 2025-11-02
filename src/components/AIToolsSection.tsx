@@ -83,9 +83,9 @@ const AIToolsSection = () => {
 
           {/* Text content on right */}
           <div className="space-y-6 order-2 lg:order-2">
-            <div className="inline-block px-3 py-1 rounded-full border border-primary/20 bg-primary/10 text-xs font-medium text-primary">
+            {/* <div className="inline-block px-3 py-1 rounded-full border border-primary/20 bg-primary/10 text-xs font-medium text-primary">
               POWERED BY AI
-            </div>
+            </div> */}
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
               Your tools, working smarter together
             </h2>

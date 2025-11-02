@@ -137,7 +137,17 @@ const nextConfig: NextConfig = {
       { hostname: '*.movieweb.com' },
       { hostname: '*.comingsoon.net' },
       { hostname: '*.joblo.com' },
+      // Contentful CDN for article images
+      { hostname: 'images.ctfassets.net' },
     ],
+    // Enable modern image formats for better compression
+    formats: ['image/avif', 'image/webp'],
+    // Device sizes for responsive images
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    // Image sizes for different use cases
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // Minimum cache time for optimized images (60 days)
+    minimumCacheTTL: 60 * 60 * 24 * 60,
     // Data URIs are still supported for fallbacks or other uses.
     dangerouslyAllowSVG: true, // If you use SVG data URIs as fallbacks
     // Temporarily relax Content Security Policy for image loading from external sources.

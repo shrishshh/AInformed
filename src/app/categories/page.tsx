@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { CategoryTabs } from "@/components/category-tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import SpotlightCard from "@/components/SpotlightCard";
 import Image from "next/image";
 
@@ -44,6 +44,21 @@ export default function CategoriesIndexPage() {
     "Automation": "/Automation-image-for-blog-article.jpg",
   };
 
+  const categoryWikipediaUrls: Record<string, string> = {
+    "Artificial Intelligence": "https://en.wikipedia.org/wiki/Artificial_intelligence",
+    "Machine Learning": "https://en.wikipedia.org/wiki/Machine_learning",
+    "Deep Learning": "https://en.wikipedia.org/wiki/Deep_learning",
+    "Natural Language Processing": "https://en.wikipedia.org/wiki/Natural_language_processing",
+    "Computer Vision": "https://en.wikipedia.org/wiki/Computer_vision",
+    "Robotics": "https://en.wikipedia.org/wiki/Robotics",
+    "Data Science": "https://en.wikipedia.org/wiki/Data_science",
+    "Cybersecurity": "https://en.wikipedia.org/wiki/Computer_security",
+    "Quantum Computing": "https://en.wikipedia.org/wiki/Quantum_computing",
+    "AI Ethics": "https://en.wikipedia.org/wiki/Ethics_of_artificial_intelligence",
+    "Neural Networks": "https://en.wikipedia.org/wiki/Artificial_neural_network",
+    "Automation": "https://en.wikipedia.org/wiki/Automation",
+  };
+
   const handleCategoryChange = (category: string) => {
     // If "All" is selected, we might want to go to the home page or a general AI news page.
     // For now, let's route to a general categories view or a default if "All" is selected.
@@ -68,29 +83,48 @@ export default function CategoriesIndexPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {allTechCategories.map((category) => (
-          <Link key={category} href={`/categories/${encodeURIComponent(category)}`} passHref>
-            <SpotlightCard className="custom-spotlight-card" spotlightColor="rgba(0, 229, 255, 0.15)">
-              <Card className="flex flex-col items-center justify-center p-6 text-center hover:shadow-xl transition-shadow duration-300 h-full cursor-pointer bg-card">
-                <div className="relative w-full aspect-[16/9] mb-4 rounded-lg overflow-hidden">
-                  <Image
-                    src={categoryImages[category] || "/placeholder.svg"}
-                    alt={category}
-                    fill
-                    className="object-cover"
-                  />
+          <SpotlightCard key={category} className="custom-spotlight-card" spotlightColor="rgba(0, 229, 255, 0.15)">
+            <Card className="flex flex-col items-center justify-center p-6 text-center hover:shadow-xl transition-shadow duration-300 h-full bg-card">
+              <div className="relative w-full aspect-[16/9] mb-4 rounded-lg overflow-hidden">
+                <Image
+                  src={categoryImages[category] || "/placeholder.svg"}
+                  alt={category}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold mb-2">{category}</CardTitle>
+                <CardDescription className="text-sm text-muted-foreground">
+                  Latest news and insights in {category}.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="w-full">
+                <div className="flex items-center justify-between gap-2 mt-4">
+                  <Link href={`/categories/${encodeURIComponent(category)}`} className="flex-1">
+                    <Button variant="secondary" className="w-full text-xs">
+                      View Articles
+                    </Button>
+                  </Link>
+                  <a
+                    href={categoryWikipediaUrls[category] || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => {
+                      if (!categoryWikipediaUrls[category]) {
+                        e.preventDefault();
+                      }
+                    }}
+                    className="flex-1"
+                  >
+                    <Button variant="secondary" className="w-full text-xs">
+                      Learn More
+                    </Button>
+                  </a>
                 </div>
-                <CardHeader>
-                  <CardTitle className="text-xl font-semibold mb-2">{category}</CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
-                    Latest news and insights in {category}.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Badge variant="secondary" className="mt-4 px-3 py-1 text-xs">View Articles</Badge>
-                </CardContent>
-              </Card>
-            </SpotlightCard>
-          </Link>
+              </CardContent>
+            </Card>
+          </SpotlightCard>
         ))}
       </div>
     </div>
