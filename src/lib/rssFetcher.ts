@@ -16,8 +16,18 @@ interface RSSFeed {
   category?: string;
 }
 
-// RSS feeds focused on AI and technology (updated with more reliable sources)
+// RSS feeds focused on AI and technology (updated with premium AI sources)
 const feeds: RSSFeed[] = [
+  // Premium AI Research & Innovation Sources (Verified Working)
+  { name: 'DeepMind Blog', url: 'https://www.deepmind.com/blog/feed/basic', category: 'ai' },
+  { name: 'Microsoft Research', url: 'https://www.microsoft.com/en-us/research/feed/', category: 'research' },
+  { name: 'NVIDIA AI', url: 'https://blogs.nvidia.com/feed/', category: 'ai' },
+  { name: 'Hugging Face Blog', url: 'https://huggingface.co/blog/feed.xml', category: 'ai' },
+  { name: 'The Gradient', url: 'https://thegradient.pub/rss/', category: 'research' },
+  { name: 'KDnuggets', url: 'https://www.kdnuggets.com/feed', category: 'data-science' },
+  { name: 'Google AI Blog', url: 'https://ai.googleblog.com/feeds/posts/default', category: 'ai' },
+  
+  // Mainstream Tech News (High Quality)
   { name: 'MIT Tech Review', url: 'https://www.technologyreview.com/feed/', category: 'technology' },
   { name: 'Wired', url: 'https://www.wired.com/feed/rss', category: 'technology' },
   { name: 'Ars Technica', url: 'http://feeds.arstechnica.com/arstechnica/index/', category: 'technology' },
@@ -165,7 +175,40 @@ function extractImageFromRSSItem(item: string): string | undefined {
 function generatePlaceholderImage(source: string): string {
   const sourceLower = source.toLowerCase();
   
-  // AI-themed images for different sources
+  // Premium AI Research Labs & Companies
+  if (sourceLower.includes('openai')) {
+    return 'https://images.unsplash.com/photo-1634117623694-c79e48b3bfa1?auto=format&fit=crop&w=600&q=80';
+  }
+  
+  if (sourceLower.includes('google ai') || sourceLower.includes('deepmind')) {
+    return 'https://images.unsplash.com/photo-1555255707-c07966088b7b?auto=format&fit=crop&w=600&q=80';
+  }
+  
+  if (sourceLower.includes('meta ai')) {
+    return 'https://images.unsplash.com/photo-1526374965328-7f61d4d18e10?auto=format&fit=crop&w=600&q=80';
+  }
+  
+  if (sourceLower.includes('microsoft research')) {
+    return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80';
+  }
+  
+  if (sourceLower.includes('nvidia') || sourceLower.includes('gpu')) {
+    return 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80';
+  }
+  
+  if (sourceLower.includes('hugging face') || sourceLower.includes('papers with code')) {
+    return 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?auto=format&fit=crop&w=600&q=80';
+  }
+  
+  if (sourceLower.includes('gradient') || sourceLower.includes('research')) {
+    return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80';
+  }
+  
+  if (sourceLower.includes('kdnuggets') || sourceLower.includes('data science')) {
+    return 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80';
+  }
+  
+  // Mainstream Tech News
   if (sourceLower.includes('techcrunch') || sourceLower.includes('venturebeat')) {
     return 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=600&q=80';
   }
@@ -284,20 +327,82 @@ export async function fetchAllRSSFeeds(): Promise<RSSArticle[]> {
     }
   }
 
-  // Stricter AI/tech filtering
-  const aiTechKeywords = [
-    'ai', 'artificial intelligence', 'machine learning', 'deep learning', 'neural network', 'computer vision',
-    'nlp', 'natural language', 'gpt', 'llm', 'openai', 'chatgpt', 'data science', 'robotics', 'automation',
-    'cloud', 'cyber', 'quantum', 'algorithm', 'software', 'hardware', 'developer', 'programming', 'code',
-    'research', 'startup', 'tech', 'technology', 'computing', 'data', 'big data', 'analytics', 'api', 'arxiv',
-    'tensorflow', 'pytorch', 'transformer', 'vision', 'speech', 'autonomous', 'self-driving', 'gpu', 'semiconductor',
-    'chip', 'internet', 'web', 'blockchain', 'crypto', 'security', 'privacy', 'cloud', 'edge', 'iot', 'virtual',
-    'augmented', 'metaverse', 'digital', 'platform', 'mobile', 'app', 'app development', 'devops', 'infra', 'infrastructure'
+  // Enhanced, stricter AI/tech filtering focused on innovations and cutting-edge tech
+  const strictAIKeywords = [
+    // Core AI Terms
+    'artificial intelligence', 'machine learning', 'deep learning', 'neural network', 'neural networks',
+    'computer vision', 'nlp', 'natural language processing', 'gpt', 'llm', 'large language model',
+    
+    // AI Companies & Products
+    'openai', 'chatgpt', 'claude', 'gemini', 'anthropic', 'x ai', 'perplexity',
+    'midjourney', 'stable diffusion', 'dalle', 'grok', 'bard',
+    
+    // AI Technologies
+    'transformer', 'attention mechanism', 'reinforcement learning', 'unsupervised learning',
+    'supervised learning', 'transfer learning', 'generative ai', 'gen ai', 'multimodal ai',
+    'diffusion model', 'variational autoencoder', 'gan', 'generative adversarial network',
+    'transformer model', 'encoder-decoder', 'backpropagation',
+    
+    // AI Frameworks & Tools
+    'tensorflow', 'pytorch', 'keras', 'hugging face', 'transformers library', 'jax',
+    'scikit-learn', 'opencv', 'spacy', 'nltk', 'langchain', 'llamaindex',
+    
+    // AI Research & Innovation
+    'ai research', 'ai breakthrough', 'new ai', 'ai development', 'ai innovation',
+    'ai model', 'ai system', 'ai tool', 'ai application',
+    
+    // Data Science (strict AI-related)
+    'data science', 'big data', 'analytics', 'data analysis', 'machine learning model',
+    
+    // Cybersecurity (AI-focused)
+    'ai security', 'cyber security ai', 'ai-powered security', 'ml security',
+    'adversarial machine learning', 'ai threat detection',
+    
+    // Robotics (AI-focused)
+    'robotics', 'autonomous', 'self-driving', 'autonomous vehicles', 'robotic process automation',
+    'ai robots', 'machine learning robotics', 'intelligent automation',
+    
+    // Emerging Technologies
+    'quantum computing', 'quantum ai', 'quantum machine learning',
+    'edge ai', 'tiny ml', 'federated learning', 'distributed ai',
+    
+    // Hardware (AI-focused)
+    'gpu', 'tpu', 'neural processing unit', 'ai chip', 'semiconductor', 'ai hardware',
+    'nvidia', 'amd ai', 'graphcore', 'cerebras',
+    
+    // Industry Applications
+    'ai healthcare', 'ai diagnosis', 'ai medicine', 'ai drug discovery',
+    'ai finance', 'ai trading', 'algorithmic trading',
+    'ai education', 'ai tutoring', 'personalized learning',
+    
+    // Latest Trends
+    'ai agent', 'autonomous agent', 'ai assistant', 'ai chatbot',
+    'retrieval augmented generation', 'rag', 'prompt engineering',
+    'fine-tuning', 'model training', 'ai deployment',
+    
+    // Explicit exclusions would help filter better
+  ];
+
+  // Exclude non-AI tech terms that were catching irrelevant content
+  const exclusionKeywords = [
+    'general politics', 'sports', 'entertainment', 'celebrities', 'food',
+    'travel', 'fashion', 'weather', 'gossip'
   ];
 
   function isRelevantAIArticle(article: RSSArticle) {
     const text = `${article.title} ${article.summary}`.toLowerCase();
-    return aiTechKeywords.some(keyword => text.includes(keyword));
+    
+    // Check for strict AI keywords
+    const hasAIKeyword = strictAIKeywords.some(keyword => 
+      text.includes(keyword.toLowerCase())
+    );
+    
+    // Exclude articles with irrelevant keywords
+    const hasExclusionKeyword = exclusionKeywords.some(keyword => 
+      text.includes(keyword.toLowerCase())
+    );
+    
+    return hasAIKeyword && !hasExclusionKeyword;
   }
 
   // Filter strictly for AI/tech relevance
@@ -317,13 +422,33 @@ export function filterRSSArticlesByCategory(articles: RSSArticle[], category?: s
     const articleText = `${article.title} ${article.summary}`.toLowerCase();
     const categoryLower = category.toLowerCase();
     
-    // Simple keyword matching for categories
+    // Enhanced keyword matching for categories with specific AI focus
     const categoryKeywords: Record<string, string[]> = {
-      'artificial intelligence': ['ai', 'artificial intelligence', 'machine learning', 'deep learning'],
-      'machine learning': ['machine learning', 'ml', 'neural network', 'algorithm'],
-      'technology': ['tech', 'technology', 'software', 'hardware'],
-      'business': ['business', 'startup', 'company', 'market'],
-      'research': ['research', 'study', 'paper', 'academic']
+      'artificial intelligence': ['artificial intelligence', 'ai', 'neural network', 'deep learning', 
+                                  'machine learning', 'gpt', 'llm', 'chatgpt', 'openai', 
+                                  'generative ai', 'ai model', 'ai system'],
+      'machine learning': ['machine learning', 'ml', 'deep learning', 'neural network', 
+                          'training', 'model', 'algorithm', 'supervised learning', 
+                          'unsupervised learning', 'reinforcement learning'],
+      'data science': ['data science', 'big data', 'analytics', 'data analysis', 
+                       'data mining', 'machine learning model', 'predictive analytics', 
+                       'statistical modeling', 'data analytics'],
+      'cybersecurity': ['cybersecurity', 'cyber security', 'ai security', 'ai-powered security', 
+                        'ml security', 'adversarial machine learning', 'ai threat detection', 
+                        'security ai', 'fraud detection ai'],
+      'robotics': ['robotics', 'robot', 'autonomous', 'self-driving', 'autonomous vehicle', 
+                   'robotic automation', 'ai robots', 'machine learning robotics', 
+                   'intelligent automation', 'autonomous system'],
+      'natural language processing': ['nlp', 'natural language processing', 'language model', 
+                                      'text processing', 'speech recognition', 'chatbot', 
+                                      'ai assistant', 'nlu', 'natural language understanding'],
+      'computer vision': ['computer vision', 'image recognition', 'cv', 'image processing', 
+                         'visual ai', 'image ai', 'object detection', 'face recognition'],
+      'quantum computing': ['quantum computing', 'quantum ai', 'quantum machine learning', 
+                           'quantum computer', 'qubit'],
+      'technology': ['innovation', 'tech breakthrough', 'new technology', 'cutting edge'],
+      'business': ['ai startup', 'ai company', 'tech company', 'ai funding', 'ai investment'],
+      'research': ['ai research', 'ai breakthrough', 'research paper', 'academic research', 'ai study']
     };
     
     const keywords = categoryKeywords[categoryLower] || [categoryLower];

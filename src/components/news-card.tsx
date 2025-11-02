@@ -102,7 +102,7 @@ export function NewsCard({
         showMobileWarning={false}
         showTooltip={false}
       >
-  <Card className="h-full flex flex-col overflow-hidden transition-all duration-200 hover:shadow-md border-0 bg-card cursor-pointer border border-gray-200 dark:border-0" onClick={handleCardClick}>
+  <Card className="h-full flex flex-col overflow-hidden transition-all duration-300 hover:shadow-2xl border-0 bg-card hover:border-primary/30 cursor-pointer hover:scale-[1.03] hover:-translate-y-2 shadow-sm" onClick={handleCardClick}>
       <div className="relative aspect-[16/9] overflow-hidden">
         <Image
               src={getFallbackImage()}
