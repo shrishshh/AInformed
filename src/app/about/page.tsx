@@ -51,14 +51,44 @@ export default function AboutPage() {
           <li className="bg-card px-3 py-1 rounded shadow">APIs</li>
         </ul>
       </div>
-      {/* <div className="flex gap-4 mb-8">
-        <a href="https://github.com/shrishshh" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
-          <Github className="h-7 w-7 text-muted-foreground hover:text-primary transition-colors" />
-        </a>
-        <a href="https://linkedin.com/in/shrishshh" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
-          <Linkedin className="h-7 w-7 text-muted-foreground hover:text-primary transition-colors" />
-        </a>
-      </div> */}
+      
+      {/* Company Contact Information */}
+      <div className="mb-8 w-full max-w-2xl">
+        <h3 className="text-xl font-semibold mb-4 text-primary text-center">Connect With Us</h3>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+          <a
+            href="mailto:sidemindlabs@gmail.com"
+            className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors text-base font-medium"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
+            </svg>
+            sidemindlabs@gmail.com
+          </a>
+          <a
+            href="https://www.linkedin.com/company/sidemindlabs"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors text-base font-medium"
+            aria-label="SideMindLabs LinkedIn"
+          >
+            <Linkedin className="h-5 w-5" />
+            LinkedIn
+          </a>
+        </div>
+      </div>
+      
       <Link href="/contact">
       </Link>
     </div>

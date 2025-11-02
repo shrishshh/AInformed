@@ -1,13 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import TimeAgo from "@/components/common/TimeAgo"
 import { Bookmark, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import SpotlightCard from "./SpotlightCard";
 import TiltedCard from "./TiltedCard";
 // import NewsSourceBadge from "./NewsSourceBadge";
@@ -47,36 +46,42 @@ export function NewsCard({
 }: NewsCardProps) {
   // Ensure date is a Date object
   const dateObj = typeof date === 'string' ? new Date(date) : date;
-  const [showSummary, setShowSummary] = useState(false);
   const [imageError, setImageError] = useState(false);
+
+  // Decode HTML entities in image URLs (safeguard)
+  const decodeHtmlEntities = (str: string): string => {
+    if (!str) return '';
+    return str
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&#x27;/g, "'")
+      .replace(/&#x2F;/g, '/');
+  };
 
   // Generate fallback image based on source
   const getFallbackImage = () => {
-    if (imageError || !imageUrl || imageUrl === '/placeholder.svg') {
-      const sourceLower = source.toLowerCase();
+    // Decode HTML entities in imageUrl first
+    const decodedImageUrl = imageUrl ? decodeHtmlEntities(imageUrl) : '';
+    
+    if (imageError || !decodedImageUrl || decodedImageUrl === '/placeholder.svg') {
+      // Use generic tech images without "AI" text graphics
+      // Abstract tech/circuit/digital patterns that don't contain text
+      const genericTechImages = [
+        'https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&w=600&q=80', // Abstract tech pattern
+        'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80', // Digital network
+        'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=600&q=80', // Abstract data visualization
+        'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=600&q=80', // Circuit board pattern
+      ];
       
-      // AI-themed fallback images based on source
-      if (sourceLower.includes('techcrunch') || sourceLower.includes('venturebeat')) {
-        return 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=600&q=80';
-      }
-      
-      if (sourceLower.includes('wired') || sourceLower.includes('ars technica')) {
-        return 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=600&q=80';
-      }
-      
-      if (sourceLower.includes('mit') || sourceLower.includes('tech review')) {
-        return 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=600&q=80';
-      }
-      
-      if (sourceLower.includes('verge') || sourceLower.includes('engadget')) {
-        return 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=600&q=80';
-      }
-      
-      // Default AI/tech image
-      return 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=600&q=80';
+      // Use a consistent image based on article ID to maintain visual consistency
+      const imageIndex = parseInt(id) % genericTechImages.length || 0;
+      return genericTechImages[imageIndex] || genericTechImages[0];
     }
     
-    return imageUrl;
+    return decodedImageUrl;
   };
 
   // Card click handler
@@ -105,14 +110,17 @@ export function NewsCard({
   <Card className="h-full flex flex-col overflow-hidden transition-all duration-300 hover:shadow-2xl border-0 bg-card hover:border-primary/30 cursor-pointer hover:scale-[1.03] hover:-translate-y-2 shadow-sm" onClick={handleCardClick}>
       <div className="relative aspect-[16/9] overflow-hidden">
         <Image
-              src={getFallbackImage()}
+          src={getFallbackImage()}
           alt={title}
           fill
           className="object-cover transition-transform duration-300 hover:scale-105"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           priority={false}
-              onError={handleImageError}
-              unoptimized={true} // Skip Next.js optimization for external images
+          onError={handleImageError}
+          quality={85}
+          loading="lazy"
+          placeholder="blur"
+          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
         />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none">
               <div className="absolute bottom-3 right-3 pointer-events-auto">
@@ -153,19 +161,20 @@ export function NewsCard({
         >
           <Bookmark className={`h-5 w-5 ${isBookmarked ? "fill-primary text-primary" : "text-white"}`} />
         </Button>
-        <Dialog open={showSummary} onOpenChange={open => { setShowSummary(open); }}>
-          <DialogTrigger asChild>
-            <Button variant="default" size="sm" className="readmore-btn" onClick={e => e.stopPropagation()}>
-              Read More
-            </Button>
-          </DialogTrigger>
-          <DialogContent onClick={e => e.stopPropagation()}>
-            <DialogHeader>
-              <DialogTitle>{title}</DialogTitle>
-            </DialogHeader>
-            <div className="text-sm text-muted-foreground whitespace-pre-line">{summary}</div>
-          </DialogContent>
-        </Dialog>
+        <Button 
+          variant="default" 
+          size="sm" 
+          className="readmore-btn" 
+          onClick={e => {
+            e.stopPropagation();
+            window.open(url, '_blank', 'noopener,noreferrer');
+          }}
+          asChild
+        >
+          <Link href={url} target="_blank" rel="noopener noreferrer">
+            Read More
+          </Link>
+        </Button>
       </CardFooter>
     </Card>
       </TiltedCard>
