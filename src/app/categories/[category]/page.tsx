@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { NewsCard } from "@/components/news-card";
+import { NewsCardWithBookmark } from "@/components/NewsCardWithBookmark";
 
 export default function CategoryPage() {
   const { category } = useParams();
@@ -35,13 +35,13 @@ export default function CategoryPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {news.map((article: any) => (
-            <NewsCard
+            <NewsCardWithBookmark
               key={article.url}
               id={article.url}
               title={article.title}
               summary={article.description}
               imageUrl={article.image}
-              source={article.source.name}
+              source={article.source?.name || article.source}
               date={article.publishedAt}
               url={article.url}
               readTime={4}

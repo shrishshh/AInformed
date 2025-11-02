@@ -153,13 +153,38 @@ export function NewsCard({
 
       <CardFooter className="p-4 pt-0 flex items-center justify-between">
         <Button
-          variant="default"
+          variant={isBookmarked ? "default" : "outline"}
           size="icon"
-          className="bookmark-btn"
-          onClick={e => { e.stopPropagation(); onToggleBookmark?.({ id, title, summary, imageUrl, source, date, url, readTime }); }}
+          type="button"
+          disabled={false}
+          className={`bookmark-btn transition-all duration-200 relative z-10 ${
+            isBookmarked 
+              ? "bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg border-0" 
+              : "border-2 border-purple-500/50 hover:border-purple-600 bg-background hover:bg-purple-50 dark:hover:bg-purple-950/20"
+          }`}
+          onClick={(e) => { 
+            console.log('Bookmark button clicked!');
+            e.stopPropagation(); 
+            e.preventDefault();
+            if (onToggleBookmark) {
+              console.log('Calling onToggleBookmark with data:', { id, title, summary, imageUrl, source, date, url, readTime });
+              onToggleBookmark({ id, title, summary, imageUrl, source, date, url, readTime });
+            } else {
+              console.warn('onToggleBookmark is not defined!');
+            }
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+          }}
           aria-label={isBookmarked ? "Unsave article" : "Save article"}
         >
-          <Bookmark className={`h-5 w-5 ${isBookmarked ? "fill-primary text-primary" : "text-white"}`} />
+          <Bookmark 
+            className={`h-5 w-5 transition-all duration-200 ${
+              isBookmarked 
+                ? "fill-white text-white" 
+                : "fill-none text-purple-600 dark:text-purple-400"
+            }`} 
+          />
         </Button>
         <Button 
           variant="default" 

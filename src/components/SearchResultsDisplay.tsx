@@ -1,16 +1,19 @@
 'use client'
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { NewsCard } from '@/components/news-card';
-import { useSavedArticles } from "@/hooks/useSavedArticles";
+import { useSupabaseBookmarks } from '@/hooks/useSupabaseBookmarks';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 export default function SearchResultsDisplay() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const query = searchParams.get('q') || '';
   const [results, setResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { isArticleSaved, saveArticle, unsaveArticle } = useSavedArticles();
+  const { isBookmarked, addBookmark, removeBookmark } = useSupabaseBookmarks();
+  const { isLoggedIn } = useSupabaseAuth();
 
   useEffect(() => {
     if (query) {
@@ -44,6 +47,34 @@ export default function SearchResultsDisplay() {
     return <p className="text-muted-foreground">No results found for "{query}".</p>;
   }
 
+  const handleToggleBookmark = async (article: any) => {
+    if (!isLoggedIn) {
+      router.push('/auth/login');
+      return;
+    }
+
+    try {
+      const articleId = article.url || article.id;
+      if (isBookmarked(articleId)) {
+        await removeBookmark(articleId);
+      } else {
+        await addBookmark({
+          id: articleId,
+          title: article.title,
+          url: article.url,
+          imageUrl: article.image,
+          source: article.source?.name || article.source,
+          summary: article.description,
+        });
+      }
+    } catch (error: any) {
+      if (error.message?.includes('must be logged in') || error.message?.includes('logged in')) {
+        router.push('/auth/login');
+      }
+      console.error('Error toggling bookmark:', error);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {results.map((article: any) => (
@@ -53,12 +84,12 @@ export default function SearchResultsDisplay() {
           title={article.title}
           summary={article.description}
           imageUrl={article.image}
-          source={article.source.name}
+          source={article.source?.name || article.source}
           date={article.publishedAt}
           url={article.url}
           readTime={4}
-          isBookmarked={isArticleSaved(article.url)}
-          onToggleBookmark={article => isArticleSaved(article.url) ? unsaveArticle(article.url) : saveArticle(article)}
+          isBookmarked={isBookmarked(article.url)}
+          onToggleBookmark={handleToggleBookmark}
         />
       ))}
     </div>

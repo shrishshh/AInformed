@@ -35,6 +35,7 @@ export async function GET(request: Request) {
   let query = searchParams.get('q') || 'AI';
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '50');
+  const forceRefresh = searchParams.get('refresh') === 'true'; // Add ?refresh=true to bypass cache
   
   // Block non-AI related searches to prevent irrelevant results
   const blockedQueries = [
@@ -59,25 +60,56 @@ export async function GET(request: Request) {
   // Generate cache key based on request parameters
   const cacheKey = generateCacheKey('news', { category, query, page, limit });
   
-  // Try to get from memory cache first (fastest)
-  const memoryCached = memoryCache.get(cacheKey);
-  if (memoryCached) {
-    console.log(`Memory cache hit for: ${cacheKey}`);
-    return createCachedResponse(memoryCached, CACHE_CONFIG.API_CACHE_DURATION);
-  }
-
-  // Try to get from database cache
-  try {
-    await connectDB();
-    const dbCached = await NewsCache.findValidCache(cacheKey);
-    if (dbCached) {
-      console.log(`Database cache hit for: ${cacheKey}`);
-      // Store in memory cache for faster subsequent access
-      memoryCache.set(cacheKey, dbCached.data, CACHE_CONFIG.MEMORY_CACHE_DURATION);
-      return createCachedResponse(dbCached.data, CACHE_CONFIG.API_CACHE_DURATION);
+  // If force refresh is requested, skip cache entirely
+  if (!forceRefresh) {
+    // Try to get from memory cache first (fastest)
+    const memoryCached = memoryCache.get(cacheKey);
+    if (memoryCached) {
+      console.log(`💾 Memory cache hit for: ${cacheKey}`);
+      return createCachedResponse(memoryCached, CACHE_CONFIG.API_CACHE_DURATION);
     }
-  } catch (error) {
-    console.error('Database cache error:', error);
+
+    // Try to get from database cache
+    try {
+      await connectDB();
+      const dbCached = await NewsCache.findValidCache(cacheKey);
+      if (dbCached) {
+        // Double-check cache age to ensure it's actually fresh (within 1 hour)
+        const cacheAge = Date.now() - new Date(dbCached.timestamp || dbCached.createdAt).getTime();
+        const cacheAgeMinutes = Math.floor(cacheAge / 60000);
+        const cacheAgeHours = Math.floor(cacheAge / 3600000);
+        
+        console.log(`📦 Database cache hit for: ${cacheKey} (age: ${cacheAgeMinutes} minutes, ${cacheAgeHours} hours)`);
+        
+        // If cache is older than 1 hour, ignore it and fetch fresh data
+        if (cacheAge > CACHE_CONFIG.DB_CACHE_DURATION) {
+          console.log(`⚠️ Cache expired (age: ${cacheAgeHours} hours), fetching fresh data instead of using cached data`);
+          // Delete expired cache entry
+          await NewsCache.deleteOne({ cacheKey });
+          // Also remove from memory cache
+          memoryCache.delete(cacheKey);
+          // Continue to fetch fresh data below
+        } else {
+          // Cache is still valid, use it
+          console.log(`✅ Using cached data (${cacheAgeMinutes} minutes old)`);
+          // Store in memory cache for faster subsequent access
+          memoryCache.set(cacheKey, dbCached.data, CACHE_CONFIG.MEMORY_CACHE_DURATION);
+          return createCachedResponse(dbCached.data, CACHE_CONFIG.API_CACHE_DURATION);
+        }
+      }
+    } catch (error) {
+      console.error('Database cache error:', error);
+    }
+  } else {
+    console.log(`🔄 Force refresh requested, bypassing cache for: ${cacheKey}`);
+    // Remove from both caches if force refresh
+    memoryCache.delete(cacheKey);
+    try {
+      await connectDB();
+      await NewsCache.deleteOne({ cacheKey });
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+    }
   }
 
   const API_KEY = process.env.GNEWS_API_KEY;
@@ -262,17 +294,19 @@ export async function GET(request: Request) {
 
     // Store in database cache (persistent)
     try {
+      const expiresAt = new Date(Date.now() + CACHE_CONFIG.DB_CACHE_DURATION);
       await NewsCache.findOneAndUpdate(
         { cacheKey },
         { 
           data: responseData,
           sources: responseData._sources,
           isMockData: false,
-          expiresAt: new Date(Date.now() + CACHE_CONFIG.DB_CACHE_DURATION)
+          timestamp: new Date(), // Ensure timestamp is set for age calculation
+          expiresAt: expiresAt
         },
         { upsert: true, new: true }
       );
-      console.log(`Stored in database cache: ${cacheKey}`);
+      console.log(`✅ Stored in database cache: ${cacheKey} (expires at: ${expiresAt.toISOString()})`);
     } catch (error) {
       console.error('Failed to store in database cache:', error);
     }

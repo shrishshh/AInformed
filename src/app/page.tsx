@@ -1,4 +1,4 @@
-import { NewsCard } from '@/components/news-card';
+import { NewsCardWithBookmark } from '@/components/NewsCardWithBookmark';
 import AIStocksSidebar from '@/components/AIStocksSidebar';
 import LatestArxivPapers from '@/components/LatestArxivPapers';
 import HeroSection from '@/components/HeroSection';
@@ -86,7 +86,7 @@ export default async function Home({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 auto-rows-fr">
             {paginatedNews.map((article) => (
-              <NewsCard
+              <NewsCardWithBookmark
                 key={article.url}
                 id={article.url}
                 title={article.title}

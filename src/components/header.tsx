@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useTheme } from "next-themes"
-import { useAuthStatus } from "@/hooks/useAuthStatus"
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth"
 import GooeyNav, { GooeyNavItem } from "./GooeyNav"
 
 export default function Header() {
@@ -18,7 +18,7 @@ export default function Header() {
   const [search, setSearch] = useState("");
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const { isLoggedIn, logout } = useAuthStatus();
+  const { isLoggedIn, signOut, loading: authLoading } = useSupabaseAuth();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -34,9 +34,8 @@ export default function Header() {
     }
   }, [pathname, searchParams]);
 
-  const handleLogout = () => {
-    logout();
-    router.push('/auth');
+  const handleLogout = async () => {
+    await signOut();
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -68,6 +67,7 @@ export default function Header() {
               items={[
                 { label: "Home", href: "/" },
                 { label: "Categories", href: "/categories" },
+                { label: "Bookmarks", href: "/bookmarks" },
                 { label: "About Us", href: "/about" },
               ]}
               particleCount={15}
@@ -110,6 +110,25 @@ export default function Header() {
               </Button>
             )}
           </div>
+
+          {/* Login/Logout Button */}
+          {mounted && !authLoading && (
+            isLoggedIn ? (
+              <Button
+                variant="ghost"
+                onClick={handleLogout}
+                className="hidden md:flex"
+              >
+                Logout
+              </Button>
+            ) : (
+              <Link href="/auth/login" className="hidden md:flex">
+                <Button variant="default" className="bg-gradient-to-r from-purple-600 to-blue-600">
+                  Login
+                </Button>
+              </Link>
+            )
+          )}
         </div>
       </div>
 
@@ -165,6 +184,13 @@ export default function Header() {
               Categories
             </Link>
             <Link
+              href="/bookmarks"
+              className="flex items-center gap-2 text-sm font-medium"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Bookmarks
+            </Link>
+            <Link
               href="/about"
               className="flex items-center gap-2 text-sm font-medium"
               onClick={() => setIsMobileMenuOpen(false)}
@@ -189,17 +215,19 @@ export default function Header() {
               </Button>
             )}
 
-            {isLoggedIn ? (
-              <Button
-                className="bg-gradient-to-r from-purple-600 to-blue-600"
-                onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
-              >
-                Logout
-              </Button>
-            ) : (
-              <Link href="/auth" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button className="bg-gradient-to-r from-purple-600 to-blue-600">Sign In</Button>
-              </Link>
+            {mounted && !authLoading && (
+              isLoggedIn ? (
+                <Button
+                  className="bg-gradient-to-r from-purple-600 to-blue-600"
+                  onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                >
+                  Logout
+                </Button>
+              ) : (
+                <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button className="bg-gradient-to-r from-purple-600 to-blue-600">Login</Button>
+                </Link>
+              )
             )}
           </div>
         </div>
