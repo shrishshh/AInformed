@@ -51,6 +51,7 @@
   align-items: center;
   padding: 0.4rem 1rem; /* slightly reduced vertical padding for better centering */
   height: 40px; /* fixed height keeps pills aligned visually */
+  white-space: nowrap; /* prevent text wrapping */
 }
 
 .gooey-nav-container nav ul li:focus-within:has(:focus-visible) {

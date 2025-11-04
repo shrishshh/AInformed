@@ -27,7 +27,7 @@ const GDELT_CONFIG = {
   query: '("Artificial Intelligence" OR "Machine Learning" OR "Deep Learning" OR "Neural Networks" OR GPT OR ChatGPT OR OpenAI OR "Large Language Model" OR "Computer Vision")',
   mode: 'ArtList',
   format: 'json',
-  timespan: '24H', // Last 24 hours
+  timespan: '48H', // Last 48 hours (expanded)
   maxResults: 50
 };
 
@@ -171,7 +171,7 @@ export async function fetchGDELTArticles(): Promise<GDELTArticle[]> {
 export async function fetchGDELTArticlesAlternative(): Promise<GDELTArticle[]> {
   try {
     // Try a simpler query first
-    const url = 'https://api.gdeltproject.org/api/v2/doc/doc?query=(AI)&mode=ArtList&format=json&timespan=24H&maxRecords=20';
+    const url = 'https://api.gdeltproject.org/api/v2/doc/doc?query=(AI)&mode=ArtList&format=json&timespan=48H&maxRecords=20';
     console.log(`Fetching GDELT articles (alternative) from: ${url}`);
     
     const response = await fetch(url, {
@@ -220,15 +220,20 @@ export async function fetchGDELTArticlesAlternative(): Promise<GDELTArticle[]> {
 
 // Convert GDELT articles to match your existing news format
 export function convertGDELTToNewsFormat(gdeltArticles: GDELTArticle[]): any[] {
-  return gdeltArticles.map(article => ({
-    title: article.title,
-    description: article.summary,
-    url: article.link,
-    image: article.image || '/placeholder.svg',
-    publishedAt: article.pubDate,
-    source: { name: article.source },
-    _isGDELT: true
-  }));
+  return gdeltArticles.map(article => {
+    // Don't use '/placeholder.svg' - use empty string to let NewsCard handle fallback
+    const image = article.image && article.image !== '/placeholder.svg' ? article.image : '';
+    return {
+      title: article.title,
+      description: article.summary,
+      url: article.link,
+      image: image, // Use empty string instead of placeholder
+      imageUrl: image, // Also set imageUrl for consistency
+      publishedAt: article.pubDate,
+      source: { name: article.source },
+      _isGDELT: true
+    };
+  });
 }
 
 // Filter GDELT articles by category (if needed)

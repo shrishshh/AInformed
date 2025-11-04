@@ -140,7 +140,7 @@ export function scoreAndSortArticles<T extends { title: string; description?: st
         article.category || ''
       )
     }))
-    .filter(article => article.score.relevanceScore >= 40) // Filter out low-quality content
+    .filter(article => article.score.relevanceScore >= 30) // Filter out low-quality content (relaxed)
     .sort((a, b) => b.score.relevanceScore - a.score.relevanceScore); // Sort by relevance
 }
 

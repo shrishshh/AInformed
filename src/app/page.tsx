@@ -85,19 +85,23 @@ export default async function Home({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 auto-rows-fr">
-            {paginatedNews.map((article) => (
-              <NewsCardWithBookmark
-                key={article.url}
-                id={article.url}
-                title={article.title}
-                summary={article.description}
-                imageUrl={article.image || DEFAULT_NEWS_IMAGE}
-                source={article.source?.name || article.source}
-                date={article.publishedAt}
-                url={article.url}
-                readTime={4}
-              />
-            ))}
+            {paginatedNews.map((article) => {
+              // Use imageUrl if available, otherwise image, otherwise empty string (let NewsCard handle fallback)
+              const imageUrl = article.imageUrl || article.image || '';
+              return (
+                <NewsCardWithBookmark
+                  key={article.url}
+                  id={article.url}
+                  title={article.title}
+                  summary={article.description}
+                  imageUrl={imageUrl}
+                  source={article.source?.name || article.source}
+                  date={article.publishedAt}
+                  url={article.url}
+                  readTime={4}
+                />
+              );
+            })}
           </div>
 
           {/* Pagination */}
