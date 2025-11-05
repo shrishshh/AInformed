@@ -1,28 +1,26 @@
-# Use the official Node.js runtime as a parent image
-FROM node:18-alpine
+# Use Node.js 20 (Supabase recommends Node 20+)
+FROM node:20-alpine
 
-# Install necessary dependencies
+# Install system dependencies
 RUN apk add --no-cache libc6-compat
 
-# Set the working directory
+# Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json
+# Copy dependency files first for better caching
 COPY package*.json ./
-
-# Copy .npmrc if it exists
 COPY .npmrc ./
 
 # Install dependencies
 RUN npm install --legacy-peer-deps
 
-# Install additional dependencies
+# Install any special dependencies
 RUN npm install @opentelemetry/exporter-jaeger --legacy-peer-deps
 
 # Copy the rest of the application code
 COPY . .
 
-# Accept build arguments
+# Accept build arguments (build-time only)
 ARG MONGODB_URI
 ARG JWT_SECRET
 ARG NEXT_PUBLIC_APP_URL
@@ -35,8 +33,12 @@ ARG BREVO_SMTP_HOST
 ARG BREVO_SMTP_PORT
 ARG BREVO_SMTP_USER
 ARG BREVO_SMTP_PASS
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-# Set environment variables from build arguments
+# Set environment variables from build args (runtime visible)
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 ENV MONGODB_URI=$MONGODB_URI
 ENV JWT_SECRET=$JWT_SECRET
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
@@ -49,23 +51,20 @@ ENV BREVO_SMTP_HOST=$BREVO_SMTP_HOST
 ENV BREVO_SMTP_PORT=$BREVO_SMTP_PORT
 ENV BREVO_SMTP_USER=$BREVO_SMTP_USER
 ENV BREVO_SMTP_PASS=$BREVO_SMTP_PASS
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-# Set other environment variables
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
+# Copy production env file if available (optional fallback)
+# Note: This will fail if .env.production doesn't exist. 
+# If you don't have this file, comment out the next line.
+# COPY .env.production .env.local
+RUN if [ -f .env.production ]; then cp .env.production .env.local; fi || true
 
-# Debug: Print environment variables (be careful with sensitive data in production)
-RUN echo "Environment variables set (values hidden for security)" && \
-    echo "Checking MONGODB_URI: ${MONGODB_URI}" && \
-    echo "Checking NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}" && \
-    echo "Checking GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}" && \
-    echo "Checking NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID}"
+# Build the Next.js application
+RUN npm run build || (echo "Build failed. Checking what we have:" && ls -la && ls -la .next 2>/dev/null || echo 'No .next directory' && exit 1)
 
-# Build the application
-RUN npm run build || (echo "Build failed. Checking what we have:" && ls -la && ls -la .next 2>/dev/null || echo "No .next directory" && exit 1)
-
-# Expose the port the app runs on
+# Expose port
 EXPOSE 3000
 
-# Start the application
-CMD ["npm", "start"] 
+# Start the app
+CMD ["npm", "start"]
