@@ -35,6 +35,7 @@ export async function GET(request: Request) {
   let query = searchParams.get('q') || 'AI';
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '50');
+  const forceRefresh = searchParams.get('refresh') === 'true'; // Add ?refresh=true to bypass cache
   
   // Block non-AI related searches to prevent irrelevant results
   const blockedQueries = [
@@ -59,25 +60,85 @@ export async function GET(request: Request) {
   // Generate cache key based on request parameters
   const cacheKey = generateCacheKey('news', { category, query, page, limit });
   
-  // Try to get from memory cache first (fastest)
-  const memoryCached = memoryCache.get(cacheKey);
-  if (memoryCached) {
-    console.log(`Memory cache hit for: ${cacheKey}`);
-    return createCachedResponse(memoryCached, CACHE_CONFIG.API_CACHE_DURATION);
-  }
-
-  // Try to get from database cache
+  // Always clean up expired caches first - be aggressive about it
   try {
     await connectDB();
-    const dbCached = await NewsCache.findValidCache(cacheKey);
-    if (dbCached) {
-      console.log(`Database cache hit for: ${cacheKey}`);
-      // Store in memory cache for faster subsequent access
-      memoryCache.set(cacheKey, dbCached.data, CACHE_CONFIG.MEMORY_CACHE_DURATION);
-      return createCachedResponse(dbCached.data, CACHE_CONFIG.API_CACHE_DURATION);
+    const deletedCount = await NewsCache.cleanExpired();
+    if (deletedCount.deletedCount > 0) {
+      console.log(`🗑️ Cleaned up ${deletedCount.deletedCount} expired cache entries`);
+    }
+    
+    // Also manually delete any cache for this specific key if it's older than 1 hour
+    const existingCache = await NewsCache.findOne({ cacheKey });
+    if (existingCache) {
+      const cacheTime = existingCache.timestamp || existingCache.createdAt;
+      const cacheAge = Date.now() - new Date(cacheTime).getTime();
+      if (cacheAge > CACHE_CONFIG.DB_CACHE_DURATION) {
+        console.log(`🗑️ Deleting stale cache for ${cacheKey} (age: ${Math.floor(cacheAge / 3600000)} hours)`);
+        await NewsCache.deleteOne({ cacheKey });
+      }
     }
   } catch (error) {
-    console.error('Database cache error:', error);
+    console.error('Error during cache cleanup:', error);
+  }
+  
+  // If force refresh is requested, skip cache entirely
+  if (!forceRefresh) {
+    // Try to get from memory cache first (fastest)
+    const memoryCached = memoryCache.get(cacheKey);
+    if (memoryCached) {
+      console.log(`💾 Memory cache hit for: ${cacheKey}`);
+      return createCachedResponse(memoryCached, CACHE_CONFIG.API_CACHE_DURATION);
+    }
+
+    // Try to get from database cache
+    try {
+      await connectDB();
+      const dbCached = await NewsCache.findValidCache(cacheKey);
+      if (dbCached) {
+        // Double-check cache age to ensure it's actually fresh (within 1 hour)
+        const cacheTime = dbCached.timestamp || dbCached.createdAt;
+        const cacheAge = Date.now() - new Date(cacheTime).getTime();
+        const cacheAgeMinutes = Math.floor(cacheAge / 60000);
+        const cacheAgeHours = Math.floor(cacheAge / 3600000);
+        
+        console.log(`📦 Database cache found for: ${cacheKey}`);
+        console.log(`   Cache timestamp: ${new Date(cacheTime).toISOString()}`);
+        console.log(`   Cache age: ${cacheAgeMinutes} minutes (${cacheAgeHours} hours)`);
+        console.log(`   DB_CACHE_DURATION: ${CACHE_CONFIG.DB_CACHE_DURATION}ms (${CACHE_CONFIG.DB_CACHE_DURATION / 3600000} hours)`);
+        
+        // If cache is older than 1 hour, ignore it and fetch fresh data
+        if (cacheAge > CACHE_CONFIG.DB_CACHE_DURATION) {
+          console.log(`⚠️ Cache EXPIRED (age: ${cacheAgeHours} hours > 1 hour), DELETING and fetching fresh data`);
+          // Delete expired cache entry
+          const deleteResult = await NewsCache.deleteOne({ cacheKey });
+          console.log(`   Delete result: ${JSON.stringify(deleteResult)}`);
+          // Also remove from memory cache
+          memoryCache.delete(cacheKey);
+          // Continue to fetch fresh data below
+        } else {
+          // Cache is still valid, use it
+          console.log(`✅ Using cached data (${cacheAgeMinutes} minutes old)`);
+          // Store in memory cache for faster subsequent access
+          memoryCache.set(cacheKey, dbCached.data, CACHE_CONFIG.MEMORY_CACHE_DURATION);
+          return createCachedResponse(dbCached.data, CACHE_CONFIG.API_CACHE_DURATION);
+        }
+      } else {
+        console.log(`📭 No valid cache found for: ${cacheKey}, will fetch fresh data`);
+      }
+    } catch (error) {
+      console.error('Database cache error:', error);
+    }
+  } else {
+    console.log(`🔄 Force refresh requested, bypassing cache for: ${cacheKey}`);
+    // Remove from both caches if force refresh
+    memoryCache.delete(cacheKey);
+    try {
+      await connectDB();
+      await NewsCache.deleteOne({ cacheKey });
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+    }
   }
 
   const API_KEY = process.env.GNEWS_API_KEY;
@@ -122,36 +183,37 @@ export async function GET(request: Request) {
           throw new Error(`GNews API errors: ${JSON.stringify(data.errors)}`);
         }
 
+        // Log GNews response details for debugging
+        const articleCount = data.articles?.length || 0;
+        const totalArticles = data.totalArticles || 'unknown';
+        console.log(`GNews API response: ${articleCount} articles returned (requested max=50, total available: ${totalArticles})`);
+        
+        if (articleCount < 50 && totalArticles !== 'unknown' && totalArticles > articleCount) {
+          console.log(`⚠️ GNews: Only ${articleCount} articles returned despite ${totalArticles} available. This may be due to free tier limitations.`);
+        }
+
         return data;
       })(),
 
-      // Fresh RSS feeds fetch (only if cache is empty)
+      // Always fetch fresh RSS for the response to avoid stale results on first load after DB expiry
       (async () => {
-        if (rssArticlesFormatted.length === 0) {
-          console.log('RSS cache empty, fetching fresh RSS feeds...');
-          const rssArticles = await fetchAllRSSFeeds();
-          rssArticlesFormatted = convertRSSToNewsFormat(rssArticles);
-        }
+        console.log('Fetching fresh RSS feeds for response...');
+        const rssArticles = await fetchAllRSSFeeds();
+        rssArticlesFormatted = convertRSSToNewsFormat(rssArticles);
         return rssArticlesFormatted;
       })(),
 
-      // Fresh GDELT fetch (only if cache is empty)
       (async () => {
-        if (gdeltArticlesFormatted.length === 0) {
-          console.log('GDELT cache empty, fetching fresh GDELT articles...');
-          const gdeltArticles = await fetchGDELTArticles();
-          gdeltArticlesFormatted = convertGDELTToNewsFormat(gdeltArticles);
-        }
+        console.log('Fetching fresh GDELT articles for response...');
+        const gdeltArticles = await fetchGDELTArticles();
+        gdeltArticlesFormatted = convertGDELTToNewsFormat(gdeltArticles);
         return gdeltArticlesFormatted;
       })(),
 
-      // Fresh HN fetch (only if cache is empty)
       (async () => {
-        if (hnArticlesFormatted.length === 0) {
-          console.log('HN cache empty, fetching fresh HN stories...');
-          const hnStories = await fetchHNStories();
-          hnArticlesFormatted = convertHNToNewsFormat(hnStories);
-        }
+        console.log('Fetching fresh HN stories for response...');
+        const hnStories = await fetchHNStories();
+        hnArticlesFormatted = convertHNToNewsFormat(hnStories);
         return hnArticlesFormatted;
       })()
     ]);
@@ -160,7 +222,20 @@ export async function GET(request: Request) {
     let gnewsArticles: any[] = [];
 
     if (gnewsResponse.status === 'fulfilled') {
-      gnewsArticles = gnewsResponse.value.articles || [];
+      gnewsArticles = (gnewsResponse.value.articles || []).map((article: any) => {
+        // Normalize GNews articles: ensure both image and imageUrl are set
+        // GNews API uses 'image' field, but we want both for consistency
+        const image = article.image || '';
+        return {
+          ...article,
+          image: image,
+          imageUrl: image, // Also set imageUrl for consistency
+          url: article.url || article.link,
+          publishedAt: article.publishedAt || article.pubDate,
+          description: article.description || article.content || '',
+          source: article.source || { name: 'GNews' }
+        };
+      });
       console.log(`GNews: Fetched ${gnewsArticles.length} articles`);
     } else {
       console.error('GNews fetch failed:', gnewsResponse.reason);
@@ -262,17 +337,19 @@ export async function GET(request: Request) {
 
     // Store in database cache (persistent)
     try {
+      const expiresAt = new Date(Date.now() + CACHE_CONFIG.DB_CACHE_DURATION);
       await NewsCache.findOneAndUpdate(
         { cacheKey },
         { 
           data: responseData,
           sources: responseData._sources,
           isMockData: false,
-          expiresAt: new Date(Date.now() + CACHE_CONFIG.DB_CACHE_DURATION)
+          timestamp: new Date(), // Ensure timestamp is set for age calculation
+          expiresAt: expiresAt
         },
         { upsert: true, new: true }
       );
-      console.log(`Stored in database cache: ${cacheKey}`);
+      console.log(`✅ Stored in database cache: ${cacheKey} (expires at: ${expiresAt.toISOString()})`);
     } catch (error) {
       console.error('Failed to store in database cache:', error);
     }

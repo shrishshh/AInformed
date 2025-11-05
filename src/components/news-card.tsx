@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import TimeAgo from "@/components/common/TimeAgo"
@@ -66,7 +66,7 @@ export function NewsCard({
     // Decode HTML entities in imageUrl first
     const decodedImageUrl = imageUrl ? decodeHtmlEntities(imageUrl) : '';
     
-    if (imageError || !decodedImageUrl || decodedImageUrl === '/placeholder.svg') {
+    if (imageError || !decodedImageUrl || decodedImageUrl === '/placeholder.svg' || decodedImageUrl === '') {
       // Use generic tech images without "AI" text graphics
       // Abstract tech/circuit/digital patterns that don't contain text
       const genericTechImages = [
@@ -76,8 +76,16 @@ export function NewsCard({
         'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=600&q=80', // Circuit board pattern
       ];
       
-      // Use a consistent image based on article ID to maintain visual consistency
-      const imageIndex = parseInt(id) % genericTechImages.length || 0;
+      // Create a simple hash from the URL/title to get a consistent but varied image index
+      // This ensures different articles get different fallback images
+      const hashString = (url || id || title || '').toString();
+      let hash = 0;
+      for (let i = 0; i < hashString.length; i++) {
+        const char = hashString.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+      }
+      const imageIndex = Math.abs(hash) % genericTechImages.length;
       return genericTechImages[imageIndex] || genericTechImages[0];
     }
     
@@ -96,6 +104,15 @@ export function NewsCard({
     console.warn(`Failed to load image for article: ${title} from ${imageUrl}. Using fallback.`);
     setImageError(true);
   };
+
+  // Log image URL on mount for debugging
+  useEffect(() => {
+    if (imageUrl && imageUrl !== '/placeholder.svg' && imageUrl !== '') {
+      console.log(`NewsCard image URL for "${title}":`, imageUrl);
+    } else {
+      console.log(`NewsCard "${title}": No image URL, will use fallback`);
+    }
+  }, [imageUrl, title]);
 
   return (
     <SpotlightCard className="custom-spotlight-card h-full" spotlightColor="rgba(0, 229, 255, 0.1)">
@@ -153,13 +170,38 @@ export function NewsCard({
 
       <CardFooter className="p-4 pt-0 flex items-center justify-between">
         <Button
-          variant="default"
+          variant={isBookmarked ? "default" : "outline"}
           size="icon"
-          className="bookmark-btn"
-          onClick={e => { e.stopPropagation(); onToggleBookmark?.({ id, title, summary, imageUrl, source, date, url, readTime }); }}
+          type="button"
+          disabled={false}
+          className={`bookmark-btn transition-all duration-200 relative z-10 ${
+            isBookmarked 
+              ? "bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg border-0" 
+              : "border-2 border-purple-500/50 hover:border-purple-600 bg-background hover:bg-purple-50 dark:hover:bg-purple-950/20"
+          }`}
+          onClick={(e) => { 
+            console.log('Bookmark button clicked!');
+            e.stopPropagation(); 
+            e.preventDefault();
+            if (onToggleBookmark) {
+              console.log('Calling onToggleBookmark with data:', { id, title, summary, imageUrl, source, date, url, readTime });
+              onToggleBookmark({ id, title, summary, imageUrl, source, date, url, readTime });
+            } else {
+              console.warn('onToggleBookmark is not defined!');
+            }
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+          }}
           aria-label={isBookmarked ? "Unsave article" : "Save article"}
         >
-          <Bookmark className={`h-5 w-5 ${isBookmarked ? "fill-primary text-primary" : "text-white"}`} />
+          <Bookmark 
+            className={`h-5 w-5 transition-all duration-200 ${
+              isBookmarked 
+                ? "fill-white text-white" 
+                : "fill-none text-purple-600 dark:text-purple-400"
+            }`} 
+          />
         </Button>
         <Button 
           variant="default" 

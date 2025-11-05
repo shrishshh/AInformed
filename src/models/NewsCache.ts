@@ -57,17 +57,55 @@ newsCacheSchema.methods.extendValidity = function(minutes = 60) {
   return this.save();
 };
 
-newsCacheSchema.statics.findValidCache = function(cacheKey: string) {
-  return this.findOne({
+newsCacheSchema.statics.findValidCache = async function(cacheKey: string) {
+  const now = new Date();
+  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+  
+  // Find cache that is both not expired AND created within the last hour
+  const cache = await this.findOne({
     cacheKey,
-    expiresAt: { $gt: new Date() }
+    expiresAt: { $gt: now },
+    $or: [
+      { timestamp: { $gte: oneHourAgo } },
+      { createdAt: { $gte: oneHourAgo } }
+    ]
   });
+  
+  // Double-check: even if it passes the query, verify the timestamp is actually recent
+  if (cache) {
+    const cacheTime = cache.timestamp || cache.createdAt;
+    const cacheAge = now.getTime() - new Date(cacheTime).getTime();
+    const oneHour = 60 * 60 * 1000;
+    
+    if (cacheAge > oneHour) {
+      // Cache is too old, delete it and return null
+      await this.deleteOne({ cacheKey });
+      return null;
+    }
+  }
+  
+  return cache;
 };
 
-newsCacheSchema.statics.cleanExpired = function() {
-  return this.deleteMany({
-    expiresAt: { $lte: new Date() }
+newsCacheSchema.statics.cleanExpired = async function() {
+  const now = new Date();
+  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+  
+  // Delete caches that are either expired OR older than 1 hour based on timestamp
+  // Be explicit about all the conditions
+  const result = await this.deleteMany({
+    $or: [
+      { expiresAt: { $lte: now } },
+      { timestamp: { $lt: oneHourAgo } },
+      { createdAt: { $lt: oneHourAgo } },
+      // Also catch any cache without proper timestamp
+      { timestamp: { $exists: false } },
+      { createdAt: { $exists: false } }
+    ]
   });
+  
+  console.log(`🧹 cleanExpired: Deleted ${result.deletedCount} expired cache entries`);
+  return result;
 };
 
 newsCacheSchema.statics.getStats = function() {

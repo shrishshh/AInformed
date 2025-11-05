@@ -34,9 +34,9 @@ interface HNResponse {
 // Hacker News API configuration - Enhanced AI-focused query
 const HN_CONFIG = {
   baseUrl: 'https://hn.algolia.com/api/v1/search',
-  query: '(AI OR "Artificial Intelligence" OR "Machine Learning" OR "Deep Learning" OR "Neural Networks" OR "OpenAI" OR "ChatGPT" OR "GPT" OR "LLM" OR "generative AI" OR "computer vision" OR "NLP" OR "data science" OR "robotics" OR "cybersecurity AI" OR "transformer" OR "reinforcement learning")',
+  query: '(AI OR "Artificial Intelligence" OR "Machine Learning")',
   tags: 'story',
-  hitsPerPage: 30,
+  hitsPerPage: 50,
   // timeRange: 'all' // Algolia API does not support this param
 };
 
@@ -204,18 +204,23 @@ export async function fetchHNStoriesAlternative(): Promise<HNStory[]> {
 
 // Convert HN stories to match your existing news format
 export function convertHNToNewsFormat(hnStories: HNStory[]): any[] {
-  return hnStories.map(story => ({
-    title: story.title,
-    description: `${story.points} points • ${story.comments} comments • by ${story.author}`,
-    url: story.link,
-    image: story.image || '/placeholder.svg',
-    publishedAt: story.pubDate,
-    source: { name: story.source },
-    _isHN: true,
-    points: story.points,
-    comments: story.comments,
-    author: story.author
-  }));
+  return hnStories.map(story => {
+    // HN doesn't provide images, so use empty string to let NewsCard handle fallback
+    const image = story.image && story.image !== '/placeholder.svg' ? story.image : '';
+    return {
+      title: story.title,
+      description: `${story.points} points • ${story.comments} comments • by ${story.author}`,
+      url: story.link,
+      image: image, // Use empty string instead of placeholder
+      imageUrl: image, // Also set imageUrl for consistency
+      publishedAt: story.pubDate,
+      source: { name: story.source },
+      _isHN: true,
+      points: story.points,
+      comments: story.comments,
+      author: story.author
+    };
+  });
 }
 
 // Filter HN stories by category (if needed)

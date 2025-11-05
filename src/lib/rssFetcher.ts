@@ -19,12 +19,18 @@ interface RSSFeed {
 // RSS feeds focused on AI and technology (updated with premium AI sources)
 const feeds: RSSFeed[] = [
   // Premium AI Research & Innovation Sources (Verified Working)
-  { name: 'DeepMind Blog', url: 'https://www.deepmind.com/blog/feed/basic', category: 'ai' },
+  // DeepMind Blog RSS feed is no longer available (404 error)
+  // { name: 'DeepMind Blog', url: 'https://www.deepmind.com/blog/feed/basic', category: 'ai' },
   { name: 'Microsoft Research', url: 'https://www.microsoft.com/en-us/research/feed/', category: 'research' },
   { name: 'NVIDIA AI', url: 'https://blogs.nvidia.com/feed/', category: 'ai' },
   { name: 'Hugging Face Blog', url: 'https://huggingface.co/blog/feed.xml', category: 'ai' },
   { name: 'The Gradient', url: 'https://thegradient.pub/rss/', category: 'research' },
   { name: 'KDnuggets', url: 'https://www.kdnuggets.com/feed', category: 'data-science' },
+  { name: 'OpenAI', url: 'https://openai.com/blog/rss.xml', category: 'ai' },
+  // DeepLearning.AI RSS feed is no longer available (404 error)
+  // { name: 'DeepLearning.AI', url: 'https://www.deeplearning.ai/the-batch/feed/', category: 'ai' },
+  // Stability AI RSS feed is no longer available (404 error)
+  // { name: 'Stability AI', url: 'https://stability.ai/blog/rss.xml', category: 'ai' },
   // Google AI Blog RSS feed is no longer available (404 error)
   // { name: 'Google AI Blog', url: 'https://ai.googleblog.com/feeds/posts/default', category: 'ai' },
   
@@ -344,31 +350,34 @@ export async function fetchAllRSSFeeds(): Promise<RSSArticle[]> {
     }
   }
 
-  // Enhanced, stricter AI/tech filtering focused on innovations and cutting-edge tech
+  // Enhanced, more inclusive AI/tech filtering with source-based pass
   const strictAIKeywords = [
     // Core AI Terms
-    'artificial intelligence', 'machine learning', 'deep learning', 'neural network', 'neural networks',
-    'computer vision', 'nlp', 'natural language processing', 'gpt', 'llm', 'large language model',
+    'artificial intelligence', 'ai', 'machine learning', 'deep learning', 'neural network', 'neural networks',
+    'computer vision', 'nlp', 'natural language processing', 'gpt', 'llm', 'large language model', 'transformer',
+    'reinforcement learning', 'unsupervised learning', 'supervised learning', 'multimodal', 'agent', 'agents',
+    'prompt', 'rag', 'retrieval augmented generation', 'vector database', 'embedding', 'fine-tuning', 'lora',
+    'diffusion', 'stable diffusion', 'midjourney', 'openai', 'chatgpt', 'claude', 'gemini', 'anthropic', 'hugging face',
+    'cerebras', 'graphcore', 'nvidia', 'gpu', 'semiconductor', 'ai chip', 'inference', 'training', 'optimizer',
+    'research', 'breakthrough', 'paper', 'arxiv', 'study', 'benchmark', 'sota', 'state of the art', 'evaluation',
     
     // AI Companies & Products
-    'openai', 'chatgpt', 'claude', 'gemini', 'anthropic', 'x ai', 'perplexity',
-    'midjourney', 'stable diffusion', 'dalle', 'grok', 'bard',
+    'perplexity', 'x ai', 'dalle', 'grok', 'bard',
     
     // AI Technologies
-    'transformer', 'attention mechanism', 'reinforcement learning', 'unsupervised learning',
-    'supervised learning', 'transfer learning', 'generative ai', 'gen ai', 'multimodal ai',
+    'attention mechanism', 'transfer learning', 'generative ai', 'gen ai',
     'diffusion model', 'variational autoencoder', 'gan', 'generative adversarial network',
     'transformer model', 'encoder-decoder', 'backpropagation',
     
     // AI Frameworks & Tools
-    'tensorflow', 'pytorch', 'keras', 'hugging face', 'transformers library', 'jax',
+    'tensorflow', 'pytorch', 'keras', 'transformers library', 'jax',
     'scikit-learn', 'opencv', 'spacy', 'nltk', 'langchain', 'llamaindex',
     
     // AI Research & Innovation
     'ai research', 'ai breakthrough', 'new ai', 'ai development', 'ai innovation',
     'ai model', 'ai system', 'ai tool', 'ai application',
     
-    // Data Science (strict AI-related)
+    // Data Science (AI-related)
     'data science', 'big data', 'analytics', 'data analysis', 'machine learning model',
     
     // Cybersecurity (AI-focused)
@@ -384,8 +393,7 @@ export async function fetchAllRSSFeeds(): Promise<RSSArticle[]> {
     'edge ai', 'tiny ml', 'federated learning', 'distributed ai',
     
     // Hardware (AI-focused)
-    'gpu', 'tpu', 'neural processing unit', 'ai chip', 'semiconductor', 'ai hardware',
-    'nvidia', 'amd ai', 'graphcore', 'cerebras',
+    'tpu', 'neural processing unit', 'amd ai',
     
     // Industry Applications
     'ai healthcare', 'ai diagnosis', 'ai medicine', 'ai drug discovery',
@@ -394,32 +402,42 @@ export async function fetchAllRSSFeeds(): Promise<RSSArticle[]> {
     
     // Latest Trends
     'ai agent', 'autonomous agent', 'ai assistant', 'ai chatbot',
-    'retrieval augmented generation', 'rag', 'prompt engineering',
-    'fine-tuning', 'model training', 'ai deployment',
-    
-    // Explicit exclusions would help filter better
+    'prompt engineering', 'model training', 'ai deployment',
   ];
 
-  // Exclude non-AI tech terms that were catching irrelevant content
+  // Lighter exclusions to avoid hiding valid articles
   const exclusionKeywords = [
-    'general politics', 'sports', 'entertainment', 'celebrities', 'food',
-    'travel', 'fashion', 'weather', 'gossip'
+    'general politics', 'sports', 'entertainment', 'celebrities', 'fashion', 'gossip'
+  ];
+
+  // Known AI-focused sources for source-based pass
+  const knownAISources = [
+    'Microsoft Research', 'NVIDIA', 'Hugging Face', 'The Gradient', 'KDnuggets',
+    'MIT Tech Review', 'Wired', 'Ars Technica', 'TechCrunch', 'VentureBeat', 'OpenAI',
+    'EleutherAI'
   ];
 
   function isRelevantAIArticle(article: RSSArticle) {
     const text = `${article.title} ${article.summary}`.toLowerCase();
-    
-    // Check for strict AI keywords
-    const hasAIKeyword = strictAIKeywords.some(keyword => 
+    const sourceName = article.source || '';
+
+    // Check for AI keywords
+    const hasAIKeyword = strictAIKeywords.some(keyword =>
       text.includes(keyword.toLowerCase())
     );
-    
-    // Exclude articles with irrelevant keywords
-    const hasExclusionKeyword = exclusionKeywords.some(keyword => 
+
+    // Check for exclusion keywords
+    const hasExclusionKeyword = exclusionKeywords.some(keyword =>
       text.includes(keyword.toLowerCase())
     );
-    
-    return hasAIKeyword && !hasExclusionKeyword;
+
+    // Check if source is a known AI source
+    const isAISource = knownAISources.some(s =>
+      sourceName.toLowerCase().includes(s.toLowerCase())
+    );
+
+    // Accept if has AI keyword OR trusted AI source, and not an exclusion keyword
+    return (hasAIKeyword || isAISource) && !hasExclusionKeyword;
   }
 
   // Filter strictly for AI/tech relevance
@@ -475,13 +493,19 @@ export function filterRSSArticlesByCategory(articles: RSSArticle[], category?: s
 
 // Convert RSS articles to match your existing news format
 export function convertRSSToNewsFormat(rssArticles: RSSArticle[]): any[] {
-  return rssArticles.map(article => ({
-    title: article.title,
-    description: article.summary,
-    url: article.link,
-    image: article.image || '/placeholder.svg',
-    publishedAt: article.pubDate,
-    source: { name: article.source },
-    _isRSS: true
-  }));
+  return rssArticles.map(article => {
+    // Don't use '/placeholder.svg' - use empty string to let NewsCard handle fallback
+    // This ensures we don't trigger the fallback logic unnecessarily
+    const image = article.image && article.image !== '/placeholder.svg' ? article.image : '';
+    return {
+      title: article.title,
+      description: article.summary,
+      url: article.link,
+      image: image, // Use empty string instead of placeholder
+      imageUrl: image, // Also set imageUrl for consistency
+      publishedAt: article.pubDate,
+      source: { name: article.source },
+      _isRSS: true
+    };
+  });
 } 
