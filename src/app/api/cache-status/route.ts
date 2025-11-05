@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { alphaVantageCache } from '../../../../lib/alphaVantageCache';
-import { memoryCache, getCacheStats } from '../../../../lib/cacheService';
+import { alphaVantageCache } from '@/lib/alphaVantageCache';
+import { memoryCache, getCacheStats } from '@/lib/cacheService';
 
 export async function GET() {
   try {
