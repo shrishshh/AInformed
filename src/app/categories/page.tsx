@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import SpotlightCard from "@/components/SpotlightCard";
 import Image from "next/image";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default function CategoriesIndexPage() {
   const router = useRouter();
 

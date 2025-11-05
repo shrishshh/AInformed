@@ -9,6 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { BookmarkX } from "lucide-react";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default function SavedArticlesPage() {
   const { savedArticles, unsaveArticle, isArticleSaved, isLoaded } = useSavedArticles();
   const { toast } = useToast();

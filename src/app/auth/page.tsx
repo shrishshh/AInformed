@@ -13,6 +13,9 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { useAuthStatus } from "@/hooks/useAuthStatus"
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)

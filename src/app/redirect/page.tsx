@@ -2,6 +2,9 @@
 import { useEffect } from "react";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default function GoogleAuthRedirectPage() {
   const { login } = useAuthStatus();
 

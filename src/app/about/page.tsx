@@ -4,6 +4,9 @@ import { Github, Linkedin } from "lucide-react";
 import Image from "next/image";
 import ProfileCard from "../../components/ProfileCard";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default function AboutPage() {
   return (
     <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-[60vh]">

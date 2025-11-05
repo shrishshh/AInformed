@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Use standalone output for Docker deployment
+  output: 'standalone',
+  
   // Handle build warnings without failing
   typescript: {
     // !! WARN !!
