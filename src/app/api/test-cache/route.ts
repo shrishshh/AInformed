@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { alphaVantageCache } from '../../../../lib/alphaVantageCache';
+import { alphaVantageCache } from '@/lib/alphaVantageCache';
 
 const SYMBOLS = ['NVDA', 'GOOGL', 'MSFT'];
 
