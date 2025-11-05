@@ -5,6 +5,9 @@ import HeroSection from '@/components/HeroSection';
 import AIToolsSection from '@/components/AIToolsSection';
 import Pagination from '../components/Pagination';
 
+// Force dynamic rendering to avoid prerender errors with API calls
+export const dynamic = 'force-dynamic';
+
 const DEFAULT_NEWS_IMAGE = "/placeholder.svg";
 
 async function getNews(): Promise<any[]> {

@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Bookmark } from "lucide-react";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default function BookmarksPage() {
   const { bookmarks, loading } = useSupabaseBookmarks();
   const { isLoggedIn, loading: authLoading } = useSupabaseAuth();

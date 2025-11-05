@@ -2,6 +2,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default function TrendingPage() {
   const [topics, setTopics] = useState<any[]>([]);
 

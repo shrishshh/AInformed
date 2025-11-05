@@ -9,6 +9,9 @@ import { Mail, MapPin, Send, ArrowLeft, Github, Linkedin } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default function ContactPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [name, setName] = useState("")

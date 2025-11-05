@@ -1,5 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { Inter as FontSans } from "next/font/google"
 import { cn } from "@/lib/utils"
 import { ThemeProvider } from "@/components/ui/theme-provider"
@@ -14,6 +15,7 @@ const fontSans = FontSans({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://ainformed.app'),
   title: "AInformed - AI News & Insights",
   description: "Stay updated with the latest AI news, trends, and insights",
   icons: {
@@ -54,7 +56,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <Header />
+          <Suspense fallback={<div className="h-16 border-b bg-background/80" />}>
+            <Header />
+          </Suspense>
           <main>{children}</main>
           <Footer />
           <Toaster richColors position="top-center" />

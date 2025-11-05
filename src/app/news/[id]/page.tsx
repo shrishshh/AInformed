@@ -1,6 +1,9 @@
 import Image from "next/image";
 import type { Metadata } from "next";
 
+// Force dynamic rendering to avoid prerender errors with API calls
+export const dynamic = 'force-dynamic';
+
 async function getArticle(id: string) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/ai-news`, { cache: 'no-store' });
   const data = await res.json();

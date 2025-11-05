@@ -8,6 +8,9 @@ import {
 import NewsCache from '@/models/NewsCache';
 import connectDB from '@/lib/mongodb';
 
+// Force dynamic rendering - this route fetches external data
+export const dynamic = 'force-dynamic';
+
 const CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 hours for jobs
 
 export async function GET() {

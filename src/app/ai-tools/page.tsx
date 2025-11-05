@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { ArrowLeft, Lightbulb, TrendingUp, BookOpen } from "lucide-react";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default function AiToolsPage() {
   const aiTools = [
     {

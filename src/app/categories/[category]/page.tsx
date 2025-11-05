@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { NewsCardWithBookmark } from "@/components/NewsCardWithBookmark";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default function CategoryPage() {
   const { category } = useParams();
   const [news, setNews] = useState<any[]>([]);

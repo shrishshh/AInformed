@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default function PrivacyPolicyPage() {
   return (
     <div className="container px-4 py-8 mx-auto max-w-3xl">
