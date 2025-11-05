@@ -25,6 +25,8 @@ const nextConfig = {
     BREVO_SMTP_PORT: process.env.BREVO_SMTP_PORT,
     BREVO_SMTP_USER: process.env.BREVO_SMTP_USER,
     BREVO_SMTP_PASS: process.env.BREVO_SMTP_PASS,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   },
   
   // Ensure server-only packages are not bundled for client/edge runtime
