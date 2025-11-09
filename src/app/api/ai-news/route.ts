@@ -71,7 +71,7 @@ export async function GET(request: Request) {
     // Also manually delete any cache for this specific key if it's older than 1 hour
     const existingCache = await NewsCache.findOne({ cacheKey });
     if (existingCache) {
-      const cacheTime = existingCache.timestamp || existingCache.createdAt;
+      const cacheTime = existingCache.timestamp || (existingCache as any).createdAt;
       const cacheAge = Date.now() - new Date(cacheTime).getTime();
       if (cacheAge > CACHE_CONFIG.DB_CACHE_DURATION) {
         console.log(`🗑️ Deleting stale cache for ${cacheKey} (age: ${Math.floor(cacheAge / 3600000)} hours)`);
@@ -97,7 +97,7 @@ export async function GET(request: Request) {
       const dbCached = await NewsCache.findValidCache(cacheKey);
       if (dbCached) {
         // Double-check cache age to ensure it's actually fresh (within 1 hour)
-        const cacheTime = dbCached.timestamp || dbCached.createdAt;
+        const cacheTime = dbCached.timestamp || (dbCached as any).createdAt;
         const cacheAge = Date.now() - new Date(cacheTime).getTime();
         const cacheAgeMinutes = Math.floor(cacheAge / 60000);
         const cacheAgeHours = Math.floor(cacheAge / 3600000);
@@ -296,25 +296,71 @@ export async function GET(request: Request) {
     // Score and sort articles by relevance
     let scoredArticles = scoreAndSortArticles(uniqueArticles);
     
-    // Filter by query (q) if provided and not empty
+    // Filter by query (q) if provided and not empty - IMPROVED: semantic matching
     let filteredArticles = scoredArticles;
     if (query && query.trim().length > 0) {
       const qLower = query.trim().toLowerCase();
+      
+      // Query synonyms/expansions for better matching
+      const queryExpansions: Record<string, string[]> = {
+        'ai': ['artificial intelligence', 'machine learning', 'ml', 'ai', 'neural network', 'deep learning'],
+        'artificial intelligence': ['ai', 'artificial intelligence', 'machine learning', 'ml'],
+        'machine learning': ['ml', 'machine learning', 'deep learning', 'neural network', 'ai'],
+        'chatgpt': ['chatgpt', 'gpt', 'openai', 'llm', 'large language model'],
+        'gpt': ['gpt', 'chatgpt', 'openai', 'llm', 'large language model'],
+        'openai': ['openai', 'chatgpt', 'gpt', 'llm'],
+        'tech': ['technology', 'tech', 'software', 'hardware', 'innovation'],
+        'technology': ['tech', 'technology', 'software', 'hardware', 'innovation'],
+        'startup': ['startup', 'startups', 'company', 'venture', 'funding'],
+        'software': ['software', 'app', 'application', 'platform', 'code', 'programming'],
+        'hardware': ['hardware', 'chip', 'processor', 'semiconductor', 'device'],
+      };
+      
+      // Get query terms and their expansions
+      const queryTerms = [qLower];
+      if (queryExpansions[qLower]) {
+        queryTerms.push(...queryExpansions[qLower]);
+      }
+      
+      // Also split query into individual words for partial matching
+      const queryWords = qLower.split(/\s+/).filter(w => w.length > 2); // Ignore words < 3 chars
+      queryTerms.push(...queryWords);
+      
       filteredArticles = scoredArticles.filter((article: any) => {
         const title = (article.title || '').toLowerCase();
         const desc = (article.description || article.summary || '').toLowerCase();
-        return title.includes(qLower) || desc.includes(qLower);
+        const fullText = `${title} ${desc}`;
+        
+        // Check if any query term or word appears in title or description
+        const hasExactMatch = queryTerms.some(term => 
+          title.includes(term) || desc.includes(term)
+        );
+        
+        // Check if query words appear (even if not in exact order)
+        const hasWordMatch = queryWords.length > 0 && queryWords.every(word =>
+          fullText.includes(word)
+        );
+        
+        // Also check for partial word matches (e.g., "intellig" matches "intelligence")
+        const hasPartialMatch = queryWords.some(word => {
+          const wordRegex = new RegExp(`\\b${word}\\w*`, 'i');
+          return wordRegex.test(fullText);
+        });
+        
+        return hasExactMatch || hasWordMatch || hasPartialMatch;
       });
     }
 
-    // Final sort: prioritize high-scoring recent articles
+    // Final sort: prioritize newest articles first
     filteredArticles.sort((a: any, b: any) => {
-      // Primary sort: by score (highest first)
-      if (b.score.relevanceScore !== a.score.relevanceScore) {
-        return b.score.relevanceScore - a.score.relevanceScore;
+      // Primary sort: by date (newest first)
+      const dateA = new Date(a.publishedAt || 0).getTime();
+      const dateB = new Date(b.publishedAt || 0).getTime();
+      if (dateB !== dateA) {
+        return dateB - dateA;
       }
-      // Secondary sort: by date (newest first)
-      return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+      // Secondary sort: by score (highest first) - tiebreaker for same date
+      return (b.score?.relevanceScore || 0) - (a.score?.relevanceScore || 0);
     });
 
     console.log(`Total unique articles: ${filteredArticles.length} (GNews: ${gnewsArticles.length}, RSS: ${rssArticlesFormatted.length}, GDELT: ${gdeltArticlesFormatted.length}, HN: ${hnArticlesFormatted.length})`);
