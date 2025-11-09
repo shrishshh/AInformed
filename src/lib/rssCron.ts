@@ -11,6 +11,7 @@ let gdeltCache: any[] = [];
 let hnCache: any[] = []; // Added HN cache
 let lastFetchTime: Date | null = null;
 const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
+let isUpdating = false; // Lock to prevent concurrent updates
 
 // Fetch RSS articles and cache them
 export async function updateRSSCache(): Promise<void> {
@@ -71,6 +72,13 @@ export async function updateHNCache(): Promise<void> {
 
 // Combined fetch for RSS, GDELT, and HN
 export async function updateAllCaches(): Promise<void> {
+  // Prevent concurrent updates
+  if (isUpdating) {
+    console.log('Cache update already in progress, skipping...');
+    return;
+  }
+  
+  isUpdating = true;
   try {
     console.log('Updating all caches (RSS + GDELT + HN)...');
 
@@ -131,6 +139,8 @@ export async function updateAllCaches(): Promise<void> {
     lastFetchTime = new Date();
   } catch (error) {
     console.error('Failed to update all caches:', error);
+  } finally {
+    isUpdating = false; // Always reset the flag
   }
 }
 
@@ -173,5 +183,4 @@ export async function refreshAllCaches(): Promise<{ rss: any[], gdelt: any[], hn
 }
 
 // Initialize cache on module load
-updateAllCaches().catch(console.error); 
 updateAllCaches().catch(console.error); 

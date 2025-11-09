@@ -1,10 +1,43 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
-import { createCachedResponse } from '@/lib/cacheService';
+import { createCachedResponse, generateCacheKey } from '@/lib/cacheService';
 import { alphaVantageCache, ALPHA_VANTAGE_CACHE_CONFIG, StockData } from '@/lib/alphaVantageCache';
+import NewsCache from '@/models/NewsCache';
+import connectDB from '@/lib/mongodb';
 
 const API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
 const SYMBOLS = ['NVDA', 'GOOGL', 'MSFT', 'AMD', 'META', 'TSLA', 'ARM', 'SNOW'];
+
+// Helper to check if Alpha Vantage response indicates rate limit
+function isRateLimited(responseData: any): boolean {
+  if (!responseData) return false;
+  
+  // Alpha Vantage returns an "Information" field when rate limited
+  const info = responseData['Information'] || responseData['Note'] || '';
+  const infoStr = typeof info === 'string' ? info.toLowerCase() : '';
+  
+  return infoStr.includes('rate limit') || 
+         infoStr.includes('api call frequency') ||
+         infoStr.includes('thank you for using alpha vantage');
+}
+
+// Helper to get stale cache data (even if expired)
+async function getStaleCacheData(): Promise<StockData[] | null> {
+  try {
+    const cacheKey = generateCacheKey('stocks', { symbols: SYMBOLS.join(',') });
+    await connectDB();
+    
+    // Get cache even if expired
+    const staleCache = await NewsCache.findOne({ cacheKey });
+    if (staleCache && staleCache.data && Array.isArray(staleCache.data) && staleCache.data.length > 0) {
+      console.log('📦 Returning stale cache data (API rate limited)');
+      return staleCache.data;
+    }
+  } catch (error) {
+    console.error('Error getting stale cache:', error);
+  }
+  return null;
+}
 
 export async function GET() {
   if (!API_KEY) {
@@ -26,18 +59,25 @@ export async function GET() {
         try {
           const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${API_KEY}`;
           const response = await axios.get(url);
-          const data = response.data['Global Quote'];
+          const data = response.data;
           
-          if (!data || !data['05. price']) {
-            console.warn(`No valid data for symbol: ${symbol}`, response.data);
+          // Check for rate limit error
+          if (isRateLimited(data)) {
+            console.warn(`Rate limit detected for ${symbol}:`, data['Information'] || data['Note']);
+            return null; // Signal rate limit
+          }
+          
+          const quoteData = data['Global Quote'];
+          if (!quoteData || !quoteData['05. price']) {
+            console.warn(`No valid data for symbol: ${symbol}`, data);
             return null;
           }
           
           return {
             symbol: symbol,
-            price: parseFloat(data['05. price']),
-            change: parseFloat(data['09. change']),
-            percentChange: data['10. change percent'],
+            price: parseFloat(quoteData['05. price']),
+            change: parseFloat(quoteData['09. change']),
+            percentChange: quoteData['10. change percent'],
             lastUpdated: new Date().toISOString(),
           } as StockData;
         } catch (symbolError) {
@@ -50,13 +90,21 @@ export async function GET() {
     // Filter out any nulls (invalid/missing data)
     const validResults = results.filter(Boolean) as StockData[];
     
+    // Check if we got rate limited (no valid results)
     if (validResults.length === 0) {
       console.warn('No valid stock data received from Alpha Vantage API - likely rate limited');
       
-      // Return a fallback response with rate limit information
+      // Try to get stale cache data as fallback
+      const staleCache = await getStaleCacheData();
+      if (staleCache) {
+        console.log('📦 Returning stale cache data due to rate limit');
+        return createCachedResponse(staleCache, ALPHA_VANTAGE_CACHE_CONFIG.API_TTL);
+      }
+      
+      // No cache available at all - return error
       return NextResponse.json({ 
         error: 'Alpha Vantage API rate limit exceeded',
-        message: 'Daily API limit of 25 requests reached. Data will be cached for 30 minutes once limit resets.',
+        message: 'Daily API limit of 25 requests reached. No cached data available.',
         fallbackData: SYMBOLS.map(symbol => ({
           symbol,
           price: 0,
@@ -81,6 +129,14 @@ export async function GET() {
     
   } catch (error) {
     console.error('Alpha Vantage API error:', error);
+    
+    // On error, try to return stale cache
+    const staleCache = await getStaleCacheData();
+    if (staleCache) {
+      console.log('📦 Returning stale cache data due to error');
+      return createCachedResponse(staleCache, ALPHA_VANTAGE_CACHE_CONFIG.API_TTL);
+    }
+    
     return NextResponse.json({ 
       error: 'Failed to fetch stock prices',
       details: error instanceof Error ? error.message : 'Unknown error'

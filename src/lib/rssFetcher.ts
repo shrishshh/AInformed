@@ -315,13 +315,24 @@ async function parseRSSFeed(url: string): Promise<RSSArticle[]> {
     });
 
     if (!response.ok) {
+      // Silently skip 403/404 errors (blocked or unavailable feeds)
+      if (response.status === 403 || response.status === 404) {
+        console.log(`Skipping RSS feed ${url}: HTTP ${response.status} (feed may be blocked or unavailable)`);
+        return [];
+      }
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
     const text = await response.text();
     return parseXMLItems(text);
   } catch (error) {
-    console.error(`Error fetching RSS feed ${url}:`, error);
+    // Only log as error if it's not a 403/404
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('403') || errorMessage.includes('404')) {
+      console.log(`Skipping RSS feed ${url}: ${errorMessage}`);
+    } else {
+      console.error(`Error fetching RSS feed ${url}:`, error);
+    }
     return [];
   }
 }
@@ -403,6 +414,31 @@ export async function fetchAllRSSFeeds(): Promise<RSSArticle[]> {
     // Latest Trends
     'ai agent', 'autonomous agent', 'ai assistant', 'ai chatbot',
     'prompt engineering', 'model training', 'ai deployment',
+    
+    // NEW: Broader Tech Keywords (to catch more relevant tech news)
+    'software', 'hardware', 'technology', 'tech', 'innovation', 'startup', 'startups',
+    'silicon valley', 'tech company', 'tech companies', 'software development', 'programming',
+    'algorithm', 'algorithms', 'computing', 'cloud computing', 'cloud', 'saas', 'paas', 'iaas',
+    'api', 'apis', 'platform', 'platforms', 'developer', 'developers', 'coding', 'code',
+    'app', 'application', 'applications', 'software engineering', 'engineering',
+    'digital transformation', 'automation', 'automated', 'smart', 'intelligent',
+    'tech news', 'tech industry', 'tech sector', 'tech market', 'tech investment',
+    'venture capital', 'vc', 'funding', 'series a', 'series b', 'ipo', 'acquisition',
+    'microsoft', 'google', 'apple', 'amazon', 'meta', 'facebook', 'tesla', 'spacex',
+    'netflix', 'uber', 'airbnb', 'stripe', 'palantir', 'databricks', 'snowflake',
+    'blockchain', 'cryptocurrency', 'bitcoin', 'ethereum', 'web3', 'defi', 'nft',
+    'iot', 'internet of things', '5g', '6g', 'wireless', 'telecommunications',
+    'cybersecurity', 'cyber security', 'security', 'privacy', 'data privacy',
+    'augmented reality', 'ar', 'virtual reality', 'vr', 'metaverse', 'mixed reality',
+    'biotechnology', 'biotech', 'genomics', 'precision medicine', 'digital health',
+    'fintech', 'financial technology', 'insurtech', 'regtech',
+    'edtech', 'education technology', 'healthtech', 'health technology',
+    'cleantech', 'green technology', 'renewable energy', 'solar', 'wind power',
+    'space technology', 'satellite', 'satellites', 'aerospace', 'rocket', 'spacex',
+    'electric vehicle', 'ev', 'electric vehicles', 'battery', 'batteries', 'lithium',
+    'semiconductor', 'semiconductors', 'chip', 'chips', 'processor', 'processors',
+    'artificial', 'intelligent', 'smart system', 'smart systems', 'automation',
+    'tech breakthrough', 'technological', 'technological advancement', 'innovation',
   ];
 
   // Lighter exclusions to avoid hiding valid articles
@@ -410,34 +446,41 @@ export async function fetchAllRSSFeeds(): Promise<RSSArticle[]> {
     'general politics', 'sports', 'entertainment', 'celebrities', 'fashion', 'gossip'
   ];
 
-  // Known AI-focused sources for source-based pass
+  // Known AI-focused sources for source-based pass (expanded)
   const knownAISources = [
     'Microsoft Research', 'NVIDIA', 'Hugging Face', 'The Gradient', 'KDnuggets',
     'MIT Tech Review', 'Wired', 'Ars Technica', 'TechCrunch', 'VentureBeat', 'OpenAI',
-    'EleutherAI'
+    'EleutherAI', 'Microsoft', 'Google', 'Apple', 'Amazon', 'Meta', 'Tesla',
+    'TechRadar', 'ZDNet', 'The Verge', 'Engadget', 'Gizmodo'
   ];
 
   function isRelevantAIArticle(article: RSSArticle) {
     const text = `${article.title} ${article.summary}`.toLowerCase();
     const sourceName = article.source || '';
 
-    // Check for AI keywords
-    const hasAIKeyword = strictAIKeywords.some(keyword =>
-      text.includes(keyword.toLowerCase())
-    );
+    // Check for AI keywords (relaxed - partial matching)
+    const hasAIKeyword = strictAIKeywords.some(keyword => {
+      const keywordLower = keyword.toLowerCase();
+      // Exact match or partial match (keyword appears as whole word or part of word)
+      return text.includes(keywordLower) || 
+             text.split(/\s+/).some(word => word.includes(keywordLower) || keywordLower.includes(word));
+    });
 
-    // Check for exclusion keywords
+    // Check for exclusion keywords (strict - must be exact match to avoid false positives)
     const hasExclusionKeyword = exclusionKeywords.some(keyword =>
       text.includes(keyword.toLowerCase())
     );
 
-    // Check if source is a known AI source
+    // Check if source is a known AI/tech source
     const isAISource = knownAISources.some(s =>
       sourceName.toLowerCase().includes(s.toLowerCase())
     );
 
-    // Accept if has AI keyword OR trusted AI source, and not an exclusion keyword
-    return (hasAIKeyword || isAISource) && !hasExclusionKeyword;
+    // RELAXED: Accept if has AI keyword OR trusted AI source, and not an exclusion keyword
+    // Also accept if title/summary contains tech-related terms even without exact keyword match
+    const hasTechIndicators = /\b(tech|technology|software|hardware|innovation|startup|digital|automation|computing|algorithm|platform|developer|coding|app|application)\b/i.test(text);
+    
+    return (hasAIKeyword || isAISource || hasTechIndicators) && !hasExclusionKeyword;
   }
 
   // Filter strictly for AI/tech relevance
