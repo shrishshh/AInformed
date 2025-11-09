@@ -34,7 +34,7 @@ export default function CategoryPage() {
     <div className="container px-4 py-8 mx-auto">
       <h1 className="text-3xl font-bold mb-6">{decodeURIComponent(category as string)} News</h1>
       {news.length === 0 ? (
-        <p className="text-muted-foreground">No articles found for this category.</p>
+        <p className="text-muted-foreground">Loading...</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {news.map((article: any) => (
