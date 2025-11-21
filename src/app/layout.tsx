@@ -15,24 +15,36 @@ const fontSans = FontSans({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://ainformed.app'),
-  title: "AInformed - AI News & Insights",
-  description: "Stay updated with the latest AI news, trends, and insights",
+  metadataBase: new URL('https://www.ainformed.in'),
+  title: "AInformed – Latest AI News, Updates, Breakthroughs & Tools",
+  description: "AInformed gives you the latest artificial intelligence news, breakthroughs, research, and trending AI tools in real-time. Stay updated with everything happening in the world of AI.",
+  keywords: ["AI news", "artificial intelligence news", "latest AI tools", "machine learning updates", "AI research", "AInformed", "tech news", "AI breakthroughs"],
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: "https://www.ainformed.in/",
+  },
+  // Google Search Console Verification
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || 'KeaQXplRTuZC3gbH6O8q2tmkRmXp4cbBMzlJSrCndQA',
+  },
   icons: {
     icon: "/icon.svg",
     apple: "/icon.svg",
   },
   openGraph: {
-    title: "AInformed - AI News & Insights",
-    description: "Stay updated with the latest AI news, trends, and insights",
-    url: process.env.NEXT_PUBLIC_APP_URL || "https://ainformed.app/",
+    title: "AInformed – Latest AI News & Trends",
+    description: "Stay informed with daily AI updates, research, tools, and innovations from trusted sources.",
+    url: "https://www.ainformed.in/",
     siteName: "AInformed",
     images: [
       {
-        url: "/profile.jpg",
-        width: 800,
-        height: 600,
-        alt: "AInformed logo"
+        url: "https://www.ainformed.in/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "AInformed - Latest AI News & Trends"
       }
     ],
     locale: "en_US",
@@ -40,11 +52,14 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "AInformed - AI News & Insights",
-    description: "Stay updated with the latest AI news, trends, and insights",
-    images: ["/profile.jpg"],
-    creator: "@ainformedapp"
-  }
+    title: "AInformed – Latest AI News & Innovations",
+    description: "Daily coverage of the latest AI tools, research, and breakthroughs.",
+    images: ["https://www.ainformed.in/og-image.png"],
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+  },
 };
 
 export default function RootLayout({
