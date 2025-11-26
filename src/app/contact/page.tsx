@@ -23,12 +23,23 @@ export default function ContactPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const res = await fetch("/api/contact", {
+      const res = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, subject, message }),
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify({
+          access_key: "763d9b61-2189-43d4-9765-d105ceb5f775",
+          name,
+          email,
+          subject,
+          message
+        })
       });
+      
       const data = await res.json();
+      
       if (data.success) {
         toast.success("Message sent successfully! We'll get back to you soon.");
         setName("");
@@ -36,9 +47,10 @@ export default function ContactPage() {
         setSubject("");
         setMessage("");
       } else {
-        toast.error(data.error || "Failed to send message. Please try again.");
+        toast.error(data.message || "Failed to send message. Please try again.");
       }
     } catch (error) {
+      console.error("Web3Forms error:", error);
       toast.error("An unexpected error occurred. Please try again.");
     }
     setIsLoading(false);

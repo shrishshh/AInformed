@@ -441,46 +441,76 @@ export async function fetchAllRSSFeeds(): Promise<RSSArticle[]> {
     'tech breakthrough', 'technological', 'technological advancement', 'innovation',
   ];
 
-  // Lighter exclusions to avoid hiding valid articles
+  // STRICTER: Block consumer/shopping/marketing content
   const exclusionKeywords = [
-    'general politics', 'sports', 'entertainment', 'celebrities', 'fashion', 'gossip'
+    // Consumer Shopping/Deals
+    'black friday', 'cyber monday', 'prime day', 'deal', 'deals', 'discount', 'discounts',
+    'sale', 'sales', 'on sale', 'buy now', 'shop', 'shopping', 'purchase', 'price drop',
+    'cheap', 'affordable', 'bargain', 'save money', 'best buy', 'best price',
+    
+    // Product Reviews/Consumer Content
+    'product review', 'review', 'reviews', 'unboxing', 'hands-on', 'first impressions',
+    'powerbank', 'power bank', 'airpods', 'air pods', 'earbuds', 'headphones',
+    'gadget', 'gadgets', 'accessory', 'accessories', 'keychain', 'tool',
+    'here\'s why', 'here\'s how', 'earned a permanent spot', 'best gadget',
+    'this $', 'under $', 'worth it', 'worth buying', 'should you buy',
+    
+    // Marketing/Advertising
+    'marketing', 'advertising', 'promotion', 'promo', 'coupon', 'coupons',
+    'sponsored', 'advertisement', 'ad', 'ads', 'commercial',
+    
+    // General Exclusions
+    'politics', 'political', 'election', 'government', 'policy',
+    'sports', 'football', 'basketball', 'soccer', 'tennis',
+    'entertainment', 'celebrities', 'celebrity', 'gossip', 'rumor',
+    'fashion', 'beauty', 'lifestyle', 'travel', 'food', 'recipe',
+    'weather', 'climate', 'forecast',
+    'movie', 'film', 'cinema', 'actor', 'actress',
+    'music', 'song', 'album', 'concert',
+    'bollywood', 'hollywood', 'showbiz'
   ];
 
-  // Known AI-focused sources for source-based pass (expanded)
-  const knownAISources = [
-    'Microsoft Research', 'NVIDIA', 'Hugging Face', 'The Gradient', 'KDnuggets',
-    'MIT Tech Review', 'Wired', 'Ars Technica', 'TechCrunch', 'VentureBeat', 'OpenAI',
-    'EleutherAI', 'Microsoft', 'Google', 'Apple', 'Amazon', 'Meta', 'Tesla',
-    'TechRadar', 'ZDNet', 'The Verge', 'Engadget', 'Gizmodo'
+  // STRICTER: Only trusted industry sources (removed consumer tech sources)
+  const trustedAISources = [
+    'Microsoft Research', 'NVIDIA AI', 'Hugging Face', 'The Gradient',
+    'KDnuggets', 'OpenAI', 'MIT Tech Review', 'TechCrunch', 'VentureBeat',
+    'ArXiv', 'Nature', 'Science', 'IEEE'
   ];
 
   function isRelevantAIArticle(article: RSSArticle) {
     const text = `${article.title} ${article.summary}`.toLowerCase();
     const sourceName = article.source || '';
 
-    // Check for AI keywords (relaxed - partial matching)
-    const hasAIKeyword = strictAIKeywords.some(keyword => {
-      const keywordLower = keyword.toLowerCase();
-      // Exact match or partial match (keyword appears as whole word or part of word)
-      return text.includes(keywordLower) || 
-             text.split(/\s+/).some(word => word.includes(keywordLower) || keywordLower.includes(word));
+    // STRICTER: Block consumer/shopping content immediately
+    const hasExclusionKeyword = exclusionKeywords.some(keyword => {
+      const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      return regex.test(text);
+    });
+    
+    if (hasExclusionKeyword) {
+      return false; // REJECT immediately
+    }
+
+    // STRICTER: Require exact word matching for AI keywords
+    const aiKeywordMatches = strictAIKeywords.filter(keyword => {
+      const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      return regex.test(text);
     });
 
-    // Check for exclusion keywords (strict - must be exact match to avoid false positives)
-    const hasExclusionKeyword = exclusionKeywords.some(keyword =>
-      text.includes(keyword.toLowerCase())
-    );
-
-    // Check if source is a known AI/tech source
-    const isAISource = knownAISources.some(s =>
+    // STRICTER: Require at least 2 AI keywords OR 1 keyword + trusted source
+    const hasMultipleAIKeywords = aiKeywordMatches.length >= 2;
+    const isTrustedAISource = trustedAISources.some(s =>
       sourceName.toLowerCase().includes(s.toLowerCase())
     );
+    const hasAIMinimum = aiKeywordMatches.length >= 1;
 
-    // RELAXED: Accept if has AI keyword OR trusted AI source, and not an exclusion keyword
-    // Also accept if title/summary contains tech-related terms even without exact keyword match
-    const hasTechIndicators = /\b(tech|technology|software|hardware|innovation|startup|digital|automation|computing|algorithm|platform|developer|coding|app|application)\b/i.test(text);
-    
-    return (hasAIKeyword || isAISource || hasTechIndicators) && !hasExclusionKeyword;
+    // STRICTER: Require industry focus indicators
+    const hasIndustryFocus = /\b(research|breakthrough|innovation|development|study|paper|algorithm|model|startup|company|funding|enterprise|industry|announcement|launch|release)\b/i.test(text);
+
+    // ACCEPT ONLY if:
+    // 1. Has multiple AI keywords (2+), OR
+    // 2. Has 1 AI keyword + trusted source + industry focus
+    return (hasMultipleAIKeywords || (hasAIMinimum && isTrustedAISource && hasIndustryFocus));
   }
 
   // Filter strictly for AI/tech relevance

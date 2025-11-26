@@ -27,14 +27,26 @@ const mediumValueKeywords = [
   'cybersecurity', 'quantum computing', 'edge ai', 'federated learning'
 ];
 
-// Low/negative indicators (reduce score)
+// STRICTER: Expanded negative keywords (consumer/shopping/marketing)
 const negativeKeywords = [
+  // Consumer Shopping/Deals
+  'black friday', 'cyber monday', 'prime day', 'deal', 'deals', 'discount',
+  'sale', 'sales', 'on sale', 'buy now', 'shop', 'shopping', 'purchase',
+  'price drop', 'cheap', 'affordable', 'bargain', 'save money',
+  
+  // Product Reviews
+  'product review', 'review', 'reviews', 'unboxing', 'hands-on',
+  'first impressions', 'powerbank', 'airpods', 'gadget', 'gadgets',
+  'here\'s why', 'here\'s how', 'earned a permanent spot', 'this $',
+  'under $', 'worth it', 'worth buying', 'should you buy',
+  
+  // Marketing
+  'marketing', 'advertising', 'promotion', 'sponsored', 'advertisement',
+  
+  // General
   'politics', 'sports', 'entertainment', 'celebrity', 'gossip', 'weather',
-  'food', 'travel', 'fashion', 'beauty', 'entertainment news', 'trivia',
-  'opinion piece', 'rumor', 'unverified', 'speculation',
-  'bollywood', 'hollywood', 'movie', 'film', 'actor', 'actress',
-  'cinema', 'theater', 'music', 'song', 'album', 'concert',
-  'celebrity news', 'showbiz', 'entertainment industry'
+  'food', 'travel', 'fashion', 'beauty', 'movie', 'film', 'music',
+  'bollywood', 'hollywood'
 ];
 
 /**
@@ -48,67 +60,99 @@ export function calculateContentScore(
 ): ContentScore {
   const text = `${title} ${description}`.toLowerCase();
   
-  let relevanceScore = 50; // Start with base score
+  // STRICTER: Lower base score (was 50, now 30)
+  let relevanceScore = 30;
   let aiFocusScore = 0;
   let innovationScore = 0;
   const qualityIndicators: string[] = [];
 
-  // Check for high-value keywords (add significant points)
-  const highValueMatches = highValueKeywords.filter(keyword => 
-    text.includes(keyword.toLowerCase())
-  );
+  // STRICTER: Require exact word matching for keywords
+  const highValueMatches = highValueKeywords.filter(keyword => {
+    const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    return regex.test(text);
+  });
   if (highValueMatches.length > 0) {
-    relevanceScore += highValueMatches.length * 15;
-    aiFocusScore += highValueMatches.length * 20;
-    innovationScore += highValueMatches.length * 25;
+    relevanceScore += highValueMatches.length * 20; // Increased from 15
+    aiFocusScore += highValueMatches.length * 25; // Increased from 20
+    innovationScore += highValueMatches.length * 30; // Increased from 25
     qualityIndicators.push(`High-value keywords: ${highValueMatches.length}`);
   }
 
-  // Check for medium-value keywords (add moderate points)
-  const mediumValueMatches = mediumValueKeywords.filter(keyword => 
-    text.includes(keyword.toLowerCase())
-  );
+  // STRICTER: Exact word matching for medium keywords
+  const mediumValueMatches = mediumValueKeywords.filter(keyword => {
+    const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    return regex.test(text);
+  });
   if (mediumValueMatches.length > 0) {
-    relevanceScore += mediumValueMatches.length * 5;
-    aiFocusScore += mediumValueMatches.length * 10;
+    relevanceScore += mediumValueMatches.length * 8; // Increased from 5
+    aiFocusScore += mediumValueMatches.length * 15; // Increased from 10
     qualityIndicators.push(`AI keywords found: ${mediumValueMatches.length}`);
   }
 
-  // Check for negative keywords (reduce score significantly)
-  const negativeMatches = negativeKeywords.filter(keyword => 
-    text.includes(keyword.toLowerCase())
-  );
-  if (negativeMatches.length > 0) {
-    relevanceScore -= negativeMatches.length * 30;
-    qualityIndicators.push('⚠️ Non-AI content detected');
+  // STRICTER: Harsher penalties for consumer/shopping content
+  const negativeMatches = negativeKeywords.filter(keyword => {
+    // More flexible matching for consumer content - check if keyword appears anywhere
+    return text.includes(keyword.toLowerCase());
+  });
+  
+  // Also check for price patterns
+  const hasPricePattern = /\$\d+|\d+\s*dollars?|under\s*\$\d+|drops?\s*to\s*\$\d+|lowest\s*price|record-low/i.test(text);
+  
+  // Check for deal patterns in title
+  const titleHasDealPattern = /\b(deal|deals|sale|discount|black friday|cyber monday)\b/i.test(title.toLowerCase());
+  
+  if (negativeMatches.length > 0 || hasPricePattern || titleHasDealPattern) {
+    relevanceScore = 0; // Set to 0 (will be filtered out by >= 40 threshold)
+    aiFocusScore = 0;
+    qualityIndicators.push('❌ Consumer/shopping content detected');
   }
 
-  // Source quality boost
-  const qualitySources = [
-    'MIT', 'Stanford', 'Google', 'OpenAI', 'Anthropic', 'ArXiv',
-    'Nature', 'Science', 'IEEE', 'TechCrunch', 'VentureBeat'
+  // STRICTER: Only premium AI research sources
+  const premiumAISources = [
+    'MIT', 'Stanford', 'Google AI', 'OpenAI', 'Anthropic', 'ArXiv',
+    'Nature', 'Science', 'IEEE', 'DeepMind', 'Microsoft Research'
   ];
-  if (qualitySources.some(qSource => source.toLowerCase().includes(qSource.toLowerCase()))) {
-    relevanceScore += 10;
-    qualityIndicators.push('✅ High-quality source');
+  if (premiumAISources.some(qSource => source.toLowerCase().includes(qSource.toLowerCase()))) {
+    relevanceScore += 15; // Increased from 10
+    qualityIndicators.push('✅ Premium AI source');
   }
 
-  // Innovation indicators
+  // STRICTER: Require industry focus indicators
+  const hasIndustryFocus = /\b(research|breakthrough|innovation|development|study|paper|algorithm|model|startup|company|funding|enterprise|industry|announcement|launch|release)\b/i.test(text);
+  
+  if (!hasIndustryFocus && mediumValueMatches.length < 2) {
+    relevanceScore -= 10; // Reduced penalty (was 30) - less harsh
+  }
+
+  // Innovation indicators (exact match)
   const innovationKeywords = [
-    'new', 'breakthrough', 'discovery', 'innovation', 'first time',
+    'breakthrough', 'discovery', 'innovation', 'first time',
     'unveiled', 'launched', 'released', 'announced', 'introduced'
   ];
-  const hasInnovation = innovationKeywords.some(keyword => text.includes(keyword));
+  const hasInnovation = innovationKeywords.some(keyword => {
+    const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    return regex.test(text);
+  });
   if (hasInnovation) {
-    innovationScore += 30;
+    innovationScore += 35; // Increased from 30
     qualityIndicators.push('🚀 Innovation content');
   }
 
-  // Research/academic boost
-  if (text.includes('research') || text.includes('study') || text.includes('paper')) {
-    relevanceScore += 15;
-    aiFocusScore += 10;
+  // Research/academic boost (exact match)
+  const researchKeywords = ['research', 'study', 'paper', 'arxiv', 'peer review'];
+  const hasResearch = researchKeywords.some(keyword => {
+    const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    return regex.test(text);
+  });
+  if (hasResearch) {
+    relevanceScore += 20; // Increased from 15
+    aiFocusScore += 15; // Increased from 10
     qualityIndicators.push('📚 Research content');
+  }
+
+  // STRICTER: Require at least one high-value keyword for decent score
+  if (highValueMatches.length === 0 && mediumValueMatches.length < 2) {
+    relevanceScore -= 20; // Penalty if no strong AI keywords
   }
 
   // Ensure scores are within bounds
@@ -140,8 +184,19 @@ export function scoreAndSortArticles<T extends { title: string; description?: st
         article.category || ''
       )
     }))
-    .filter(article => article.score.relevanceScore >= 15) // Filter out low-quality content (relaxed threshold)
-    .sort((a, b) => b.score.relevanceScore - a.score.relevanceScore); // Sort by relevance
+    // LESS STRICT: Require relevanceScore >= 15 (lowered from 20) AND aiFocusScore >= 5 (lowered from 10) AND score > 0 (blocks consumer content)
+    .filter(article => 
+      article.score.relevanceScore >= 15 && 
+      article.score.aiFocusScore >= 5 &&
+      article.score.relevanceScore > 0 // Block negative scores (consumer content)
+    )
+    .sort((a, b) => {
+      // Sort by relevance score first, then AI focus score
+      if (b.score.relevanceScore !== a.score.relevanceScore) {
+        return b.score.relevanceScore - a.score.relevanceScore;
+      }
+      return b.score.aiFocusScore - a.score.aiFocusScore;
+    });
 }
 
 /**

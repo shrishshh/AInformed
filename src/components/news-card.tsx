@@ -92,11 +92,25 @@ export function NewsCard({
     return decodedImageUrl;
   };
 
-  // Card click handler
+  // Card click handler - improved to handle clicks properly, even during animation
   const handleCardClick = (e: React.MouseEvent) => {
-    // Prevent click if clicking on bookmark or read more
-    if ((e.target as HTMLElement).closest('.bookmark-btn, .readmore-btn')) return;
-    window.open(url, '_blank');
+    const target = e.target as HTMLElement;
+    
+    // Don't navigate if clicking on interactive elements
+    if (target.closest('button, a, .bookmark-btn, .readmore-btn')) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    
+    // Prevent default to avoid any navigation conflicts
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Open in new tab immediately
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
   };
 
   // Handle image error
@@ -124,7 +138,21 @@ export function NewsCard({
         showMobileWarning={false}
         showTooltip={false}
       >
-  <Card className="h-full flex flex-col overflow-hidden transition-all duration-300 hover:shadow-2xl border-0 bg-card hover:border-primary/30 cursor-pointer hover:scale-[1.03] hover:-translate-y-2 shadow-sm" onClick={handleCardClick}>
+  <Card 
+    className="h-full flex flex-col overflow-hidden transition-all duration-300 hover:shadow-2xl border-0 bg-card hover:border-primary/30 cursor-pointer hover:scale-[1.03] hover:-translate-y-2 shadow-sm"
+    onClick={handleCardClick}
+    role="button"
+    tabIndex={0}
+    style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }} // Ensure clicks work even during animation
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (url) {
+          window.open(url, '_blank', 'noopener,noreferrer');
+        }
+      }
+    }}
+  >
       <div className="relative aspect-[16/9] overflow-hidden">
         <Image
           src={getFallbackImage()}
@@ -206,16 +234,17 @@ export function NewsCard({
         <Button 
           variant="default" 
           size="sm" 
-          className="readmore-btn" 
+          className="readmore-btn relative z-10" 
           onClick={e => {
             e.stopPropagation();
+            e.preventDefault();
             window.open(url, '_blank', 'noopener,noreferrer');
           }}
-          asChild
+          onMouseDown={e => {
+            e.stopPropagation();
+          }}
         >
-          <Link href={url} target="_blank" rel="noopener noreferrer">
-            Read More
-          </Link>
+          Read More
         </Button>
       </CardFooter>
     </Card>
