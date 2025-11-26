@@ -117,8 +117,21 @@ export default function TiltedCard({
         className={`tilted-card-inner${isCardMode ? ' tilted-card-inner-flex' : ''}`}
         style={
           isCardMode
-            ? { width: '100%', height: '100%', rotateX, rotateY, scale }
-            : { width: imageWidth, height: imageHeight, rotateX, rotateY, scale }
+            ? { 
+                width: '100%', 
+                height: '100%', 
+                rotateX, 
+                rotateY, 
+                scale,
+                pointerEvents: 'none' // Don't block clicks during animation
+              }
+            : { 
+                width: imageWidth, 
+                height: imageHeight, 
+                rotateX, 
+                rotateY, 
+                scale 
+              }
         }
       >
         {isCardMode ? (

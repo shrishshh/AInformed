@@ -37,23 +37,11 @@ export default function AboutPage() {
           contactUrl="https://www.linkedin.com/in/shrishshh/"
         />
       </div>
-      <h1 className="text-3xl font-bold mb-2">SideMindLabs</h1>
+      <h1 className="text-3xl font-bold mb-2">AInformed</h1>
       <p className="text-muted-foreground text-center max-w-2xl mb-6">
       Hi! We're Aryaman and Shrish, AI enthusiasts and developers passionate about building modern web apps and sharing the latest in artificial intelligence. We love exploring new technologies, collaborating on open source, and making AI accessible to everyone.<br /><br />
         <span className="font-semibold">Fun Fact:</span> We can code for hours with just coffee and lo-fi beats!
       </p>
-      <div className="mb-8">
-        <h3 className="text-xl font-semibold mb-2 text-primary">Skills & Technologies</h3>
-        <ul className="flex flex-wrap gap-3 justify-center text-sm text-muted-foreground">
-          <li className="bg-card px-3 py-1 rounded shadow">React</li>
-          <li className="bg-card px-3 py-1 rounded shadow">Next.js</li>
-          <li className="bg-card px-3 py-1 rounded shadow">TypeScript</li>
-          <li className="bg-card px-3 py-1 rounded shadow">Tailwind CSS</li>
-          <li className="bg-card px-3 py-1 rounded shadow">Firebase</li>
-          {/* <li className="bg-card px-3 py-1 rounded shadow">Python</li> */}
-          <li className="bg-card px-3 py-1 rounded shadow">APIs</li>
-        </ul>
-      </div>
       
       {/* Company Contact Information */}
       <div className="mb-8 w-full max-w-2xl">

@@ -31,9 +31,19 @@ export const metadata: Metadata = {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || 'KeaQXplRTuZC3gbH6O8q2tmkRmXp4cbBMzlJSrCndQA',
   },
   icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [
+      { url: "/icon.svg", sizes: "180x180", type: "image/svg+xml" },
+    ],
+    shortcut: "/favicon.ico",
   },
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+  ],
   openGraph: {
     title: "AInformed – Latest AI News & Trends",
     description: "Stay informed with daily AI updates, research, tools, and innovations from trusted sources.",
@@ -76,7 +86,12 @@ export default function RootLayout({
           </Suspense>
           <main>{children}</main>
           <Footer />
-          <Toaster richColors position="top-center" />
+          <Toaster 
+            richColors 
+            position="top-center" 
+            closeButton 
+            duration={3000}
+          />
         </ThemeProvider>
       </body>
     </html>

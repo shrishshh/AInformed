@@ -5,6 +5,9 @@ import { alphaVantageCache, ALPHA_VANTAGE_CACHE_CONFIG, StockData } from '@/lib/
 import NewsCache from '@/models/NewsCache';
 import connectDB from '@/lib/mongodb';
 
+// Force dynamic rendering to prevent static generation during build
+export const dynamic = 'force-dynamic';
+
 const API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
 const SYMBOLS = ['NVDA', 'GOOGL', 'MSFT', 'AMD', 'META', 'TSLA', 'ARM', 'SNOW'];
 
