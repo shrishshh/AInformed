@@ -22,7 +22,7 @@ const AIToolsSection = () => {
           <div className="relative h-96 w-96 mx-auto group">
             {/* Rotating container */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full">
-              <div className="absolute inset-0 animate-spin-slow group-hover:[animation-play-state:paused]">
+              <div className="absolute inset-0 animate-spin-slow">
                 {aiTools.map((tool, index) => {
                   const totalTools = aiTools.length;
                   const angle = (360 / totalTools) * index;
@@ -39,7 +39,7 @@ const AIToolsSection = () => {
                       }}
                     >
                       {/* Counter-rotate to keep icon upright */}
-                      <div className="animate-spin-reverse group-hover:[animation-play-state:paused]">
+                      <div className="animate-spin-reverse">
                         <a
                           href={tool.url}
                           target="_blank"
