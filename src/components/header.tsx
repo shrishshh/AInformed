@@ -54,7 +54,7 @@ export default function Header() {
           <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center mr-2">
             <span className="text-white font-bold text-sm">AI</span>
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hidden sm:inline-block">
+          <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
             AInformed
           </span>
         </Link>
@@ -93,8 +93,8 @@ export default function Header() {
             />
           </form>
 
-          {/* Theme Toggle */}
-          <div className="flex items-center gap-2">
+          {/* Theme Toggle - Desktop Only */}
+          <div className="hidden md:flex items-center gap-2">
             {mounted && (
               <Button
                 variant="ghost"
