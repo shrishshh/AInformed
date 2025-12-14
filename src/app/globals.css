@@ -106,15 +106,29 @@ body {
   * {
     @apply border-border;
   }
+  /* Smooth scroll behavior and prevent horizontal overflow */
+  html {
+    scroll-behavior: smooth;
+    width: 100%;
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  
   body {
     @apply bg-background text-foreground;
     /* Ensures clean sans-serif font is applied */
-    font-feature-settings: "rlig" 1, "calt" 1; 
+    font-feature-settings: "rlig" 1, "calt" 1;
+    width: 100%;
+    overflow-x: hidden;
+    max-width: 100vw;
+    position: relative;
   }
   
-  /* Smooth scroll behavior */
-  html {
-    scroll-behavior: smooth;
+  /* Ensure main container doesn't exceed viewport */
+  main {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
   
   /* Enhanced focus visible */
@@ -149,11 +163,6 @@ body {
   /* Marquee animation for horizontal scrolling */
   .animate-marquee {
     animation: marquee 30s linear infinite;
-  }
-
-  /* Pause on hover */
-  .group:hover .animate-marquee {
-    animation-play-state: paused;
   }
 
   @keyframes marquee {

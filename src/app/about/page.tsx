@@ -39,7 +39,7 @@ export default function AboutPage() {
       </div>
       <h1 className="text-3xl font-bold mb-2">AInformed</h1>
       <p className="text-muted-foreground text-center max-w-2xl mb-6">
-      Hi! We're Aryaman and Shrish, AI enthusiasts and developers passionate about building modern web apps and sharing the latest in artificial intelligence. We love exploring new technologies, collaborating on open source, and making AI accessible to everyone.<br /><br />
+      AInformed is an AI-curated intelligence platform that cuts through the noise of the rapidly evolving AI world. It brings together updates from research labs, tech companies, news outlets, developer communities, and social conversations, then intelligently filters, summarizes, and analyzes them into clear, meaningful insights. Instead of endless feeds and hype, AInformed helps you understand what actually matters in AI whether you’re a student, developer, researcher, founder, or simply curious. It’s designed to make staying informed effortless, focused, and ahead of the curve.<br /><br />
         <span className="font-semibold">Fun Fact:</span> We can code for hours with just coffee and lo-fi beats!
       </p>
       
