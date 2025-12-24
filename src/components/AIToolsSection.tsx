@@ -22,7 +22,7 @@ const AIToolsSection = () => {
           <div className="relative h-96 w-96 mx-auto group">
             {/* Rotating container */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full">
-              <div className="absolute inset-0 animate-spin-slow">
+              <div className="absolute inset-0 animate-spin-slow" style={{ transformOrigin: 'center center' }}>
                 {aiTools.map((tool, index) => {
                   const totalTools = aiTools.length;
                   const angle = (360 / totalTools) * index;
@@ -33,18 +33,26 @@ const AIToolsSection = () => {
                   return (
                     <div
                       key={index}
-                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                      className="absolute"
                       style={{
-                        transform: `translate(${x}px, ${y}px) rotate(${-angle}deg)`,
+                        left: `calc(50% + ${x}px)`,
+                        top: `calc(50% + ${y}px)`,
+                        transform: 'translate(-50%, -50%)',
+                        transformOrigin: 'center center',
                       }}
                     >
                       {/* Counter-rotate to keep icon upright */}
-                      <div className="animate-spin-reverse">
+                      <div 
+                        className="animate-spin-reverse"
+                        style={{
+                          transformOrigin: 'center center',
+                        }}
+                      >
                         <a
                           href={tool.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="group/item block"
+                          className="group/item block w-full h-full"
                         >
                           <div className="w-20 h-20 flex items-center justify-center hover:scale-125 transition-all duration-300 relative cursor-pointer">
                             <div className="relative w-full h-full flex items-center justify-center">
@@ -63,9 +71,9 @@ const AIToolsSection = () => {
                             </div>
                           </div>
                         
-                        {/* Tooltip on hover - counter-rotate to keep text upright */}
+                        {/* Tooltip on hover */}
                         <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 opacity-0 group-hover/item:opacity-100 transition-opacity duration-300 pointer-events-none z-50">
-                          <div className="flex flex-col items-center" style={{ transform: 'rotate(180deg)' }}>
+                          <div className="flex flex-col items-center">
                             <div className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs font-semibold px-3 py-1.5 rounded whitespace-nowrap shadow-lg">
                               {tool.name}
                             </div>

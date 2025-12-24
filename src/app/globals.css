@@ -177,10 +177,18 @@ body {
   /* Slow spinning animation for circular tool icons */
   .animate-spin-slow {
     animation: spin-slow 20s linear infinite;
+    will-change: transform;
+    transform-origin: center center;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
   }
 
   .animate-spin-reverse {
     animation: spin-reverse 20s linear infinite;
+    will-change: transform;
+    transform-origin: center center;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
   }
 
   @keyframes spin-slow {
@@ -200,4 +208,72 @@ body {
       transform: rotate(-360deg);
     }
   }
+}
+
+/* 🔒 WebView-only fixes - ONLY affects Android app, zero impact on web */
+body.webview {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overflow-x: hidden;
+  /* Prevent text scaling issues */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Ensure smooth scrolling in WebView */
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  /* Fix potential z-index stacking issues in WebView */
+  position: relative;
+  isolation: isolate;
+}
+
+/* Fix heading spacing in WebView */
+body.webview h1,
+body.webview h2,
+body.webview h3,
+body.webview h4,
+body.webview h5,
+body.webview h6 {
+  line-height: 1.2;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Fix image blur / crop in WebView */
+body.webview img {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* Disable unstable backdrop-filter effects only in WebView */
+body.webview header,
+body.webview .backdrop-blur-md,
+body.webview .backdrop-blur-lg,
+body.webview .backdrop-blur-sm,
+body.webview [class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Fix ProfileCard backdrop-filter in WebView */
+body.webview .pc-avatar-content::before {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.webview .pc-contact-btn {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Fix potential transform issues in WebView */
+body.webview .animate-spin-slow,
+body.webview .animate-spin-reverse {
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
+
+/* Prevent layout shifts in WebView */
+body.webview * {
+  -webkit-tap-highlight-color: transparent;
 }
