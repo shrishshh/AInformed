@@ -277,3 +277,38 @@ body.webview .animate-spin-reverse {
 body.webview * {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* 🔒 WebView-only navbar brand text fix - prevents "painted/smeared" text */
+/* Fix 1: Isolate the brand text to its own GPU layer */
+body.webview header a[href="/"] span,
+body.webview header a[href="/"] span[class*="bg-gradient"],
+body.webview header .flex.items-center span {
+  position: relative;
+  z-index: 2;
+  transform: translateZ(0);
+  will-change: transform;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Fix 2: Remove opacity from header to prevent text blur inheritance */
+body.webview header {
+  opacity: 1 !important;
+  background: hsl(var(--background)) !important;
+  isolation: isolate;
+}
+
+/* Fix 3: Ensure header container isolates blur effects */
+body.webview header .container {
+  isolation: isolate;
+  position: relative;
+  z-index: 1;
+}
+
+/* Fix 4: Force brand text container to separate layer */
+body.webview header a[href="/"] {
+  position: relative;
+  z-index: 2;
+  transform: translateZ(0);
+  isolation: isolate;
+}
