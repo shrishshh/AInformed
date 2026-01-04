@@ -10,8 +10,17 @@ const client_secret = process.env.GOOGLE_CLIENT_SECRET;
 // Add these logs for debugging
 console.log('NEXT_PUBLIC_APP_URL (in route.js):', process.env.NEXT_PUBLIC_APP_URL);
 console.log('GOOGLE_REDIRECT_URI (in route.js):', process.env.GOOGLE_REDIRECT_URI);
+console.log('VERCEL_URL (in route.js):', process.env.VERCEL_URL);
 
-const redirect_uri = process.env.GOOGLE_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/google/callback`;
+// For OAuth redirects, we need absolute URLs
+const getRedirectUri = () => {
+  if (process.env.GOOGLE_REDIRECT_URI) return process.env.GOOGLE_REDIRECT_URI;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}/api/auth/google/callback`;
+  if (process.env.NEXT_PUBLIC_APP_URL) return `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`;
+  return 'http://localhost:3000/api/auth/google/callback'; // Only for local development
+};
+
+const redirect_uri = getRedirectUri();
 
 const oauth2Client = new google.auth.OAuth2(
   client_id,
@@ -56,7 +65,12 @@ export async function GET(req) {
     );
 
     // Redirect to frontend with token
-    const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/redirect?token=${token}`;
+    const getRedirectUrl = () => {
+      if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}/redirect?token=${token}`;
+      if (process.env.NEXT_PUBLIC_APP_URL) return `${process.env.NEXT_PUBLIC_APP_URL}/redirect?token=${token}`;
+      return `http://localhost:3000/redirect?token=${token}`; // Only for local development
+    };
+    const redirectTo = getRedirectUrl();
     console.log('Redirecting to:', redirectTo); // Add this log as well
     return NextResponse.redirect(redirectTo);
   } catch (error) {

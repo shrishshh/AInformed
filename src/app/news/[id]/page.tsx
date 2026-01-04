@@ -1,11 +1,12 @@
 import Image from "next/image";
 import type { Metadata } from "next";
+import { getApiUrl, getFullUrl } from '@/lib/url';
 
 // Force dynamic rendering to avoid prerender errors with API calls
 export const dynamic = 'force-dynamic';
 
 async function getArticle(id: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/ai-news`, { cache: 'no-store' });
+  const res = await fetch(getApiUrl('/api/ai-news'), { cache: 'no-store' });
   const data = await res.json();
   const found = (data.articles || []).find((item: any) => encodeURIComponent(item.url) === id);
   return found || null;
@@ -29,7 +30,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     openGraph: {
       title: article.title,
       description: article.description || article.summary,
-      url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://ainformed.app'}/news/${encodeURIComponent(article.url)}`,
+      url: getFullUrl(`/news/${encodeURIComponent(article.url)}`),
       siteName: "AInformed",
       images: [
         {

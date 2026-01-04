@@ -28,7 +28,14 @@ export default function AuthPage() {
   const { login } = useAuthStatus()
 
   const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""
-  const GOOGLE_REDIRECT_URI = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/redirect`
+  // For OAuth redirects, we need absolute URLs
+  const getRedirectUri = () => {
+    if (process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI) return process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI;
+    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}/redirect`;
+    if (process.env.NEXT_PUBLIC_APP_URL) return `${process.env.NEXT_PUBLIC_APP_URL}/redirect`;
+    return 'http://localhost:3000/redirect'; // Only for local development
+  };
+  const GOOGLE_REDIRECT_URI = getRedirectUri();
 
   function getGoogleAuthUrl() {
     const rootUrl = "https://accounts.google.com/o/oauth2/v2/auth"

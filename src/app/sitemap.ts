@@ -1,4 +1,5 @@
 import { MetadataRoute } from "next";
+import { getApiUrl, getFullUrl } from '@/lib/url';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://www.ainformed.in";
@@ -7,7 +8,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let articles: any[] = [];
   
   try {
-    const apiUrl = `${process.env.NEXT_PUBLIC_APP_URL || baseUrl}/api/ai-news`;
+    const apiUrl = getApiUrl('/api/ai-news');
     const res = await fetch(apiUrl, { 
       next: { revalidate: 3600 } // Revalidate every hour
     });

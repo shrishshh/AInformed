@@ -4,6 +4,7 @@ import LatestArxivPapers from '@/components/LatestArxivPapers';
 import HeroSection from '@/components/HeroSection';
 import AIToolsSection from '@/components/AIToolsSection';
 import Pagination from '../components/Pagination';
+import { getApiUrl } from '@/lib/url';
 
 // Force dynamic rendering to avoid prerender errors with API calls
 export const dynamic = 'force-dynamic';
@@ -11,7 +12,7 @@ export const dynamic = 'force-dynamic';
 const DEFAULT_NEWS_IMAGE = "/placeholder.svg";
 
 async function getNews(): Promise<any[]> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/ai-news`, { cache: 'no-store' });
+  const res = await fetch(getApiUrl('/api/ai-news'), { cache: 'no-store' });
   const data = await res.json();
   // Deduplicate by normalized title
   const uniqueArticles: any[] = [];
