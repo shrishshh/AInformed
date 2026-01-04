@@ -7,7 +7,7 @@
  * Get the base URL for the application
  * - Uses VERCEL_URL in production (automatically provided by Vercel)
  * - Falls back to NEXT_PUBLIC_APP_URL if set
- * - Returns empty string for relative URLs (recommended for server-side internal calls)
+ * - For server-side: MUST return absolute URL (Next.js server fetch requires this)
  */
 export function getBaseUrl(): string {
   // In production on Vercel, use VERCEL_URL (automatically provided)
@@ -20,21 +20,24 @@ export function getBaseUrl(): string {
     return process.env.NEXT_PUBLIC_APP_URL;
   }
   
-  // For server-side internal API calls, return empty string to use relative URLs
-  // This works correctly in both development and production
-  return '';
+  // For server-side fetch, we MUST use an absolute URL
+  // Default to production URL if nothing is set
+  // In development, this will use localhost if NEXT_PUBLIC_APP_URL is set to http://localhost:3000
+  return process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:3000'
+    : 'https://www.ainformed.in';
 }
 
 /**
  * Get the full API URL for a given path
  * @param path - API path (e.g., '/api/ai-news')
- * @returns Full URL or relative path depending on environment
+ * @returns Full URL (always absolute for server-side fetch)
  */
 export function getApiUrl(path: string): string {
   const baseUrl = getBaseUrl();
   // Ensure path starts with /
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  return baseUrl ? `${baseUrl}${normalizedPath}` : normalizedPath;
+  return `${baseUrl}${normalizedPath}`;
 }
 
 /**
