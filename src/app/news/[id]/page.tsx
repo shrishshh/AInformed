@@ -6,10 +6,28 @@ import { getApiUrl, getFullUrl } from '@/lib/url';
 export const dynamic = 'force-dynamic';
 
 async function getArticle(id: string) {
-  const res = await fetch(getApiUrl('/api/ai-news'), { cache: 'no-store' });
-  const data = await res.json();
-  const found = (data.articles || []).find((item: any) => encodeURIComponent(item.url) === id);
-  return found || null;
+  try {
+    const apiUrl = getApiUrl('/api/ai-news');
+    const res = await fetch(apiUrl, { cache: 'no-store' });
+    
+    if (!res.ok) {
+      console.error(`API error: ${res.status} ${res.statusText}`);
+      return null;
+    }
+    
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error('API returned non-JSON response:', contentType);
+      return null;
+    }
+    
+    const data = await res.json();
+    const found = (data.articles || []).find((item: any) => encodeURIComponent(item.url) === id);
+    return found || null;
+  } catch (error) {
+    console.error('Error fetching article:', error);
+    return null;
+  }
 }
 
 interface NewsDetailPageProps {

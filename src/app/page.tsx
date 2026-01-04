@@ -12,19 +12,41 @@ export const dynamic = 'force-dynamic';
 const DEFAULT_NEWS_IMAGE = "/placeholder.svg";
 
 async function getNews(): Promise<any[]> {
-  const res = await fetch(getApiUrl('/api/ai-news'), { cache: 'no-store' });
-  const data = await res.json();
-  // Deduplicate by normalized title
-  const uniqueArticles: any[] = [];
-  const seen = new Set<string>();
-  for (const article of (data.articles || []) as any[]) {
-    const normTitle = (article.title || '').toLowerCase().replace(/[^a-z0-9 ]/gi, '').trim();
-    if (!seen.has(normTitle)) {
-      uniqueArticles.push(article);
-      seen.add(normTitle);
+  try {
+    const apiUrl = getApiUrl('/api/ai-news');
+    const res = await fetch(apiUrl, { cache: 'no-store' });
+    
+    if (!res.ok) {
+      console.error(`API error: ${res.status} ${res.statusText}`);
+      const text = await res.text();
+      console.error('Response text:', text.substring(0, 500));
+      return [];
     }
+    
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error('API returned non-JSON response:', contentType);
+      const text = await res.text();
+      console.error('Response text:', text.substring(0, 500));
+      return [];
+    }
+    
+    const data = await res.json();
+    // Deduplicate by normalized title
+    const uniqueArticles: any[] = [];
+    const seen = new Set<string>();
+    for (const article of (data.articles || []) as any[]) {
+      const normTitle = (article.title || '').toLowerCase().replace(/[^a-z0-9 ]/gi, '').trim();
+      if (!seen.has(normTitle)) {
+        uniqueArticles.push(article);
+        seen.add(normTitle);
+      }
+    }
+    return uniqueArticles;
+  } catch (error) {
+    console.error('Error fetching news:', error);
+    return [];
   }
-  return uniqueArticles;
 }
 
 interface TrendingTopic {
