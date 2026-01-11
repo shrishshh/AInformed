@@ -43,11 +43,17 @@ const nextConfig = {
     ],
   },
 
-  // Image optimization configuration (allowing all HTTPS hostnames for debugging)
+  // Image optimization configuration (allowing all HTTP and HTTPS hostnames)
   images: {
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: '**',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
         hostname: '**',
         port: '',
         pathname: '/**',

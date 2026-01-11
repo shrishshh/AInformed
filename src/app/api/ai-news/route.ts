@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import mockNews from '@/data/news.json';
 import { fetchAllRSSFeeds, filterRSSArticlesByCategory, convertRSSToNewsFormat } from '@/lib/rssFetcher';
-import { getCachedRSSArticles, getCachedGDELTArticles, getCachedHNArticles } from '@/lib/rssCron';
+import { getCachedRSSArticles, getCachedGDELTArticles, getCachedHNArticles, getCachedTavilyArticles } from '@/lib/rssCron';
 import { fetchGDELTArticles, convertGDELTToNewsFormat } from '@/lib/gdeltFetcher';
 import { fetchHNStories, convertHNToNewsFormat } from '@/lib/hnFetcher';
 import { 
@@ -19,13 +19,14 @@ import { scoreAndSortArticles } from '@/lib/contentScoring';
 const mockNewsData = {
   articles: mockNews || [],
   _isMockData: true,
-  _sources: {
-    gnews: 0,
-    rss: 0,
-    gdelt: 0,
-    hn: 0,
-    total: mockNews?.length || 0
-  },
+    _sources: {
+      gnews: 0,
+      rss: 0,
+      gdelt: 0,
+      hn: 0,
+      tavily: 0,
+      total: mockNews?.length || 0
+    },
   timestamp: new Date().toISOString()
 };
 
@@ -54,6 +55,7 @@ export async function GET(request: Request) {
     'AI Ethics': 'AI ethics OR "ethical AI" OR "AI bias" OR "responsible AI" OR "AI governance"',
     'Neural Networks': 'neural networks OR "neural network" OR "artificial neural network" OR ANN',
     'Automation': 'automation OR "intelligent automation" OR "AI automation" OR "process automation"',
+    'Big Data': 'big data OR "large-scale data" OR "data infrastructure" OR "data warehousing" OR "data lake"',
   };
 
   // If category is provided, use category-specific query
@@ -183,12 +185,14 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Get cached RSS, GDELT, and HN articles first (fast)
+    // Get cached RSS, GDELT, HN, and Tavily articles first (fast)
     let rssArticlesFormatted = getCachedRSSArticles();
     let gdeltArticlesFormatted = getCachedGDELTArticles();
     let hnArticlesFormatted = getCachedHNArticles(); // Get cached HN
+    let tavilyArticlesFormatted = getCachedTavilyArticles(); // Get cached Tavily
 
-    // Fetch from all four sources (GNews, RSS, GDELT, HN) in parallel
+    // Fetch from all sources (GNews, RSS, GDELT, HN) in parallel
+    // Note: Tavily is updated via scheduled cron, not fetched here
     const [gnewsResponse, freshRSSResponse, freshGDELTResponse, freshHNResponse] = await Promise.allSettled([
       // GNews API call
       (async () => {
@@ -304,6 +308,33 @@ export async function GET(request: Request) {
       console.error('HN fetch failed:', freshHNResponse.reason);
     }
 
+    // Filter Tavily articles by category if category is provided
+    if (category && tavilyArticlesFormatted.length > 0) {
+      const decodedCategory = decodeURIComponent(category);
+      // Tavily articles already have category tags, filter by primary or secondary category
+      tavilyArticlesFormatted = tavilyArticlesFormatted.filter((article: any) => {
+        const articleCategory = (article.category || '').toLowerCase();
+        const decodedCategoryLower = decodedCategory.toLowerCase();
+        
+        // Check primary category
+        if (articleCategory === decodedCategoryLower) {
+          return true;
+        }
+        
+        // Check secondary categories
+        if (article.secondaryCategories && Array.isArray(article.secondaryCategories)) {
+          return article.secondaryCategories.some((cat: string) => 
+            cat.toLowerCase() === decodedCategoryLower
+          );
+        }
+        
+        return false;
+      });
+      console.log(`Tavily: Filtered to ${tavilyArticlesFormatted.length} articles for category: ${decodedCategory}`);
+    } else {
+      console.log(`Tavily: Using ${tavilyArticlesFormatted.length} articles (from cache)`);
+    }
+
     // Helper function to decode HTML entities in image URLs
     const decodeHtmlEntities = (str: string): string => {
       if (!str) return '';
@@ -353,8 +384,8 @@ export async function GET(request: Request) {
       return hasConsumerKeyword || hasPricePattern || titleHasDealPattern;
     }
 
-    // Merge and deduplicate articles from all four sources
-    let allArticles = [...gnewsArticles, ...rssArticlesFormatted, ...gdeltArticlesFormatted, ...hnArticlesFormatted];
+    // Merge and deduplicate articles from all sources (GNews, RSS, GDELT, HN, Tavily)
+    let allArticles = [...gnewsArticles, ...rssArticlesFormatted, ...gdeltArticlesFormatted, ...hnArticlesFormatted, ...tavilyArticlesFormatted];
     
     // STRICTER: Filter out consumer content BEFORE deduplication
     allArticles = allArticles.filter(article => !isConsumerContent(article));
@@ -530,7 +561,7 @@ export async function GET(request: Request) {
       return (b.score?.relevanceScore || 0) - (a.score?.relevanceScore || 0);
     });
 
-    console.log(`Total unique articles: ${filteredArticles.length} (GNews: ${gnewsArticles.length}, RSS: ${rssArticlesFormatted.length}, GDELT: ${gdeltArticlesFormatted.length}, HN: ${hnArticlesFormatted.length})`);
+    console.log(`Total unique articles: ${filteredArticles.length} (GNews: ${gnewsArticles.length}, RSS: ${rssArticlesFormatted.length}, GDELT: ${gdeltArticlesFormatted.length}, HN: ${hnArticlesFormatted.length}, Tavily: ${tavilyArticlesFormatted.length})`);
 
     const responseData = { 
       articles: filteredArticles,
@@ -540,6 +571,7 @@ export async function GET(request: Request) {
         rss: rssArticlesFormatted.length,
         gdelt: gdeltArticlesFormatted.length,
         hn: hnArticlesFormatted.length,
+        tavily: tavilyArticlesFormatted.length,
         total: filteredArticles.length
       },
       timestamp: new Date().toISOString()

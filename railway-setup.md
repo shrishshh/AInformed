@@ -27,6 +27,13 @@ BREVO_SMTP_HOST=smtp-relay.brevo.com
 BREVO_SMTP_PORT=587
 BREVO_SMTP_USER=your-brevo-email
 BREVO_SMTP_PASS=your-brevo-api-key
+
+# News APIs
+GNEWS_API_KEY=your-gnews-api-key
+TAVILY_API_KEY=your-tavily-api-key
+
+# Cron Jobs
+CRON_SECRET=your-secure-random-string-for-cron-authentication
 ```
 
 Replace the placeholder values with your actual credentials:
@@ -37,6 +44,9 @@ Replace the placeholder values with your actual credentials:
 4. `GOOGLE_REDIRECT_URI`: Your app's callback URL (use your Railway app URL)
 5. `NEXT_PUBLIC_APP_URL`: Your Railway app URL
 6. `BREVO_SMTP_*`: Your Brevo SMTP credentials
+7. `GNEWS_API_KEY`: Your GNews API key (for mainstream news)
+8. `TAVILY_API_KEY`: Your Tavily API key (for AI/tech news search - Researcher plan recommended)
+9. `CRON_SECRET`: A secure random string for authenticating cron job requests (used by `/api/cron/tavily`)
 
 After setting these variables:
 1. Go to the "Deployments" tab
