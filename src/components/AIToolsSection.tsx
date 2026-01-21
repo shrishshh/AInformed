@@ -19,7 +19,7 @@ const AIToolsSection = () => {
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Revolving icons on left */}
-          <div className="relative h-96 w-96 mx-auto group">
+          <div className="relative w-72 h-72 sm:w-80 sm:h-80 md:w-96 md:h-96 mx-auto">
             {/* Rotating container */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full">
               <div className="absolute inset-0 animate-spin-slow" style={{ transformOrigin: 'center center' }}>
