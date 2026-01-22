@@ -186,6 +186,12 @@ export function NewsCard({
           </time>
           <span>•</span>
           <span>{readTime} min read</span>
+          {source ? (
+            <>
+              <span>•</span>
+              <span className="truncate">Source: {source}</span>
+            </>
+          ) : null}
         </div>
 
         <h3 className="text-lg font-semibold leading-tight mb-2 hover:text-primary transition-colors line-clamp-2">

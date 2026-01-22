@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import mockNews from '@/data/news.json';
 import { fetchAllRSSFeeds, filterRSSArticlesByCategory, convertRSSToNewsFormat } from '@/lib/rssFetcher';
-import { getCachedRSSArticles, getCachedGDELTArticles, getCachedHNArticles, getCachedTavilyArticles } from '@/lib/rssCron';
+import { getCachedRSSArticles, getCachedGDELTArticles, getCachedHNArticles, updateAllCaches } from '@/lib/rssCron';
 import { fetchGDELTArticles, convertGDELTToNewsFormat } from '@/lib/gdeltFetcher';
 import { fetchHNStories, convertHNToNewsFormat } from '@/lib/hnFetcher';
 import { 
@@ -14,6 +14,7 @@ import {
 import NewsCache from '@/models/NewsCache';
 import connectDB from '@/lib/mongodb';
 import { scoreAndSortArticles } from '@/lib/contentScoring';
+import { buildFeed } from '@/lib/feed/feedBuilder';
 
 // Mock news data for fallback
 const mockNewsData = {
@@ -25,6 +26,7 @@ const mockNewsData = {
       gdelt: 0,
       hn: 0,
       tavily: 0,
+      perplexity: 0,
       total: mockNews?.length || 0
     },
   timestamp: new Date().toISOString()
@@ -33,13 +35,28 @@ const mockNewsData = {
 // Force dynamic rendering to prevent static generation during build
 export const dynamic = 'force-dynamic';
 
+const CACHE_VERSION = 'v3';
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const category = searchParams.get('category');
-  let query = searchParams.get('q') || 'AI';
+  const rawQuery = searchParams.get('q');
+  const hasExplicitQuery = rawQuery !== null;
+  let query = rawQuery || '';
+  const sectionParam = searchParams.get('section');
+  const sourceParam = searchParams.get('source');
+  const productParam = searchParams.get('product');
+  const platformParam = searchParams.get('platform');
+  const hasFilters = Boolean(sectionParam || sourceParam || productParam || platformParam);
+  const isHomeFeed = (!hasExplicitQuery && !category) || hasFilters;
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '50');
+  const section = sectionParam || 'all'; // all | today | productUpdates | modelReleases | research | whatsNewToday | other
+  const sourceFilter = sourceParam || undefined; // exact source name
+  const productFilter = productParam || undefined; // entity display name (e.g., ChatGPT)
+  const platformFilter = platformParam || undefined; // official | other | all
   const forceRefresh = searchParams.get('refresh') === 'true'; // Add ?refresh=true to bypass cache
+  const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.VERCEL;
   
   // Category to search query mapping
   const categoryQueryMap: Record<string, string> = {
@@ -88,14 +105,14 @@ export async function GET(request: Request) {
     return NextResponse.json({
       articles: [],
       _isMockData: false,
-      _sources: { gnews: 0, rss: 0, gdelt: 0, hn: 0, total: 0 },
+      _sources: { gnews: 0, rss: 0, gdelt: 0, hn: 0, tavily: 0, perplexity: 0, total: 0 },
       timestamp: new Date().toISOString(),
       message: 'Sorry, this search is not AI/tech focused. Please try searching for AI-related topics like "machine learning", "chatgpt", "artificial intelligence", etc.'
     });
   }
 
   // Generate cache key based on request parameters
-  const cacheKey = generateCacheKey('news', { category, query, page, limit });
+  const cacheKey = generateCacheKey('news', { version: CACHE_VERSION, category, query, page, limit, section, source: sourceFilter, product: productFilter, platform: platformFilter });
   
   // Always clean up expired caches first - be aggressive about it
   try {
@@ -178,161 +195,201 @@ export async function GET(request: Request) {
     }
   }
 
-  const API_KEY = process.env.GNEWS_API_KEY;
-  if (!API_KEY) {
-    console.error('GNews API key not found');
-    return NextResponse.json(mockNewsData);
-  }
+  // ============================================================================
+  // TEMPORARY: COMMENTED OUT FOR PERPLEXITY TESTING - UNCOMMENT TO RESTORE
+  // ============================================================================
+  // const API_KEY = process.env.GNEWS_API_KEY;
+  // if (!API_KEY) {
+  //   console.error('GNews API key not found');
+  //   return NextResponse.json(mockNewsData);
+  // }
 
   try {
-    // Get cached RSS, GDELT, HN, and Tavily articles first (fast)
-    let rssArticlesFormatted = getCachedRSSArticles();
-    let gdeltArticlesFormatted = getCachedGDELTArticles();
-    let hnArticlesFormatted = getCachedHNArticles(); // Get cached HN
-    let tavilyArticlesFormatted = getCachedTavilyArticles(); // Get cached Tavily
+    // ============================================================================
+    // TEMPORARY: COMMENTED OUT FOR PERPLEXITY TESTING - UNCOMMENT TO RESTORE
+    // ============================================================================
+    // If force refresh was requested, refresh caches BEFORE reading them.
+    // This avoids temporarily returning 0 articles right after cache invalidation.
+    if (forceRefresh) {
+      await updateAllCaches();
+    }
 
+    // Get cached RSS, GDELT, HN, and Tavily articles first (fast)
+    // NOTE: Perplexity is intentionally disabled for this test run.
+    let rssArticlesFormatted = getCachedRSSArticles();
+    let gdeltArticlesFormatted = getCachedGDELTArticles().map((a: any) => ({
+      ...a,
+      sourceType: a.sourceType || 'AGGREGATOR',
+      _isGDELT: a._isGDELT ?? true,
+    }));
+    let hnArticlesFormatted = getCachedHNArticles().map((a: any) => ({
+      ...a,
+      sourceType: a.sourceType || 'AGGREGATOR',
+      _isHN: a._isHN ?? true,
+    })); // Get cached HN
+    let tavilyArticlesFormatted: any[] = []; // Tavily disabled for now
+
+    // ============================================================================
+    // TEMPORARY: COMMENTED OUT FOR PERPLEXITY TESTING - UNCOMMENT TO RESTORE
+    // ============================================================================
     // Fetch from all sources (GNews, RSS, GDELT, HN) in parallel
     // Note: Tavily is updated via scheduled cron, not fetched here
-    const [gnewsResponse, freshRSSResponse, freshGDELTResponse, freshHNResponse] = await Promise.allSettled([
-      // GNews API call
-      (async () => {
-        const gnewsUrl = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=en&country=us&max=50&apikey=${API_KEY}`;
-        console.log('Fetching from GNews API...');
-        
-        const response = await fetch(gnewsUrl, {
-          headers: {
-            'Accept': 'application/json',
-          },
-          next: { revalidate: 300 } // Cache for 5 minutes
-        });
+    // const [gnewsResponse, freshRSSResponse, freshGDELTResponse, freshHNResponse] = await Promise.allSettled([
+    //   // GNews API call
+    //   (async () => {
+    //     const gnewsUrl = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=en&country=us&max=50&apikey=${API_KEY}`;
+    //     console.log('Fetching from GNews API...');
+    //     
+    //     const response = await fetch(gnewsUrl, {
+    //       headers: {
+    //         'Accept': 'application/json',
+    //       },
+    //       next: { revalidate: 300 } // Cache for 5 minutes
+    //     });
 
-        if (!response.ok) {
-          throw new Error(`GNews API request failed: ${response.status} ${response.statusText}`);
-        }
+    //     if (!response.ok) {
+    //       throw new Error(`GNews API request failed: ${response.status} ${response.statusText}`);
+    //     }
 
-        const data = await response.json();
-        
-        if (data.errors && data.errors.length > 0) {
-          console.error('GNews API errors:', data.errors);
-          // Check if it's a rate limit error
-          if (data.errors.some((error: any) => error.message?.includes('rate limit'))) {
-            console.log('GNews rate limit reached, returning empty array');
-            return { articles: [] };
-          }
-          throw new Error(`GNews API errors: ${JSON.stringify(data.errors)}`);
-        }
+    //     const data = await response.json();
+    //     
+    //     if (data.errors && data.errors.length > 0) {
+    //       console.error('GNews API errors:', data.errors);
+    //       // Check if it's a rate limit error
+    //       if (data.errors.some((error: any) => error.message?.includes('rate limit'))) {
+    //         console.log('GNews rate limit reached, returning empty array');
+    //         return { articles: [] };
+    //       }
+    //       throw new Error(`GNews API errors: ${JSON.stringify(data.errors)}`);
+    //     }
 
-        // Log GNews response details for debugging
-        const articleCount = data.articles?.length || 0;
-        const totalArticles = data.totalArticles || 'unknown';
-        console.log(`GNews API response: ${articleCount} articles returned (requested max=50, total available: ${totalArticles})`);
-        
-        if (articleCount < 50 && totalArticles !== 'unknown' && totalArticles > articleCount) {
-          console.log(`⚠️ GNews: Only ${articleCount} articles returned despite ${totalArticles} available. This may be due to free tier limitations.`);
-        }
+    //     // Log GNews response details for debugging
+    //     const articleCount = data.articles?.length || 0;
+    //     const totalArticles = data.totalArticles || 'unknown';
+    //     console.log(`GNews API response: ${articleCount} articles returned (requested max=50, total available: ${totalArticles})`);
+    //     
+    //     if (articleCount < 50 && totalArticles !== 'unknown' && totalArticles > articleCount) {
+    //       console.log(`⚠️ GNews: Only ${articleCount} articles returned despite ${totalArticles} available. This may be due to free tier limitations.`);
+    //     }
 
-        return data;
-      })(),
+    //     return data;
+    //   })(),
 
-      // Always fetch fresh RSS for the response to avoid stale results on first load after DB expiry
-      (async () => {
-        console.log('Fetching fresh RSS feeds for response...');
-        const rssArticles = await fetchAllRSSFeeds();
-        rssArticlesFormatted = convertRSSToNewsFormat(rssArticles);
-        return rssArticlesFormatted;
-      })(),
+    //   // Always fetch fresh RSS for the response to avoid stale results on first load after DB expiry
+    //   (async () => {
+    //     console.log('Fetching fresh RSS feeds for response...');
+    //     const rssArticles = await fetchAllRSSFeeds();
+    //     rssArticlesFormatted = convertRSSToNewsFormat(rssArticles);
+    //     return rssArticlesFormatted;
+    //   })(),
 
-      (async () => {
-        console.log('Fetching fresh GDELT articles for response...');
-        const gdeltArticles = await fetchGDELTArticles();
-        gdeltArticlesFormatted = convertGDELTToNewsFormat(gdeltArticles);
-        return gdeltArticlesFormatted;
-      })(),
+    //   (async () => {
+    //     console.log('Fetching fresh GDELT articles for response...');
+    //     const gdeltArticles = await fetchGDELTArticles();
+    //     gdeltArticlesFormatted = convertGDELTToNewsFormat(gdeltArticles);
+    //     return gdeltArticlesFormatted;
+    //   })(),
 
-      (async () => {
-        console.log('Fetching fresh HN stories for response...');
-        const hnStories = await fetchHNStories();
-        hnArticlesFormatted = convertHNToNewsFormat(hnStories);
-        return hnArticlesFormatted;
-      })()
-    ]);
+    //   (async () => {
+    //     console.log('Fetching fresh HN stories for response...');
+    //     const hnStories = await fetchHNStories();
+    //     hnArticlesFormatted = convertHNToNewsFormat(hnStories);
+    //     return hnArticlesFormatted;
+    //   })()
+    // ]);
 
+    // Small delay to allow Perplexity/Tavily cache updates to complete if they were triggered
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // ============================================================================
+    // TEMPORARY: COMMENTED OUT FOR PERPLEXITY TESTING - UNCOMMENT TO RESTORE
+    // ============================================================================
     // Process results
     let gnewsArticles: any[] = [];
 
-    if (gnewsResponse.status === 'fulfilled') {
-      gnewsArticles = (gnewsResponse.value.articles || []).map((article: any) => {
-        // Normalize GNews articles: ensure both image and imageUrl are set
-        // GNews API uses 'image' field, but we want both for consistency
-        const image = article.image || '';
-        return {
-          ...article,
-          image: image,
-          imageUrl: image, // Also set imageUrl for consistency
-          url: article.url || article.link,
-          publishedAt: article.publishedAt || article.pubDate,
-          description: article.description || article.content || '',
-          source: article.source || { name: 'GNews' }
-        };
-      });
-      console.log(`GNews: Fetched ${gnewsArticles.length} articles`);
-    } else {
-      console.error('GNews fetch failed:', gnewsResponse.reason);
-    }
+    // if (gnewsResponse.status === 'fulfilled') {
+    //   gnewsArticles = (gnewsResponse.value.articles || []).map((article: any) => {
+    //     // Normalize GNews articles: ensure both image and imageUrl are set
+    //     // GNews API uses 'image' field, but we want both for consistency
+    //     const image = article.image || '';
+    //     return {
+    //       ...article,
+    //       image: image,
+    //       imageUrl: image, // Also set imageUrl for consistency
+    //       url: article.url || article.link,
+    //       publishedAt: article.publishedAt || article.pubDate,
+    //       description: article.description || article.content || '',
+    //       source: article.source || { name: 'GNews' }
+    //     };
+    //   });
+    //   console.log(`GNews: Fetched ${gnewsArticles.length} articles`);
+    // } else {
+    //   console.error('GNews fetch failed:', gnewsResponse.reason);
+    // }
 
-    if (freshRSSResponse.status === 'fulfilled') {
-      rssArticlesFormatted = freshRSSResponse.value;
-      // Filter RSS articles by category if category is provided
-      if (category) {
-        const decodedCategory = decodeURIComponent(category);
-        rssArticlesFormatted = filterRSSArticlesByCategory(rssArticlesFormatted, decodedCategory);
-        console.log(`RSS: Filtered to ${rssArticlesFormatted.length} articles for category: ${decodedCategory}`);
-      } else {
-        console.log(`RSS: Using ${rssArticlesFormatted.length} articles (${rssArticlesFormatted.length === 0 ? 'from cache' : 'fresh fetch'})`);
-      }
-    } else {
-      console.error('RSS fetch failed:', freshRSSResponse.reason);
-      }
+    // if (freshRSSResponse.status === 'fulfilled') {
+    //   rssArticlesFormatted = freshRSSResponse.value;
+    //   // Filter RSS articles by category if category is provided
+    //   if (category) {
+    //     const decodedCategory = decodeURIComponent(category);
+    //     rssArticlesFormatted = filterRSSArticlesByCategory(rssArticlesFormatted, decodedCategory);
+    //     console.log(`RSS: Filtered to ${rssArticlesFormatted.length} articles for category: ${decodedCategory}`);
+    //   } else {
+    //     console.log(`RSS: Using ${rssArticlesFormatted.length} articles (${rssArticlesFormatted.length === 0 ? 'from cache' : 'fresh fetch'})`);
+    //   }
+    // } else {
+    //   console.error('RSS fetch failed:', freshRSSResponse.reason);
+    //   }
 
-    if (freshGDELTResponse.status === 'fulfilled') {
-      gdeltArticlesFormatted = freshGDELTResponse.value;
-      console.log(`GDELT: Using ${gdeltArticlesFormatted.length} articles (${gdeltArticlesFormatted.length === 0 ? 'from cache' : 'fresh fetch'})`);
-    } else {
-      console.error('GDELT fetch failed:', freshGDELTResponse.reason);
-    }
+    // if (freshGDELTResponse.status === 'fulfilled') {
+    //   gdeltArticlesFormatted = freshGDELTResponse.value;
+    //   console.log(`GDELT: Using ${gdeltArticlesFormatted.length} articles (${gdeltArticlesFormatted.length === 0 ? 'from cache' : 'fresh fetch'})`);
+    // } else {
+    //   console.error('GDELT fetch failed:', freshGDELTResponse.reason);
+    // }
 
-    if (freshHNResponse.status === 'fulfilled') {
-      hnArticlesFormatted = freshHNResponse.value;
-      console.log(`HN: Using ${hnArticlesFormatted.length} stories (${hnArticlesFormatted.length === 0 ? 'from cache' : 'fresh fetch'})`);
-    } else {
-      console.error('HN fetch failed:', freshHNResponse.reason);
-    }
+    // if (freshHNResponse.status === 'fulfilled') {
+    //   hnArticlesFormatted = freshHNResponse.value;
+    //   console.log(`HN: Using ${hnArticlesFormatted.length} stories (${hnArticlesFormatted.length === 0 ? 'from cache' : 'fresh fetch'})`);
+    // } else {
+    //   console.error('HN fetch failed:', freshHNResponse.reason);
+    // }
 
+    // ============================================================================
+    // TEMPORARY: COMMENTED OUT FOR PERPLEXITY TESTING - UNCOMMENT TO RESTORE
+    // ============================================================================
     // Filter Tavily articles by category if category is provided
-    if (category && tavilyArticlesFormatted.length > 0) {
+    // if (category && tavilyArticlesFormatted.length > 0) {
+    //   const decodedCategory = decodeURIComponent(category);
+    //   // Tavily articles already have category tags, filter by primary or secondary category
+    //   tavilyArticlesFormatted = tavilyArticlesFormatted.filter((article: any) => {
+    //     const articleCategory = (article.category || '').toLowerCase();
+    //     const decodedCategoryLower = decodedCategory.toLowerCase();
+    //     
+    //     // Check primary category
+    //     if (articleCategory === decodedCategoryLower) {
+    //       return true;
+    //     }
+    //     
+    //     // Check secondary categories
+    //     if (article.secondaryCategories && Array.isArray(article.secondaryCategories)) {
+    //       return article.secondaryCategories.some((cat: string) => 
+    //         cat.toLowerCase() === decodedCategoryLower
+    //       );
+    //     }
+    //     
+    //     return false;
+    //   });
+    //   console.log(`Tavily: Filtered to ${tavilyArticlesFormatted.length} articles for category: ${decodedCategory}`);
+    // } else {
+    //   console.log(`Tavily: Using ${tavilyArticlesFormatted.length} articles (from cache)`);
+    // }
+
+    // Filter RSS articles by category if category is provided
+    if (category && rssArticlesFormatted.length > 0) {
       const decodedCategory = decodeURIComponent(category);
-      // Tavily articles already have category tags, filter by primary or secondary category
-      tavilyArticlesFormatted = tavilyArticlesFormatted.filter((article: any) => {
-        const articleCategory = (article.category || '').toLowerCase();
-        const decodedCategoryLower = decodedCategory.toLowerCase();
-        
-        // Check primary category
-        if (articleCategory === decodedCategoryLower) {
-          return true;
-        }
-        
-        // Check secondary categories
-        if (article.secondaryCategories && Array.isArray(article.secondaryCategories)) {
-          return article.secondaryCategories.some((cat: string) => 
-            cat.toLowerCase() === decodedCategoryLower
-          );
-        }
-        
-        return false;
-      });
-      console.log(`Tavily: Filtered to ${tavilyArticlesFormatted.length} articles for category: ${decodedCategory}`);
-    } else {
-      console.log(`Tavily: Using ${tavilyArticlesFormatted.length} articles (from cache)`);
+      rssArticlesFormatted = filterRSSArticlesByCategory(rssArticlesFormatted, decodedCategory);
+      console.log(`RSS: Filtered to ${rssArticlesFormatted.length} articles for category: ${decodedCategory}`);
     }
 
     // Helper function to decode HTML entities in image URLs
@@ -384,12 +441,31 @@ export async function GET(request: Request) {
       return hasConsumerKeyword || hasPricePattern || titleHasDealPattern;
     }
 
-    // Merge and deduplicate articles from all sources (GNews, RSS, GDELT, HN, Tavily)
-    let allArticles = [...gnewsArticles, ...rssArticlesFormatted, ...gdeltArticlesFormatted, ...hnArticlesFormatted, ...tavilyArticlesFormatted];
+    // Merge and deduplicate articles from all sources (Perplexity intentionally disabled)
+    // IMPORTANT: For the main homepage feed (no explicit query/category), we exclude Tavily.
+    // Tavily is search-oriented and better suited for query-driven endpoints, not the primary news feed.
+    let allArticles = [
+      ...gnewsArticles,
+      ...rssArticlesFormatted,
+      ...gdeltArticlesFormatted,
+      ...hnArticlesFormatted,
+    ];
+    
+    console.log(`\n📦 ========== BEFORE FILTERING (PERPLEXITY DISABLED) ==========`);
+    console.log(`Total articles from all sources: ${allArticles.length}`);
+    console.log(`  📰 GNews: ${gnewsArticles.length}`);
+    console.log(`  📡 RSS: ${rssArticlesFormatted.length}`);
+    console.log(`  🌍 GDELT: ${gdeltArticlesFormatted.length}`);
+    console.log(`  💬 HN: ${hnArticlesFormatted.length}`);
+    console.log(`  🔍 Tavily: 0`);
+    console.log(`  🤖 Perplexity: 0`);
     
     // STRICTER: Filter out consumer content BEFORE deduplication
+    const beforeConsumerFilter = allArticles.length;
     allArticles = allArticles.filter(article => !isConsumerContent(article));
-    console.log(`🚫 Filtered out consumer content. Remaining articles: ${allArticles.length}`);
+    const removedByConsumerFilter = beforeConsumerFilter - allArticles.length;
+    console.log(`🚫 Filtered out ${removedByConsumerFilter} consumer content articles. Remaining: ${allArticles.length}`);
+    console.log(`==========================================\n`);
     // Deduplicate by URL
     const seenUrls = new Set();
     const uniqueArticles = allArticles.filter((article: any) => {
@@ -410,15 +486,40 @@ export async function GET(request: Request) {
     // STRICTER: Final consumer content check after deduplication (double-check)
     const finalFilteredArticles = uniqueArticles.filter(article => !isConsumerContent(article));
     console.log(`🚫 Final consumer content filter. Remaining: ${finalFilteredArticles.length} (removed ${uniqueArticles.length - finalFilteredArticles.length})`);
+    
+    // Helper: count articles per source in a list
+    const countBySource = (list: any[]) => {
+      const counts: Record<string, number> = {};
+      list.forEach((article: any) => {
+        const name = (article.source && (article.source.name || article.source)) || 'Unknown';
+        counts[name] = (counts[name] || 0) + 1;
+      });
+      return counts;
+    };
 
-    // Score and sort articles by relevance (using final filtered articles)
-    let scoredArticles = scoreAndSortArticles(finalFilteredArticles);
-    console.log(`📊 After scoring: ${scoredArticles.length} articles passed score thresholds (from ${finalFilteredArticles.length} input articles)`);
+    // Log per-source counts before scoring (post-filter/dedup)
+    console.log('📊 Per-source (post-filter, pre-score):', countBySource(finalFilteredArticles));
+
+    // For the home feed (or any tabbed filter), do NOT run discovery scoring/query filtering.
+    const shouldApplyDiscoveryScoring = !isHomeFeed;
+
+    let scoredArticles: any[] = finalFilteredArticles;
+    if (shouldApplyDiscoveryScoring) {
+      scoredArticles = scoreAndSortArticles(finalFilteredArticles);
+    }
+
+    console.log(
+      `📊 After scoring: ${scoredArticles.length} articles ` +
+        `(from ${finalFilteredArticles.length} input articles)` +
+        (shouldApplyDiscoveryScoring ? '' : ' [skipped scoring for home feed]'),
+    );
     
     // Filter by query (q) if provided and not empty - IMPROVED: semantic matching
-    // NOTE: For category queries, the sources already filter by query, so we're more lenient here
+    // NOTE: For the home feed or tabbed filters, skip query filtering unless user explicitly set q
     let filteredArticles = scoredArticles;
-    if (query && query.trim().length > 0) {
+    const shouldApplyQueryFilter = !isHomeFeed && hasExplicitQuery && query && query.trim().length > 0;
+
+    if (shouldApplyQueryFilter) {
       const qLower = query.trim().toLowerCase();
       
       // Check if this is an OR query (category queries use OR)
@@ -549,29 +650,148 @@ export async function GET(request: Request) {
       console.log(`🔍 After query filtering: ${filteredArticles.length} articles match query "${query}" (from ${scoredArticles.length} scored articles)`);
     }
 
-    // Final sort: prioritize newest articles first
+    // Final sort:
+    // - Prefer the editorial rank score when present (_score from official pipeline)
+    // - Otherwise fall back to newest first, then content scoring as a tiebreaker
     filteredArticles.sort((a: any, b: any) => {
-      // Primary sort: by date (newest first)
+      const scoreA = typeof a._score === 'number' ? a._score : -Infinity;
+      const scoreB = typeof b._score === 'number' ? b._score : -Infinity;
+      if (scoreB !== scoreA) return scoreB - scoreA;
+
       const dateA = new Date(a.publishedAt || 0).getTime();
       const dateB = new Date(b.publishedAt || 0).getTime();
-      if (dateB !== dateA) {
-        return dateB - dateA;
-      }
-      // Secondary sort: by score (highest first) - tiebreaker for same date
+      if (dateB !== dateA) return dateB - dateA;
+
       return (b.score?.relevanceScore || 0) - (a.score?.relevanceScore || 0);
     });
 
-    console.log(`Total unique articles: ${filteredArticles.length} (GNews: ${gnewsArticles.length}, RSS: ${rssArticlesFormatted.length}, GDELT: ${gdeltArticlesFormatted.length}, HN: ${hnArticlesFormatted.length}, Tavily: ${tavilyArticlesFormatted.length})`);
+    console.log(`\n📊 ========== NEWS SOURCES SUMMARY (PERPLEXITY DISABLED) ==========`);
+    console.log(`Total unique articles: ${filteredArticles.length}`);
+    console.log(`  📰 GNews: ${gnewsArticles.length} articles`);
+    console.log(`  📡 RSS: ${rssArticlesFormatted.length} articles`);
+    console.log(`  🌍 GDELT: ${gdeltArticlesFormatted.length} articles`);
+    console.log(`  💬 HN: ${hnArticlesFormatted.length} articles`);
+    console.log(`  🔍 Tavily: 0 articles`);
+    console.log(`  🤖 Perplexity: 0 articles`);
+    console.log('  📑 Per-source (final feed):', countBySource(filteredArticles));
+    console.log(`==========================================\n`);
+
+    // ============================================================================
+    // TEMPORARY: COMMENTED OUT FOR PERPLEXITY TESTING - UNCOMMENT TO RESTORE
+    // ============================================================================
+    // Log sample articles from each source for debugging
+    // if (gnewsArticles.length > 0) {
+    //   console.log(`📰 GNews Sample Articles (first 3):`);
+    //   gnewsArticles.slice(0, 3).forEach((article: any, idx: number) => {
+    //     console.log(`  ${idx + 1}. ${article.title?.substring(0, 60)}... | Source: ${article.source?.name || 'Unknown'}`);
+    //   });
+    // }
+
+    // if (rssArticlesFormatted.length > 0) {
+    //   console.log(`📡 RSS Sample Articles (first 3):`);
+    //   rssArticlesFormatted.slice(0, 3).forEach((article: any, idx: number) => {
+    //     console.log(`  ${idx + 1}. ${article.title?.substring(0, 60)}... | Source: ${article.source?.name || article.source || 'Unknown'}`);
+    //   });
+    // }
+
+    // if (gdeltArticlesFormatted.length > 0) {
+    //   console.log(`🌍 GDELT Sample Articles (first 3):`);
+    //   gdeltArticlesFormatted.slice(0, 3).forEach((article: any, idx: number) => {
+    //     console.log(`  ${idx + 1}. ${article.title?.substring(0, 60)}... | Source: ${article.source?.name || article.source || 'Unknown'}`);
+    //   });
+    // }
+
+    // if (hnArticlesFormatted.length > 0) {
+    //   console.log(`💬 HN Sample Articles (first 3):`);
+    //   hnArticlesFormatted.slice(0, 3).forEach((article: any, idx: number) => {
+    //     console.log(`  ${idx + 1}. ${article.title?.substring(0, 60)}... | Source: ${article.source?.name || article.source || 'Unknown'}`);
+    //   });
+    // }
+
+    // if (tavilyArticlesFormatted.length > 0) {
+    //   console.log(`🔍 Tavily Sample Articles (first 3):`);
+    //   tavilyArticlesFormatted.slice(0, 3).forEach((article: any, idx: number) => {
+    //     console.log(`  ${idx + 1}. ${article.title?.substring(0, 60)}... | Source: ${article.source?.name || article.source || 'Unknown'} | Category: ${article.category || 'N/A'}`);
+    //   });
+    // }
+
+    // Build structured feed sections (Step 6) from the final ranked articles
+    const sections = buildFeed(filteredArticles);
+
+    // Build "view" list based on nav filters (section/source/product/platform)
+    const isOtherPlatforms = section === 'other' || platformFilter === 'other';
+    const isOfficialPlatforms = platformFilter === 'official';
+
+    const platformFiltered = filteredArticles.filter((a: any) => {
+      const st = a.sourceType;
+      const isOfficial = st === 'OFFICIAL_BLOG' || st === 'CHANGELOG' || st === 'RESEARCH_LAB';
+      const isOther = st === 'TECH_NEWS' || st === 'AGGREGATOR' || a._isGDELT || a._isHN || a._isGNews;
+      if (isOfficialPlatforms) return isOfficial;
+      if (isOtherPlatforms) return isOther;
+      return true;
+    });
+
+    let viewList: any[] = platformFiltered;
+    if (section === 'today') viewList = sections.top || platformFiltered;
+    if (section === 'whatsNewToday') viewList = sections.whatsNewToday || [];
+    if (section === 'productUpdates') viewList = sections.productUpdates || [];
+    if (section === 'modelReleases') viewList = sections.modelReleases || [];
+    if (section === 'research') viewList = sections.research || [];
+    if (section === 'other') viewList = platformFiltered.filter((a: any) => (a.sourceType === 'TECH_NEWS' || a.sourceType === 'AGGREGATOR' || a._isGDELT || a._isHN || a._isGNews));
+
+    if (productFilter) {
+      viewList = viewList.filter((a: any) => Array.isArray(a.entities) && a.entities.includes(productFilter));
+    }
+    if (sourceFilter) {
+      viewList = viewList.filter((a: any) => (a.source?.name || a.source) === sourceFilter);
+    }
+
+    // Pagination for the current view
+    const pageSize = Number.isFinite(limit) && limit > 0 ? limit : 20;
+    const totalInView = viewList.length;
+    const totalPages = Math.max(1, Math.ceil(totalInView / pageSize));
+    const safePage = Math.min(Math.max(page, 1), totalPages);
+    const start = (safePage - 1) * pageSize;
+    const end = start + pageSize;
+    const items = viewList.slice(start, end);
+
+    // Available filters for UI
+    const availableSources = Array.from(
+      new Set(filteredArticles.map((a: any) => (a.source?.name || a.source || 'Unknown'))),
+    ).filter(Boolean).sort();
+
+    const availableProducts = Array.from(
+      new Set(
+        filteredArticles.flatMap((a: any) => (Array.isArray(a.entities) ? a.entities : [])),
+      ),
+    ).filter(Boolean).sort();
 
     const responseData = { 
       articles: filteredArticles,
+      items,
+      sections,
+      pagination: {
+        page: safePage,
+        pageSize,
+        totalInView,
+        totalPages,
+      },
+      filters: {
+        section,
+        source: sourceFilter || null,
+        product: productFilter || null,
+        platform: platformFilter || null,
+        availableSources,
+        availableProducts,
+      },
       _isMockData: false,
       _sources: {
         gnews: gnewsArticles.length,
         rss: rssArticlesFormatted.length,
         gdelt: gdeltArticlesFormatted.length,
         hn: hnArticlesFormatted.length,
-        tavily: tavilyArticlesFormatted.length,
+        tavily: 0,
+        perplexity: 0,
         total: filteredArticles.length
       },
       timestamp: new Date().toISOString()
