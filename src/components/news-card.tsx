@@ -10,6 +10,8 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import SpotlightCard from "./SpotlightCard";
 import TiltedCard from "./TiltedCard";
 // import NewsSourceBadge from "./NewsSourceBadge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Sparkles } from "lucide-react"
 
 interface NewsCardProps {
   id: string
@@ -26,6 +28,7 @@ interface NewsCardProps {
   _isGNews?: boolean
   _isGDELT?: boolean
   _isHN?: boolean // Added HN prop
+  onWordSelect?: (word: string) => void
 }
 
 export function NewsCard({
@@ -39,6 +42,7 @@ export function NewsCard({
   readTime = 3,
   isBookmarked,
   onToggleBookmark,
+  onWordSelect,
   _isRSS,
   _isGNews,
   _isGDELT,
@@ -47,6 +51,56 @@ export function NewsCard({
   // Ensure date is a Date object
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   const [imageError, setImageError] = useState(false);
+
+  const renderInteractiveSummary = () => {
+    if (!onWordSelect) {
+      return <p className="text-sm text-muted-foreground line-clamp-3">{summary}</p>
+    }
+  
+    const words = summary.split(" ")
+  
+    return (
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        {words.map((word, index) => {
+          const cleanWord = word.replace(/[.,!?;:()]/g, "")
+          const isClickable = cleanWord.length > 2
+  
+          return (
+            <span key={index}>
+              {isClickable ? (
+                <TooltipProvider delayDuration={300}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span
+                        className="hover:bg-blue-100 hover:text-blue-800 cursor-pointer rounded px-0.5 transition-all duration-150 inline-block"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          e.preventDefault()
+                          onWordSelect(cleanWord)
+                        }}
+                      >
+                        {word}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      <div className="flex items-center gap-1.5">
+                        <Sparkles className="h-3 w-3 text-blue-500" />
+                        <p className="text-xs">Click for definition</p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <span>{word}</span>
+              )}
+              {index < words.length - 1 && " "}
+            </span>
+          )
+        })}
+      </p>
+    )
+  }
+  
 
   // Decode HTML entities in image URLs (safeguard)
   const decodeHtmlEntities = (str: string): string => {
@@ -191,8 +245,8 @@ export function NewsCard({
         <h3 className="text-lg font-semibold leading-tight mb-2 hover:text-primary transition-colors line-clamp-2">
           {title}
         </h3>
-
-        <p className="text-sm text-muted-foreground line-clamp-3">{summary}</p>
+        {renderInteractiveSummary()}
+        {/*<p className="text-sm text-muted-foreground line-clamp-3">{summary}</p>*/}
         <div className="mt-auto" />
       </CardContent>
 

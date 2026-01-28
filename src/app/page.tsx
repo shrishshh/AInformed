@@ -5,6 +5,8 @@ import HeroSection from '@/components/HeroSection';
 import AIToolsSection from '@/components/AIToolsSection';
 import Pagination from '../components/Pagination';
 import { getApiUrl } from '@/lib/url';
+import ExpandingFilterPanel from "../components/filters/ExpandingFilterPanel";
+
 
 // Force dynamic rendering to avoid prerender errors with API calls
 export const dynamic = 'force-dynamic';
@@ -109,8 +111,8 @@ export default async function Home({
               Stay updated with the most recent developments in artificial intelligence
             </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 auto-rows-fr">
+          <ExpandingFilterPanel />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 auto-rows-fr mt-8">
             {paginatedNews.map((article) => {
               // Use imageUrl if available, otherwise image, otherwise empty string (let NewsCard handle fallback)
               const imageUrl = article.imageUrl || article.image || '';
@@ -126,6 +128,8 @@ export default async function Home({
                   url={article.url}
                   readTime={4}
                 />
+              
+              
               );
             })}
           </div>
