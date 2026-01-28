@@ -102,7 +102,7 @@ export default async function Home({
       <HeroSection />
       <AIToolsSection />
       <div id="news-section" className="flex flex-col md:flex-row gap-12 mt-16 scroll-mt-24">
-        <div className="w-full md:w-2/3">
+        <div className="w-full md:w-3/4">
           <div className="mb-12">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">Latest AI News</h2>
             <p className="text-lg text-muted-foreground">
@@ -149,7 +149,7 @@ export default async function Home({
           {/* Newsletter signup removed */}
         </div>
 
-        <div className="w-full md:w-1/3 md:sticky md:top-24 h-fit space-y-6">
+        <div className="w-full md:w-1/4 md:sticky md:top-24 h-fit space-y-6">
           <AIStocksSidebar />
           <LatestArxivPapers />
         </div>

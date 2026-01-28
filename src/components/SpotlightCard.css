@@ -9,6 +9,14 @@
   --mouse-x: 50%;
   --mouse-y: 50%;
   --spotlight-color: rgba(255, 255, 255, 0.05);
+
+  /* Light mode: add separation even when card/background match */
+  box-shadow: 0 10px 24px -18px rgba(0, 0, 0, 0.28);
+}
+
+.dark .card-spotlight {
+  /* Dark mode already has surface contrast; avoid extra shadow noise */
+  box-shadow: none;
 }
 
 .card-spotlight::before {
