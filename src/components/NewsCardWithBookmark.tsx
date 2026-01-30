@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import WordExplanation from '@/components/NewComponents/WordExplanation';
 import React, { useState, useEffect } from 'react';
+import { useArticleSummary } from '@/hooks/useArticleSummary';
+import { useWordDefinition } from '@/hooks/useWordDefinition';
 
 
 
@@ -34,12 +36,15 @@ export function NewsCardWithBookmark({
   const { isBookmarked, addBookmark, removeBookmark } = useSupabaseBookmarks();
   const { isLoggedIn } = useSupabaseAuth();
   const router = useRouter();
+  const { summary: aiSummary, loading: summaryLoading } = useArticleSummary(summary);
 
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [isWordModalOpen, setIsWordModalOpen] = useState(false);
 
-  const handleWordSelect = (word: string) => {
-    console.log("Glossary word selected:", word)
+  const handleWordSelect = (payload: { word: string; context: string; articleId: string }) => {
+    const { word, context } = payload;
+    console.log("Glossary word selected:", word, "with context:", context);
+  
     setSelectedWord(word);
     setIsWordModalOpen(true);
     // Call your existing word explanation component here
@@ -136,11 +141,12 @@ export function NewsCardWithBookmark({
       onWordSelect={handleWordSelect}
     />
 
-    <WordExplanation
-    word={selectedWord}
-    isOpen={isWordModalOpen}
-    onClose={() => setIsWordModalOpen(false)}
-  />
+<WordExplanation
+  word={selectedWord}
+  context={aiSummary || summary} // AI summary if available, otherwise fallback
+  isOpen={isWordModalOpen}
+  onClose={() => setIsWordModalOpen(false)}
+/>
   </>
   );
 }

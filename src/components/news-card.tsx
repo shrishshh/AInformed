@@ -12,6 +12,8 @@ import TiltedCard from "./TiltedCard";
 // import NewsSourceBadge from "./NewsSourceBadge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Sparkles } from "lucide-react"
+import { useArticleSummary } from "@/hooks/useArticleSummary";
+
 
 interface NewsCardProps {
   id: string
@@ -28,7 +30,11 @@ interface NewsCardProps {
   _isGNews?: boolean
   _isGDELT?: boolean
   _isHN?: boolean // Added HN prop
-  onWordSelect?: (word: string) => void
+  onWordSelect?: (payload: {
+    word: string
+    context: string
+    articleId: string
+  }) => void
 }
 
 export function NewsCard({
@@ -52,12 +58,22 @@ export function NewsCard({
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   const [imageError, setImageError] = useState(false);
 
+  const { summary: aiSummary, loading: summaryLoading } =
+  useArticleSummary(summary);
+
   const renderInteractiveSummary = () => {
+    const text = aiSummary || summary;
+  
     if (!onWordSelect) {
-      return <p className="text-sm text-muted-foreground line-clamp-3">{summary}</p>
+      return (
+        <p className="text-sm text-muted-foreground line-clamp-3">
+          {text}
+        </p>
+      );
     }
   
-    const words = summary.split(" ")
+    const words = text.split(" ");
+  
   
     return (
       <p className="text-sm text-muted-foreground leading-relaxed">
@@ -71,16 +87,22 @@ export function NewsCard({
                 <TooltipProvider delayDuration={300}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span
-                        className="hover:bg-blue-100 hover:text-blue-800 cursor-pointer rounded px-0.5 transition-all duration-150 inline-block"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          e.preventDefault()
-                          onWordSelect(cleanWord)
-                        }}
-                      >
-                        {word}
-                      </span>
+                    <span
+                      className="hover:bg-blue-100 hover:text-blue-800 cursor-pointer rounded px-0.5 transition-all duration-150 inline-block"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        e.preventDefault()
+                        if (onWordSelect) {
+                          onWordSelect({
+                            word: cleanWord,
+                            context: aiSummary || summary, // <-- here we pass the AI summary
+                            articleId: id,                 // <-- optional, handy for tracking
+                          })
+                        }
+                      }}
+                    >
+                      {word}
+                    </span>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs">
                       <div className="flex items-center gap-1.5">
@@ -245,7 +267,19 @@ export function NewsCard({
         <h3 className="text-lg font-semibold leading-tight mb-2 hover:text-primary transition-colors line-clamp-2">
           {title}
         </h3>
-        {renderInteractiveSummary()}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <Sparkles className="h-3 w-3" />
+            <span>AI-generated summary</span>
+          </div>
+        {summaryLoading ? (
+          <p className="text-sm text-muted-foreground italic">
+            Generating AI summary…
+          </p>
+        ) : (
+          renderInteractiveSummary()
+        )}
+        </div>
         {/*<p className="text-sm text-muted-foreground line-clamp-3">{summary}</p>*/}
         <div className="mt-auto" />
       </CardContent>
