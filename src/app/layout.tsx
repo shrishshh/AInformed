@@ -88,7 +88,7 @@ export default function RootLayout({
           <Suspense fallback={<div className="h-16 border-b bg-background/80" />}>
             <Header />
           </Suspense>
-          <main>{children}</main>
+          <main className="pt-20 md:pt-16">{children}</main>
           <Footer />
           <Toaster 
             richColors 
