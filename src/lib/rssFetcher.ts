@@ -1,5 +1,7 @@
-// RSS Fetcher for AI News (Server-side)
-// This module fetches articles from multiple RSS feeds and formats them to match your existing news structure
+// RSS + Official sources fetcher (Server-side)
+// This module fetches articles from:
+// - OFFICIAL_AI_SOURCES (RSS + LISTING_PAGE)
+// and formats them to match your existing news structure.
 
 interface RSSArticle {
   source: string;
@@ -8,44 +10,11 @@ interface RSSArticle {
   pubDate: string;
   summary: string;
   image?: string;
+  sourceType?: string;
 }
 
-interface RSSFeed {
-  name: string;
-  url: string;
-  category?: string;
-}
-
-// RSS feeds focused on AI and technology (updated with premium AI sources)
-const feeds: RSSFeed[] = [
-  // Premium AI Research & Innovation Sources (Verified Working)
-  // DeepMind Blog RSS feed is no longer available (404 error)
-  // { name: 'DeepMind Blog', url: 'https://www.deepmind.com/blog/feed/basic', category: 'ai' },
-  { name: 'Microsoft Research', url: 'https://www.microsoft.com/en-us/research/feed/', category: 'research' },
-  { name: 'NVIDIA AI', url: 'https://blogs.nvidia.com/feed/', category: 'ai' },
-  { name: 'Hugging Face Blog', url: 'https://huggingface.co/blog/feed.xml', category: 'ai' },
-  { name: 'The Gradient', url: 'https://thegradient.pub/rss/', category: 'research' },
-  { name: 'KDnuggets', url: 'https://www.kdnuggets.com/feed', category: 'data-science' },
-  { name: 'OpenAI', url: 'https://openai.com/blog/rss.xml', category: 'ai' },
-  // DeepLearning.AI RSS feed is no longer available (404 error)
-  // { name: 'DeepLearning.AI', url: 'https://www.deeplearning.ai/the-batch/feed/', category: 'ai' },
-  // Stability AI RSS feed is no longer available (404 error)
-  // { name: 'Stability AI', url: 'https://stability.ai/blog/rss.xml', category: 'ai' },
-  // Google AI Blog RSS feed is no longer available (404 error)
-  // { name: 'Google AI Blog', url: 'https://ai.googleblog.com/feeds/posts/default', category: 'ai' },
-  
-  // Mainstream Tech News (High Quality)
-  { name: 'MIT Tech Review', url: 'https://www.technologyreview.com/feed/', category: 'technology' },
-  { name: 'Wired', url: 'https://www.wired.com/feed/rss', category: 'technology' },
-  { name: 'Ars Technica', url: 'http://feeds.arstechnica.com/arstechnica/index/', category: 'technology' },
-  { name: 'TechCrunch AI', url: 'https://techcrunch.com/tag/ai/feed/', category: 'ai' },
-  { name: 'VentureBeat AI', url: 'https://venturebeat.com/category/ai/feed/', category: 'ai' },
-  { name: 'The Verge', url: 'https://www.theverge.com/rss/index.xml', category: 'technology' },
-  { name: 'Engadget', url: 'https://www.engadget.com/rss.xml', category: 'technology' },
-  { name: 'Gizmodo', url: 'https://gizmodo.com/rss', category: 'technology' },
-  { name: 'TechRadar', url: 'https://www.techradar.com/rss', category: 'technology' },
-  { name: 'ZDNet', url: 'https://www.zdnet.com/news/rss.xml', category: 'technology' },
-];
+import { OFFICIAL_AI_SOURCES } from "./sources/officialSources";
+import { listingToArticles } from "./sources/listingPageFetcher";
 
 // Enhanced content cleaner function
 function cleanXmlContent(text: string): string {
@@ -271,9 +240,19 @@ function parseXMLItems(xmlText: string): RSSArticle[] {
     const linkMatch = item.match(/<link[^>]*>([\s\S]*?)<\/link>/i);
     const link = linkMatch ? linkMatch[1].replace(/<[^>]*>/g, '').trim() : '';
     
-    // Extract pubDate
+    // Extract pubDate (try to normalize to ISO if parseable)
     const pubDateMatch = item.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/i);
-    const pubDate = pubDateMatch ? pubDateMatch[1].replace(/<[^>]*>/g, '').trim() : '';
+    let pubDate = pubDateMatch ? pubDateMatch[1].replace(/<[^>]*>/g, '').trim() : '';
+    if (pubDate) {
+      try {
+        const parsed = new Date(pubDate);
+        if (!Number.isNaN(parsed.getTime())) {
+          pubDate = parsed.toISOString();
+        }
+      } catch {
+        // ignore
+      }
+    }
     
     // Extract description
     const descMatch = item.match(/<description[^>]*>([\s\S]*?)<\/description>/i);
@@ -341,185 +320,44 @@ async function parseRSSFeed(url: string): Promise<RSSArticle[]> {
 export async function fetchAllRSSFeeds(): Promise<RSSArticle[]> {
   const allArticles: RSSArticle[] = [];
 
-  for (const feed of feeds) {
+  for (const src of OFFICIAL_AI_SOURCES) {
     try {
-      console.log(`Fetching RSS feed: ${feed.name}`);
-      const articles = await parseRSSFeed(feed.url);
-      
-      // Add source name to each article and generate placeholder images
-      const articlesWithSource = articles.map((article: RSSArticle) => ({
-        ...article,
-        source: feed.name,
-        // Use extracted image or generate placeholder based on source
-        image: article.image || generatePlaceholderImage(feed.name)
-      }));
-      
-      allArticles.push(...articlesWithSource);
-      console.log(`Fetched ${articles.length} articles from ${feed.name}`);
+      if (src.fetchMethod === "RSS" && src.rss) {
+        console.log(`Fetching RSS feed: ${src.company}`);
+        const articles = await parseRSSFeed(src.rss);
+
+        const withSource = articles.map((a) => ({
+          ...a,
+          source: src.company,
+          image: a.image || generatePlaceholderImage(src.company),
+          sourceType: src.sourceType,
+        }));
+
+        allArticles.push(...withSource);
+        console.log(`Fetched ${articles.length} articles from ${src.company}`);
+      } else if (src.fetchMethod === "LISTING_PAGE" && src.listingUrl) {
+        console.log(`Fetching listing page: ${src.company}`);
+        const discovered = await listingToArticles(src.listingUrl, 25);
+        const mapped: RSSArticle[] = discovered.map((d) => ({
+          source: src.company,
+          title: d.title,
+          link: d.url,
+          pubDate: d.publishedAt || new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
+          summary: (d.description || "").substring(0, 200) + ((d.description || "").length > 200 ? "..." : ""),
+          image: d.image || generatePlaceholderImage(src.company),
+          sourceType: src.sourceType,
+        }));
+        allArticles.push(...mapped);
+        console.log(`Discovered ${mapped.length} articles from ${src.company}`);
+      }
     } catch (error) {
-      console.error(`Error fetching ${feed.name}:`, error);
+      console.error(`Error fetching ${src.company}:`, error);
     }
   }
 
-  // Enhanced, more inclusive AI/tech filtering with source-based pass
-  const strictAIKeywords = [
-    // Core AI Terms
-    'artificial intelligence', 'ai', 'machine learning', 'deep learning', 'neural network', 'neural networks',
-    'computer vision', 'nlp', 'natural language processing', 'gpt', 'llm', 'large language model', 'transformer',
-    'reinforcement learning', 'unsupervised learning', 'supervised learning', 'multimodal', 'agent', 'agents',
-    'prompt', 'rag', 'retrieval augmented generation', 'vector database', 'embedding', 'fine-tuning', 'lora',
-    'diffusion', 'stable diffusion', 'midjourney', 'openai', 'chatgpt', 'claude', 'gemini', 'anthropic', 'hugging face',
-    'cerebras', 'graphcore', 'nvidia', 'gpu', 'semiconductor', 'ai chip', 'inference', 'training', 'optimizer',
-    'research', 'breakthrough', 'paper', 'arxiv', 'study', 'benchmark', 'sota', 'state of the art', 'evaluation',
-    
-    // AI Companies & Products
-    'perplexity', 'x ai', 'dalle', 'grok', 'bard',
-    
-    // AI Technologies
-    'attention mechanism', 'transfer learning', 'generative ai', 'gen ai',
-    'diffusion model', 'variational autoencoder', 'gan', 'generative adversarial network',
-    'transformer model', 'encoder-decoder', 'backpropagation',
-    
-    // AI Frameworks & Tools
-    'tensorflow', 'pytorch', 'keras', 'transformers library', 'jax',
-    'scikit-learn', 'opencv', 'spacy', 'nltk', 'langchain', 'llamaindex',
-    
-    // AI Research & Innovation
-    'ai research', 'ai breakthrough', 'new ai', 'ai development', 'ai innovation',
-    'ai model', 'ai system', 'ai tool', 'ai application',
-    
-    // Data Science (AI-related)
-    'data science', 'big data', 'analytics', 'data analysis', 'machine learning model',
-    
-    // Cybersecurity (AI-focused)
-    'ai security', 'cyber security ai', 'ai-powered security', 'ml security',
-    'adversarial machine learning', 'ai threat detection',
-    
-    // Robotics (AI-focused)
-    'robotics', 'autonomous', 'self-driving', 'autonomous vehicles', 'robotic process automation',
-    'ai robots', 'machine learning robotics', 'intelligent automation',
-    
-    // Emerging Technologies
-    'quantum computing', 'quantum ai', 'quantum machine learning',
-    'edge ai', 'tiny ml', 'federated learning', 'distributed ai',
-    
-    // Hardware (AI-focused)
-    'tpu', 'neural processing unit', 'amd ai',
-    
-    // Industry Applications
-    'ai healthcare', 'ai diagnosis', 'ai medicine', 'ai drug discovery',
-    'ai finance', 'ai trading', 'algorithmic trading',
-    'ai education', 'ai tutoring', 'personalized learning',
-    
-    // Latest Trends
-    'ai agent', 'autonomous agent', 'ai assistant', 'ai chatbot',
-    'prompt engineering', 'model training', 'ai deployment',
-    
-    // NEW: Broader Tech Keywords (to catch more relevant tech news)
-    'software', 'hardware', 'technology', 'tech', 'innovation', 'startup', 'startups',
-    'silicon valley', 'tech company', 'tech companies', 'software development', 'programming',
-    'algorithm', 'algorithms', 'computing', 'cloud computing', 'cloud', 'saas', 'paas', 'iaas',
-    'api', 'apis', 'platform', 'platforms', 'developer', 'developers', 'coding', 'code',
-    'app', 'application', 'applications', 'software engineering', 'engineering',
-    'digital transformation', 'automation', 'automated', 'smart', 'intelligent',
-    'tech news', 'tech industry', 'tech sector', 'tech market', 'tech investment',
-    'venture capital', 'vc', 'funding', 'series a', 'series b', 'ipo', 'acquisition',
-    'microsoft', 'google', 'apple', 'amazon', 'meta', 'facebook', 'tesla', 'spacex',
-    'netflix', 'uber', 'airbnb', 'stripe', 'palantir', 'databricks', 'snowflake',
-    'blockchain', 'cryptocurrency', 'bitcoin', 'ethereum', 'web3', 'defi', 'nft',
-    'iot', 'internet of things', '5g', '6g', 'wireless', 'telecommunications',
-    'cybersecurity', 'cyber security', 'security', 'privacy', 'data privacy',
-    'augmented reality', 'ar', 'virtual reality', 'vr', 'metaverse', 'mixed reality',
-    'biotechnology', 'biotech', 'genomics', 'precision medicine', 'digital health',
-    'fintech', 'financial technology', 'insurtech', 'regtech',
-    'edtech', 'education technology', 'healthtech', 'health technology',
-    'cleantech', 'green technology', 'renewable energy', 'solar', 'wind power',
-    'space technology', 'satellite', 'satellites', 'aerospace', 'rocket', 'spacex',
-    'electric vehicle', 'ev', 'electric vehicles', 'battery', 'batteries', 'lithium',
-    'semiconductor', 'semiconductors', 'chip', 'chips', 'processor', 'processors',
-    'artificial', 'intelligent', 'smart system', 'smart systems', 'automation',
-    'tech breakthrough', 'technological', 'technological advancement', 'innovation',
-  ];
-
-  // STRICTER: Block consumer/shopping/marketing content
-  const exclusionKeywords = [
-    // Consumer Shopping/Deals
-    'black friday', 'cyber monday', 'prime day', 'deal', 'deals', 'discount', 'discounts',
-    'sale', 'sales', 'on sale', 'buy now', 'shop', 'shopping', 'purchase', 'price drop',
-    'cheap', 'affordable', 'bargain', 'save money', 'best buy', 'best price',
-    
-    // Product Reviews/Consumer Content
-    'product review', 'review', 'reviews', 'unboxing', 'hands-on', 'first impressions',
-    'powerbank', 'power bank', 'airpods', 'air pods', 'earbuds', 'headphones',
-    'gadget', 'gadgets', 'accessory', 'accessories', 'keychain', 'tool',
-    'here\'s why', 'here\'s how', 'earned a permanent spot', 'best gadget',
-    'this $', 'under $', 'worth it', 'worth buying', 'should you buy',
-    
-    // Marketing/Advertising
-    'marketing', 'advertising', 'promotion', 'promo', 'coupon', 'coupons',
-    'sponsored', 'advertisement', 'ad', 'ads', 'commercial',
-    
-    // General Exclusions
-    'politics', 'political', 'election', 'government', 'policy',
-    'sports', 'football', 'basketball', 'soccer', 'tennis',
-    'entertainment', 'celebrities', 'celebrity', 'gossip', 'rumor',
-    'fashion', 'beauty', 'lifestyle', 'travel', 'food', 'recipe',
-    'weather', 'climate', 'forecast',
-    'movie', 'film', 'cinema', 'actor', 'actress',
-    'music', 'song', 'album', 'concert',
-    'bollywood', 'hollywood', 'showbiz'
-  ];
-
-  // STRICTER: Only trusted industry sources (removed consumer tech sources)
-  const trustedAISources = [
-    'Microsoft Research', 'NVIDIA AI', 'Hugging Face', 'The Gradient',
-    'KDnuggets', 'OpenAI', 'MIT Tech Review', 'TechCrunch', 'VentureBeat',
-    'ArXiv', 'Nature', 'Science', 'IEEE'
-  ];
-
-  function isRelevantAIArticle(article: RSSArticle) {
-    const text = `${article.title} ${article.summary}`.toLowerCase();
-    const sourceName = article.source || '';
-
-    // STRICTER: Block consumer/shopping content immediately
-    const hasExclusionKeyword = exclusionKeywords.some(keyword => {
-      const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-      return regex.test(text);
-    });
-    
-    if (hasExclusionKeyword) {
-      return false; // REJECT immediately
-    }
-
-    // STRICTER: Require exact word matching for AI keywords
-    const aiKeywordMatches = strictAIKeywords.filter(keyword => {
-      const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-      return regex.test(text);
-    });
-
-    // STRICTER: Require at least 2 AI keywords OR 1 keyword + trusted source
-    const hasMultipleAIKeywords = aiKeywordMatches.length >= 2;
-    const isTrustedAISource = trustedAISources.some(s =>
-      sourceName.toLowerCase().includes(s.toLowerCase())
-    );
-    const hasAIMinimum = aiKeywordMatches.length >= 1;
-
-    // STRICTER: Require industry focus indicators
-    const hasIndustryFocus = /\b(research|breakthrough|innovation|development|study|paper|algorithm|model|startup|company|funding|enterprise|industry|announcement|launch|release)\b/i.test(text);
-
-    // ACCEPT ONLY if:
-    // 1. Has multiple AI keywords (2+), OR
-    // 2. Has 1 AI keyword + trusted source + industry focus
-    return (hasMultipleAIKeywords || (hasAIMinimum && isTrustedAISource && hasIndustryFocus));
-  }
-
-  // Filter strictly for AI/tech relevance
-  const filteredArticles = allArticles.filter(isRelevantAIArticle);
-
-  // Sort by date (newest first)
-  filteredArticles.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
-
-  return filteredArticles;
+  // Do not aggressively filter here — filtering happens in /api/ai-news.
+  allArticles.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+  return allArticles;
 }
 
 // Filter RSS articles by category
@@ -578,7 +416,8 @@ export function convertRSSToNewsFormat(rssArticles: RSSArticle[]): any[] {
       imageUrl: image, // Also set imageUrl for consistency
       publishedAt: article.pubDate,
       source: { name: article.source },
-      _isRSS: true
+      _isRSS: true,
+      sourceType: article.sourceType
     };
   });
 } 

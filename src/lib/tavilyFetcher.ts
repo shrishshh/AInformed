@@ -231,6 +231,63 @@ export async function fetchTavilyArticles(groupName?: string): Promise<TavilyArt
   }
 }
 
+// Search-only: fetch articles for a user-entered query (no caching)
+export async function searchTavilyArticles(searchQuery: string): Promise<any[]> {
+  if (!TAVILY_CONFIG.apiKey) return [];
+
+  const q = (searchQuery || '').trim();
+  if (!q) return [];
+
+  try {
+    const response = await fetch(TAVILY_CONFIG.baseUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_key: TAVILY_CONFIG.apiKey,
+        query: q,
+        search_depth: TAVILY_CONFIG.searchDepth,
+        max_results: 20,
+        include_answer: false,
+        include_raw_content: false,
+        include_images: false,
+      }),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) return [];
+    const data: TavilyResponse = await response.json();
+    if (!data.results || !Array.isArray(data.results)) return [];
+
+    return data.results
+      .filter((r) => r?.title && r?.url)
+      .map((r) => {
+        let source = 'Tavily';
+        try {
+          source = new URL(r.url).hostname.replace('www.', '');
+        } catch {
+          // ignore
+        }
+
+        const publishedAt = r.published_date ? new Date(r.published_date).toISOString() : new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+        const description = (r.content || '').toString().trim().slice(0, 240);
+
+        return {
+          title: r.title.trim(),
+          description,
+          url: r.url,
+          image: '',
+          imageUrl: '',
+          publishedAt,
+          source: { name: source },
+          _isTavily: true,
+          sourceType: 'AGGREGATOR',
+        };
+      });
+  } catch {
+    return [];
+  }
+}
+
 // Convert Tavily articles to match your existing news format
 export function convertTavilyToNewsFormat(tavilyArticles: TavilyArticle[]): any[] {
   return tavilyArticles.map(article => {

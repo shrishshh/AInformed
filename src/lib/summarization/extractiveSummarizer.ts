@@ -29,6 +29,7 @@ const { SummarizerManager } = require("node-summarizer") as {
 };
 
 const SUMMARY_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const SUMMARY_CACHE_VERSION = "v3";
 const summaryCache = new Map<string, { fetchedAt: number; value: ExtractiveSummaryResult }>();
 
 function normalizeWhitespace(text: string): string {
@@ -72,6 +73,12 @@ function normalizePunctuationSpacing(text: string): string {
   return t;
 }
 
+function capitalizeSentenceStarts(text: string): string {
+  const t = normalizePunctuationSpacing(text);
+  if (!t) return "";
+  return t.replace(/(^|[.!?]\s+)([a-z])/g, (_m, p1: string, p2: string) => `${p1}${p2.toUpperCase()}`);
+}
+
 function removeOrphanContractions(text: string): string {
   let t = normalizePunctuationSpacing(text);
   if (!t) return "";
@@ -91,10 +98,108 @@ function postProcessSummary(text: string): string {
   // Remove very common low-signal CTA phrases that sometimes slip through.
   t = t.replace(/\b(make sure to|don['’]t forget to)\s+click\s+the\s+follow\s+button!?/gi, "");
   t = t.replace(/\bclick\s+the\s+follow\s+button!?/gi, "");
+  t = t.replace(/^\s*plus\s*:\s*/i, "");
 
   // Final cleanup
   t = normalizePunctuationSpacing(t);
+
+  // Drop obvious list/bullet artifacts that can slip into summaries.
+  // (Some publishers inject numbered UI fragments inside the main content.)
+  const parts = t
+    .split(/(?<=[.!?])\s+/g)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .filter((s) => {
+      if (/^\d+(\s|[.)])/i.test(s)) return false;
+      if (/^\d+\s+and\s+\d+/i.test(s)) return false;
+      if (/\bwe tried to make\b/i.test(s)) return false;
+      // Drop very short numeric fragments
+      const nums = s.match(/\d+/g) || [];
+      if (nums.length >= 1 && wordCount(s) <= 5) return false;
+      return true;
+    });
+  t = parts.join(" ").trim();
+  t = normalizePunctuationSpacing(t);
+
+  // Avoid broken/unmatched quotes in tight 60-word summaries.
+  // If quotes are unbalanced, drop them rather than rendering odd leading quotes.
+  const quoteCount = (t.match(/"/g) || []).length;
+  if (quoteCount % 2 === 1) {
+    t = t.replace(/"/g, "");
+    t = normalizePunctuationSpacing(t);
+  }
+  t = capitalizeSentenceStarts(t);
   return t;
+}
+
+const TRAILING_JUNK_WORDS = new Set([
+  "one",
+  "and",
+  "but",
+  "or",
+  "so",
+  "because",
+  "however",
+  "therefore",
+  "thus",
+  "also",
+  "then",
+  "the",
+  "a",
+  "an",
+  "to",
+  "of",
+  "in",
+  "on",
+  "for",
+  "with",
+]);
+
+function dropTrailingJunkWords(text: string, maxDrop = 3): string {
+  const words = stripWeirdSpaces(text).split(" ").filter(Boolean);
+  let dropped = 0;
+  while (words.length > 0 && dropped < maxDrop) {
+    const last = (words[words.length - 1] || "").replace(/[^A-Za-z]/g, "").toLowerCase();
+    if (!last) break;
+    if (!TRAILING_JUNK_WORDS.has(last)) break;
+    words.pop();
+    dropped += 1;
+  }
+  return words.join(" ").trim();
+}
+
+function trimToSentenceBoundaryWithinLimit(text: string, minWordsToKeep = 24): string {
+  const t = normalizePunctuationSpacing(text);
+  if (!t) return "";
+
+  // Try to end on a sentence boundary to avoid abrupt cut-offs.
+  // We search from the end for the last ., !, ? (not part of an abbreviation heuristic—simple).
+  const idx = Math.max(t.lastIndexOf("."), t.lastIndexOf("!"), t.lastIndexOf("?"));
+  if (idx <= 0) return t;
+
+  const candidate = t.slice(0, idx + 1).trim();
+  return wordCount(candidate) >= minWordsToKeep ? candidate : t;
+}
+
+function finalizeSummary(text: string, maxWords: number): { summary: string; summaryWordCount: number } {
+  // 1) cleanup/normalization
+  let t = postProcessSummary(text);
+
+  // 2) enforce word cap AFTER cleanup (important!)
+  let { text: limited, trimmed } = trimToWordLimit(t, maxWords);
+
+  // 3) if we had to cut, avoid ending on junk connectors like "One", "And", etc.
+  if (trimmed) {
+    limited = dropTrailingJunkWords(limited);
+    limited = normalizePunctuationSpacing(limited);
+    limited = trimToSentenceBoundaryWithinLimit(limited, 22);
+  }
+
+  // IMPORTANT: don't append "..." here; the UI already truncates with CSS line-clamp.
+  // Make sure spacing fixes can't push us over the limit.
+  const { text: finalLimited } = trimToWordLimit(limited, maxWords);
+  const finalFinal = finalLimited.trim();
+  return { summary: finalFinal, summaryWordCount: wordCount(finalFinal) };
 }
 
 const SENTENCE_BLACKLIST: RegExp[] = [
@@ -113,6 +218,11 @@ const SENTENCE_BLACKLIST: RegExp[] = [
   /\b(related|recommended)\s+(stories|articles)\b/i,
   /\b(advertisement|sponsored)\b/i,
   /\bwatch live\b/i,
+  // Meta “about this article” lines
+  /^\s*plus\s*:/i,
+  /^\s*the\s+article\s+(covers|explores|looks\s+at|is\s+about)\b/i,
+  /^\s*here['’]s\s+how\b/i,
+  /^\s*in\s+this\s+(article|story)\b/i,
 
   // Time/location headers often embedded near captions
   /\b(updated|published)\s*:\b/i,
@@ -159,6 +269,11 @@ function cleanTextForSummarization(text: string): string {
     if (SENTENCE_BLACKLIST.some((re) => re.test(normalized))) return false;
     // Remove sentence fragments that start with orphan contractions (usually extraction artifacts)
     if (/^['"]?s\b/i.test(normalized)) return false;
+    // Drop list/bullet artifacts that often pollute summaries
+    if (/^\d+(\s|[.)])/i.test(normalized)) return false;
+    if (/^\d+\s+and\s+\d+/i.test(normalized)) return false;
+    // Drop weird all-lowercase attribution fragments (common after stripping "'s")
+    if (/^[a-z]/.test(normalized) && /\bsaid\b/i.test(normalized) && !/[A-Z]/.test(normalized)) return false;
     // Remove very short “noise” sentences with no real content
     if (wordCount(normalized) <= 3) return false;
     return true;
@@ -166,7 +281,11 @@ function cleanTextForSummarization(text: string): string {
 
   // If our filter was too aggressive, fall back to original text.
   const cleanedText = cleaned.join(" ").trim();
-  return wordCount(cleanedText) >= 40 ? cleanedText : t;
+  // Prefer cleaned text unless it becomes effectively empty.
+  // Falling back to raw text often re-introduces captions/CTAs/list bullets.
+  if (wordCount(cleanedText) >= 20) return cleanedText;
+  if (cleanedText) return cleanedText;
+  return t;
 }
 
 function wordCount(text: string): number {
@@ -291,7 +410,8 @@ export async function summarizeExtractiveText(params: {
   sentenceCount?: number;
   maxWords?: number;
 }): Promise<{ summary: string; summaryWordCount: number }> {
-  const sentenceCount = params.sentenceCount ?? 3;
+  // Ask for more than needed; we hard-trim to 60 words afterward.
+  const sentenceCount = params.sentenceCount ?? 5;
   const maxWords = params.maxWords ?? 60;
   const text = cleanTextForSummarization(params.text || "");
 
@@ -299,7 +419,7 @@ export async function summarizeExtractiveText(params: {
 
   let rawSummary = "";
   try {
-    const summarizer = new SummarizerManager(text, sentenceCount);
+    let summarizer = new SummarizerManager(text, sentenceCount);
     // Prefer TextRank (news-style), fall back to frequency if it fails.
     const rankObj = await summarizer.getSummaryByRank();
     const rankSummary = (rankObj as any)?.summary;
@@ -310,6 +430,17 @@ export async function summarizeExtractiveText(params: {
       const freqSummary = (freqObj as any)?.summary;
       rawSummary = typeof freqSummary === "string" ? freqSummary : "";
     }
+
+    // If output is still too short, try once with more sentences.
+    if (wordCount(rawSummary) > 0 && wordCount(rawSummary) < Math.min(45, maxWords - 10)) {
+      summarizer = new SummarizerManager(text, Math.min(sentenceCount + 2, 7));
+      const rankObj2 = await summarizer.getSummaryByRank();
+      const rankSummary2 = (rankObj2 as any)?.summary;
+      const candidate = typeof rankSummary2 === "string" ? rankSummary2 : "";
+      if (wordCount(candidate) > wordCount(rawSummary)) {
+        rawSummary = candidate;
+      }
+    }
   } catch {
     rawSummary = "";
   }
@@ -319,11 +450,7 @@ export async function summarizeExtractiveText(params: {
     rawSummary = takeLeadSentences(text, sentenceCount);
   }
 
-  rawSummary = postProcessSummary(rawSummary);
-
-  const { text: limited, trimmed } = trimToWordLimit(rawSummary, maxWords);
-  const finalSummary = addEllipsisIfTrimmed(limited, trimmed);
-  return { summary: finalSummary, summaryWordCount: wordCount(finalSummary) };
+  return finalizeSummary(rawSummary, maxWords);
 }
 
 export async function getExtractiveSummary(params: {
@@ -332,10 +459,11 @@ export async function getExtractiveSummary(params: {
   sentenceCount?: number;
   bypassCache?: boolean;
 }): Promise<ExtractiveSummaryResult | null> {
-  const { url, maxWords = 60, sentenceCount = 3, bypassCache = false } = params;
+  const { url, maxWords = 60, sentenceCount = 5, bypassCache = false } = params;
   if (!isSafePublicHttpUrl(url)) return null;
 
-  const cached = summaryCache.get(url);
+  const cacheKey = `${SUMMARY_CACHE_VERSION}:${url}|w=${maxWords}|s=${sentenceCount}`;
+  const cached = summaryCache.get(cacheKey);
   const now = Date.now();
   if (!bypassCache && cached && now - cached.fetchedAt < SUMMARY_TTL_MS) {
     return cached.value;
@@ -351,11 +479,7 @@ export async function getExtractiveSummary(params: {
 
   const { summary, summaryWordCount } =
     wc < 80
-      ? (() => {
-          const { text: limited, trimmed } = trimToWordLimit(baseText, maxWords);
-          const s = addEllipsisIfTrimmed(limited, trimmed);
-          return { summary: s, summaryWordCount: wordCount(s) };
-        })()
+      ? finalizeSummary(baseText, maxWords)
       : await summarizeExtractiveText({ text: baseText, sentenceCount, maxWords });
 
   // Final fallback: if we still couldn't produce anything, use excerpt.
@@ -364,9 +488,7 @@ export async function getExtractiveSummary(params: {
       ? { summary, summaryWordCount }
       : (() => {
           const fallbackBase = extracted.excerpt || baseText;
-          const { text: limited, trimmed } = trimToWordLimit(fallbackBase, maxWords);
-          const s = addEllipsisIfTrimmed(postProcessSummary(limited), trimmed);
-          return { summary: s, summaryWordCount: wordCount(s) };
+          return finalizeSummary(fallbackBase, maxWords);
         })();
 
   const value: ExtractiveSummaryResult = {
@@ -377,7 +499,7 @@ export async function getExtractiveSummary(params: {
     method: "readability+textrank",
   };
 
-  summaryCache.set(url, { fetchedAt: now, value });
+  summaryCache.set(cacheKey, { fetchedAt: now, value });
   return value;
 }
 

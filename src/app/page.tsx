@@ -13,16 +13,68 @@ export const dynamic = 'force-dynamic';
 
 const DEFAULT_NEWS_IMAGE = "/placeholder.svg";
 
-async function getNews(): Promise<any[]> {
+type HomeSearchParams = {
+  page?: string;
+  topics?: string;
+  sources?: string;
+  time?: string;
+  location?: string;
+};
+
+type NewsApiResponse = {
+  articles?: any[];
+  items?: any[];
+  pagination?: {
+    page: number;
+    limit: number;
+    totalItems: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+};
+
+async function getNews(
+  searchParams?: HomeSearchParams,
+  opts?: { page?: number; limit?: number }
+): Promise<{ articles: any[]; pagination: NonNullable<NewsApiResponse['pagination']> }> {
   try {
-    const apiUrl = getApiUrl('/api/ai-news');
+    const sp = new URLSearchParams();
+    const parsedPage = parseInt(searchParams?.page ?? '1', 10);
+    const urlPage = Number.isFinite(parsedPage) ? parsedPage : 1;
+    const page = Math.max(1, opts?.page ?? urlPage);
+    const limit = Math.min(100, Math.max(1, opts?.limit ?? 20));
+    sp.set("limit", String(limit));
+    sp.set("page", String(page));
+
+    // Only force-refresh on base feed (no filters)
+    const hasAnyFilter = !!(searchParams?.topics || searchParams?.sources || searchParams?.time || searchParams?.location);
+    // Only refresh page 1 (prevents pagination flicker / reshuffling)
+    if (!hasAnyFilter && page === 1) sp.set("refresh", "true");
+
+    if (searchParams?.topics) sp.set("topics", searchParams.topics);
+    if (searchParams?.sources) sp.set("sources", searchParams.sources);
+    if (searchParams?.time) sp.set("time", searchParams.time);
+    if (searchParams?.location) sp.set("location", searchParams.location);
+
+    const apiUrl = getApiUrl(`/api/ai-news?${sp.toString()}`);
     const res = await fetch(apiUrl, { cache: 'no-store' });
     
     if (!res.ok) {
       console.error(`API error: ${res.status} ${res.statusText}`);
       const text = await res.text();
       console.error('Response text:', text.substring(0, 500));
-      return [];
+      return {
+        articles: [],
+        pagination: {
+          page,
+          limit,
+          totalItems: 0,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPrevPage: page > 1,
+        },
+      };
     }
     
     const contentType = res.headers.get('content-type');
@@ -30,24 +82,44 @@ async function getNews(): Promise<any[]> {
       console.error('API returned non-JSON response:', contentType);
       const text = await res.text();
       console.error('Response text:', text.substring(0, 500));
-      return [];
+      return {
+        articles: [],
+        pagination: {
+          page,
+          limit,
+          totalItems: 0,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPrevPage: page > 1,
+        },
+      };
     }
     
-    const data = await res.json();
-    // Deduplicate by normalized title
-    const uniqueArticles: any[] = [];
-    const seen = new Set<string>();
-    for (const article of (data.articles || []) as any[]) {
-      const normTitle = (article.title || '').toLowerCase().replace(/[^a-z0-9 ]/gi, '').trim();
-      if (!seen.has(normTitle)) {
-        uniqueArticles.push(article);
-        seen.add(normTitle);
-      }
-    }
-    return uniqueArticles;
+    const data = (await res.json()) as NewsApiResponse;
+    const articles = (data.articles || data.items || []) as any[];
+    const pagination = data.pagination || {
+      page,
+      limit,
+      totalItems: articles.length,
+      totalPages: Math.max(1, Math.ceil(articles.length / limit)),
+      hasNextPage: false,
+      hasPrevPage: page > 1,
+    };
+
+    return { articles, pagination };
   } catch (error) {
     console.error('Error fetching news:', error);
-    return [];
+    return {
+      articles: [],
+      pagination: {
+        page: 1,
+        limit: 20,
+        totalItems: 0,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+      },
+    };
   }
 }
 
@@ -87,17 +159,15 @@ async function getTrendingAndUpdates(articles: any[]): Promise<{ trendingTopics:
 export default async function Home({
   searchParams,
 }: {
-  searchParams: { page?: string };
+  searchParams: HomeSearchParams;
 }) {
-  const news = await getNews();
-  const { trendingTopics, recentUpdates } = await getTrendingAndUpdates(news);
-  // Pagination logic
   const currentPage = parseInt(searchParams.page || '1');
   const itemsPerPage = 20;
-  const totalPages = Math.ceil(news.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedNews = news.slice(startIndex, endIndex);
+  const { articles: paginatedNews, pagination } = await getNews(searchParams, {
+    page: currentPage,
+    limit: itemsPerPage,
+  });
+  const { trendingTopics, recentUpdates } = await getTrendingAndUpdates(paginatedNews);
 
   return (
     <div className="container px-4 py-8 mx-auto max-w-7xl">
@@ -136,16 +206,16 @@ export default async function Home({
 
           {/* Pagination */}
           <div className="mt-8">
-            {totalPages > 1 ? (
+            {pagination.totalPages > 1 ? (
               <Pagination 
                 currentPage={currentPage} 
-                totalPages={totalPages} 
-                totalItems={news.length}
+                totalPages={pagination.totalPages} 
+                totalItems={pagination.totalItems}
                 itemsPerPage={itemsPerPage}
               />
             ) : (
               <div className="text-sm text-muted-foreground">
-                No pagination needed - all {news.length} articles fit on one page
+                No pagination needed - all {pagination.totalItems} articles fit on one page
               </div>
             )}
           </div>

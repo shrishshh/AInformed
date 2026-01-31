@@ -5,6 +5,7 @@ import { fetchAllRSSFeeds, convertRSSToNewsFormat } from './rssFetcher';
 import { fetchGDELTArticles, fetchGDELTArticlesAlternative, convertGDELTToNewsFormat } from './gdeltFetcher';
 import { fetchHNStories, fetchHNStoriesAlternative, convertHNToNewsFormat } from './hnFetcher';
 import { fetchTavilyArticles, convertTavilyToNewsFormat, getGroupForHour } from './tavilyFetcher';
+import { fetchInstagramPosts, convertInstagramToNewsFormat } from './instagramFetcher';
 import { memoryCache } from './cacheService';
 import connectDB from './mongodb';
 import NewsCache from '@/models/NewsCache';
@@ -14,6 +15,7 @@ let rssCache: any[] = [];
 let gdeltCache: any[] = [];
 let hnCache: any[] = []; // Added HN cache
 let tavilyCache: any[] = []; // Added Tavily cache
+let instagramCache: any[] = []; // Added Instagram cache
 let lastFetchTime: Date | null = null;
 let lastTavilyFetch: Date | null = null;
 let lastTavilyGroup: string | null = null;
@@ -21,6 +23,7 @@ const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes (for RSS/GDELT/HN)
 const TAVILY_CACHE_DURATION = 60 * 60 * 1000; // 1 hour (for Tavily)
 let isUpdating = false; // Lock to prevent concurrent updates
 let isUpdatingTavily = false; // Separate lock for Tavily to prevent concurrent updates
+let updateAllPromise: Promise<void> | null = null; // Allow awaiting refresh
 
 // Fetch RSS articles and cache them
 export async function updateRSSCache(): Promise<void> {
@@ -84,18 +87,23 @@ export async function updateAllCaches(): Promise<void> {
   // Prevent concurrent updates
   if (isUpdating) {
     console.log('Cache update already in progress, skipping...');
+    if (updateAllPromise) {
+      await updateAllPromise;
+    }
     return;
   }
   
   isUpdating = true;
+  updateAllPromise = (async () => {
   try {
-    console.log('Updating all caches (RSS + GDELT + HN)...');
+    console.log('Updating all caches (RSS + GDELT + HN + Instagram)...');
 
-    // Fetch all three sources in parallel
-    const [rssArticles, gdeltArticles, hnStories] = await Promise.allSettled([
+    // Fetch all sources in parallel
+    const [rssArticles, gdeltArticles, hnStories, instagramPosts] = await Promise.allSettled([
       fetchAllRSSFeeds(),
       fetchGDELTArticles(), // Initial GDELT fetch
-      fetchHNStories() // Initial HN fetch
+      fetchHNStories(), // Initial HN fetch
+      fetchInstagramPosts()
     ]);
 
     // Process RSS results
@@ -145,12 +153,26 @@ export async function updateAllCaches(): Promise<void> {
       }
     }
 
+    // Process Instagram results
+    if (instagramPosts.status === 'fulfilled') {
+      const formattedInstagram = convertInstagramToNewsFormat(instagramPosts.value);
+      instagramCache = formattedInstagram;
+      console.log(`Instagram cache updated: ${formattedInstagram.length} posts`);
+    } else {
+      console.error('Instagram fetch failed:', instagramPosts.reason);
+      instagramCache = [];
+    }
+
     lastFetchTime = new Date();
   } catch (error) {
     console.error('Failed to update all caches:', error);
   } finally {
     isUpdating = false; // Always reset the flag
+    updateAllPromise = null;
   }
+  })();
+
+  await updateAllPromise;
 }
 
 // Get cached RSS articles
@@ -175,6 +197,13 @@ export function getCachedHNArticles(): any[] {
     updateAllCaches().catch(console.error);
   }
   return hnCache;
+}
+
+export function getCachedInstagramArticles(): any[] {
+  if (!lastFetchTime || Date.now() - lastFetchTime.getTime() > CACHE_DURATION) {
+    updateAllCaches().catch(console.error);
+  }
+  return instagramCache;
 }
 
 // Get cached Tavily articles
@@ -297,14 +326,14 @@ export function getAllCachedArticles(): any[] {
   if (!lastFetchTime || Date.now() - lastFetchTime.getTime() > CACHE_DURATION) {
     updateAllCaches().catch(console.error);
   }
-  return [...rssCache, ...gdeltCache, ...hnCache, ...getCachedTavilyArticles()];
+  return [...rssCache, ...gdeltCache, ...hnCache, ...instagramCache, ...getCachedTavilyArticles()];
 }
 
 // Force refresh all caches
 export async function refreshAllCaches(): Promise<{ rss: any[], gdelt: any[], hn: any[], tavily: any[] }> {
   await updateAllCaches();
-  await updateTavilyCache();
-  return { rss: rssCache, gdelt: gdeltCache, hn: hnCache, tavily: tavilyCache };
+  // Search-only mode: Tavily/Perplexity should not be refreshed here.
+  return { rss: rssCache, gdelt: gdeltCache, hn: hnCache, tavily: tavilyCache, instagram: instagramCache } as any;
 }
 
 // Initialize cache on module load
