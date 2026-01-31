@@ -58,8 +58,10 @@ export function NewsCard({
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   const [imageError, setImageError] = useState(false);
 
-  const { summary: aiSummary, loading: summaryLoading } =
-  useArticleSummary(summary);
+  const { summary: aiSummary, loading: summaryLoading } = useArticleSummary({
+    url,
+    fallbackText: summary,
+  });
 
   const renderInteractiveSummary = () => {
     const text = aiSummary || summary;
@@ -270,11 +272,11 @@ export function NewsCard({
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-xs text-gray-500">
             <Sparkles className="h-3 w-3" />
-            <span>AI-generated summary</span>
+            <span>60-second summary</span>
           </div>
         {summaryLoading ? (
           <p className="text-sm text-muted-foreground italic">
-            Generating AI summary…
+            Generating summary…
           </p>
         ) : (
           renderInteractiveSummary()

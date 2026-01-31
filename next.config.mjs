@@ -45,6 +45,10 @@ const nextConfig = {
 
   // Image optimization configuration (allowing all HTTP and HTTPS hostnames)
   images: {
+    // Explicit allowlist for CDNs that appear in feeds
+    domains: [
+      'd14e0irai0gcaa.cloudfront.net',
+    ],
     remotePatterns: [
       {
         protocol: 'https',
@@ -58,6 +62,7 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      
     ],
   },
 
