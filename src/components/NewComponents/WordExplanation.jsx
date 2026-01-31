@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/NewComponents/dialog.jsx';
-import { Loader2, BookOpen, Lightbulb } from 'lucide-react';
+import { Loader2, BookOpen } from 'lucide-react';
 import { useWordDefinition } from '@/hooks/useWordDefinition';
 
 const WordExplanation = ({ word, isOpen, onClose, context }) => {
@@ -44,17 +44,6 @@ const WordExplanation = ({ word, isOpen, onClose, context }) => {
               </div>
               <p className="text-gray-800 leading-relaxed pl-6">
                 {explanation.standardDefinition}
-              </p>
-            </div>
-
-            {/* Contextual Explanation */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                <Lightbulb className="h-4 w-4" />
-                <span>In Context</span>
-              </div>
-              <p className="text-gray-800 leading-relaxed pl-6">
-                {explanation.contextualExplanation}
               </p>
             </div>
 

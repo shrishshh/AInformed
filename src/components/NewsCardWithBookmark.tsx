@@ -36,7 +36,10 @@ export function NewsCardWithBookmark({
   const { isBookmarked, addBookmark, removeBookmark } = useSupabaseBookmarks();
   const { isLoggedIn } = useSupabaseAuth();
   const router = useRouter();
-  const { summary: aiSummary, loading: summaryLoading } = useArticleSummary(summary);
+  const { summary: aiSummary, loading: summaryLoading } = useArticleSummary({
+    url,
+    fallbackText: summary,
+  });
 
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [isWordModalOpen, setIsWordModalOpen] = useState(false);
