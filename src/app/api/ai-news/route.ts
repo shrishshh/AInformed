@@ -33,7 +33,7 @@ const mockNewsData = {
 // Force dynamic rendering to prevent static generation during build
 export const dynamic = 'force-dynamic';
 
-const CACHE_VERSION = 'v4-backend-filters-searchonly';
+const CACHE_VERSION = 'v5-backend-filters-searchonly-sourcefilter';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -63,6 +63,7 @@ export async function GET(request: Request) {
   const locationParam = (searchParams.get('location') || '').trim(); // CSV
 
   const hasExplicitQuery = query.length > 0;
+  const hasExplicitSourceFilter = sourceParam.length > 0 || sourcesParam.length > 0;
   
   // STRICTER: Expanded blocked queries (consumer/shopping/marketing)
   const blockedQueries = [
@@ -505,6 +506,9 @@ export async function GET(request: Request) {
       if (hasExplicitQuery) return true; // don't over-filter user search mode
       if (isEducationalContent(a)) return false;
       if (isConsumerContent(a)) return false;
+      // If the user explicitly selected a source (or sources), don't apply the AI-relevance gate.
+      // They asked to see that source; we'll still keep consumer/edu noise filtered out above.
+      if (hasExplicitSourceFilter) return true;
       return isAIRelevant(a);
     });
 

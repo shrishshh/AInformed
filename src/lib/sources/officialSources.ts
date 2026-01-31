@@ -198,6 +198,17 @@ export const OFFICIAL_AI_SOURCES: OfficialSource[] = [
     sourceType: "TECH_NEWS",
   },
   {
+    id: "tech-funding-news",
+    company: "Tech Funding News",
+    products: [],
+    website: "https://techfundingnews.com/",
+    rss: "https://techfundingnews.com/feed/",
+    fetchMethod: "RSS",
+    trust: "LOW",
+    contentTypes: ["NEWS"],
+    sourceType: "TECH_NEWS",
+  },
+  {
     id: "venturebeat-ai",
     company: "VentureBeat AI",
     products: [],

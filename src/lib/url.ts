@@ -3,6 +3,26 @@
  * Handles Vercel deployment URLs correctly
  */
 
+import "server-only";
+import { headers } from "next/headers";
+
+function getRequestBaseUrl(): string | null {
+  try {
+    const h = headers();
+    const protoRaw = h.get("x-forwarded-proto") || "";
+    const proto = (protoRaw.split(",")[0] || "").trim() || "http";
+
+    const hostRaw = h.get("x-forwarded-host") || h.get("host") || "";
+    const host = (hostRaw.split(",")[0] || "").trim();
+    if (!host) return null;
+
+    return `${proto}://${host}`;
+  } catch {
+    // headers() is not available outside a request (e.g. build-time)
+    return null;
+  }
+}
+
 /**
  * Get the base URL for the application
  * - Uses VERCEL_URL in production (automatically provided by Vercel)
@@ -19,6 +39,11 @@ export function getBaseUrl(): string {
   if (process.env.NEXT_PUBLIC_APP_URL) {
     return process.env.NEXT_PUBLIC_APP_URL;
   }
+
+  // In development (and in any request-context), derive from the current request host/port.
+  // This prevents issues when `next dev` runs on a non-3000 port (e.g. 3002).
+  const requestBase = getRequestBaseUrl();
+  if (requestBase) return requestBase;
   
   // For server-side fetch, we MUST use an absolute URL
   // Default to production URL if nothing is set

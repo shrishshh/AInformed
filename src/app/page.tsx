@@ -1,5 +1,5 @@
 import { NewsCardWithBookmark } from '@/components/NewsCardWithBookmark';
-import AIStocksSidebar from '@/components/AIStocksSidebar';
+// import AIStocksSidebar from '@/components/AIStocksSidebar';
 import LatestArxivPapers from '@/components/LatestArxivPapers';
 import HeroSection from '@/components/HeroSection';
 import AIToolsSection from '@/components/AIToolsSection';
@@ -224,7 +224,7 @@ export default async function Home({
         </div>
 
         <div className="w-full md:w-1/3 md:sticky md:top-24 h-fit space-y-6">
-          <AIStocksSidebar />
+          {/* <AIStocksSidebar /> */}
           <LatestArxivPapers />
         </div>
       </div>

@@ -9,6 +9,7 @@ const NewsSourceBanner = () => {
     "Wired",
     "Ars Technica", 
     "TechCrunch AI",
+    "Tech Funding News",
     "VentureBeat AI",
     "The Verge",
     "Engadget",

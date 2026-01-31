@@ -201,7 +201,12 @@ function generatePlaceholderImage(source: string): string {
   }
   
   // Mainstream Tech News
-  if (sourceLower.includes('techcrunch') || sourceLower.includes('venturebeat')) {
+  if (
+    sourceLower.includes('techcrunch') ||
+    sourceLower.includes('venturebeat') ||
+    sourceLower.includes('tech funding news') ||
+    sourceLower.includes('techfundingnews')
+  ) {
     return 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=600&q=80';
   }
   

@@ -50,6 +50,7 @@ Your AI news platform now aggregates content from **three powerful sources**:
 | Wired | https://www.wired.com/feed/rss | Technology | ✅ Working |
 | Ars Technica | http://feeds.arstechnica.com/arstechnica/index/ | Technology | ✅ Working |
 | TechCrunch AI | https://techcrunch.com/tag/ai/feed/ | AI | ✅ Working |
+| Tech Funding News | https://techfundingnews.com/feed/ | Funding/Startups | ✅ Working |
 | VentureBeat AI | https://venturebeat.com/category/ai/feed/ | AI | ✅ Working |
 | The Verge | https://www.theverge.com/rss/index.xml | Technology | ✅ Working |
 | Engadget | https://www.engadget.com/rss.xml | Technology | ✅ Working |
