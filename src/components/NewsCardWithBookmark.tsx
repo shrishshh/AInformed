@@ -5,6 +5,12 @@ import { useSupabaseBookmarks } from '@/hooks/useSupabaseBookmarks';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import WordExplanation from '@/components/NewComponents/WordExplanation';
+import React, { useState, useEffect } from 'react';
+import { useArticleSummary } from '@/hooks/useArticleSummary';
+import { useWordDefinition } from '@/hooks/useWordDefinition';
+
+
 
 interface NewsCardWithBookmarkProps {
   id: string;
@@ -30,6 +36,29 @@ export function NewsCardWithBookmark({
   const { isBookmarked, addBookmark, removeBookmark } = useSupabaseBookmarks();
   const { isLoggedIn } = useSupabaseAuth();
   const router = useRouter();
+  const { summary: aiSummary, loading: summaryLoading } = useArticleSummary({
+    url,
+    fallbackText: summary,
+  });
+
+  const [selectedWord, setSelectedWord] = useState<string | null>(null);
+  const [isWordModalOpen, setIsWordModalOpen] = useState(false);
+
+  const handleWordSelect = (payload: { word: string; context: string; articleId: string }) => {
+    const { word, context } = payload;
+    console.log("Glossary word selected:", word, "with context:", context);
+  
+    setSelectedWord(word);
+    setIsWordModalOpen(true);
+    // Call your existing word explanation component here
+    // Examples (use whichever matches your setup):
+  
+    // openGlossary(word)
+    // setSelectedWord(word)
+    // setGlossaryOpen(true)
+  
+    // For now, logging confirms it's wired correctly
+  }
 
   // Use URL as the consistent identifier
   const articleId = url;
@@ -100,6 +129,7 @@ export function NewsCardWithBookmark({
   };
 
   return (
+    <>
     <NewsCard
       id={id}
       title={title}
@@ -111,7 +141,16 @@ export function NewsCardWithBookmark({
       readTime={readTime}
       isBookmarked={isBookmarked(articleId)}
       onToggleBookmark={handleToggleBookmark}
+      onWordSelect={handleWordSelect}
     />
+
+<WordExplanation
+  word={selectedWord}
+  context={aiSummary || summary} // AI summary if available, otherwise fallback
+  isOpen={isWordModalOpen}
+  onClose={() => setIsWordModalOpen(false)}
+/>
+  </>
   );
 }
 

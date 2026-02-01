@@ -20,6 +20,7 @@ const categoryKeywords: Record<string, string[]> = {
   'AI Ethics': ['ai ethics', 'ethical ai', 'ai bias', 'responsible ai', 'ai governance', 'ai fairness', 'ethical artificial intelligence', 'ai regulation'],
   'Neural Networks': ['neural network', 'neural networks', 'artificial neural network', 'ann', 'neural architecture', 'neural model', 'neural ai'],
   'Automation': ['automation', 'intelligent automation', 'ai automation', 'process automation', 'automated system', 'ai-powered automation', 'intelligent system'],
+  'Big Data': ['big data', 'large-scale data', 'data infrastructure', 'data warehousing', 'data lake', 'data pipeline', 'data architecture', 'data processing at scale'],
 };
 
 // Function to check if article matches category

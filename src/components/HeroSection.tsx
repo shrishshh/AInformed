@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import NewsSourceBanner from "./NewsSourceBanner";
+import StarBorder from './ui/starborder';
 
 const HeroSection = () => {
   return (
@@ -25,7 +26,9 @@ const HeroSection = () => {
             </p>
             
             {/* CTA Button */}
+            
             <div className="flex justify-center items-center">
+            
               <button 
                 onClick={() => {
                   const newsSection = document.getElementById('news-section');
@@ -37,7 +40,9 @@ const HeroSection = () => {
               >
                 Explore Latest News
               </button>
+             
             </div>
+            
           </div>
         </div>
         

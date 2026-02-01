@@ -9,11 +9,32 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
+    // Add explicit allowlist for common problematic CDNs (prevents runtime crashes)
+    domains: [
+      "d14e0irai0gcaa.cloudfront.net",
+    ],
     remotePatterns: [
-      // Allowing all hostnames for development purposes.
-      // WARNING: This is not recommended for production due to security risks.
-      // In production, you should list only the specific hostnames you trust.
-      { hostname: '**' },
+      // Allow all remote images in development (prevents next/image crashes).
+      // NOTE: In production you should restrict to trusted hostnames.
+      {
+        protocol: 'https',
+        hostname: '**',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '**',
+        port: '',
+        pathname: '/**',
+      },
+      // Explicitly allow this CloudFront host over HTTP (some feeds return http://)
+      {
+        protocol: 'http',
+        hostname: 'd14e0irai0gcaa.cloudfront.net',
+        port: '',
+        pathname: '/**',
+      },
       
       // Explicit support for Unsplash fallback images
       { 
