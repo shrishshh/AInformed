@@ -13,6 +13,7 @@ import TiltedCard from "./TiltedCard";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Sparkles } from "lucide-react"
 import { useArticleSummary } from "@/hooks/useArticleSummary";
+import { ListenButton } from "@/components/ListenButton";
 
 
 interface NewsCardProps {
@@ -279,7 +280,10 @@ export function NewsCard({
             Generating summary…
           </p>
         ) : (
-          renderInteractiveSummary()
+          <>
+            {renderInteractiveSummary()}
+            <ListenButton text={(aiSummary || summary) ?? ""} />
+          </>
         )}
         </div>
         {/*<p className="text-sm text-muted-foreground line-clamp-3">{summary}</p>*/}

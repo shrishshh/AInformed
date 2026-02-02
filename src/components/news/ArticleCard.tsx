@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { LoadingSpinner } from "../common/LoadingSpinner";
 import Link from "next/link";
+import { ListenButton } from "@/components/ListenButton";
 
 interface ArticleCardProps {
   article: NewsArticle;
@@ -96,6 +97,7 @@ export function ArticleCard({ article, isSaved, onToggleSave }: ArticleCardProps
       </CardHeader>
       <CardContent className="flex-grow">
         <p className="text-sm text-muted-foreground line-clamp-4">{article.summary}</p>
+        <ListenButton text={article.summary ?? ""} />
       </CardContent>
       <CardFooter className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border-t border-border">
         <div className="flex gap-2 mt-2 sm:mt-0">
