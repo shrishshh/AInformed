@@ -6,9 +6,14 @@ import Link from "next/link"
 import { Search, Menu, X, Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  SignInButton,
+  SignUpButton,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from "@clerk/nextjs"
 import { useTheme } from "next-themes"
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth"
 import GooeyNav, { GooeyNavItem } from "./GooeyNav"
 
 export default function Header() {
@@ -18,7 +23,6 @@ export default function Header() {
   const [search, setSearch] = useState("");
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const { isLoggedIn, signOut, loading: authLoading } = useSupabaseAuth();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -33,10 +37,6 @@ export default function Header() {
       setSearch(query);
     }
   }, [pathname, searchParams]);
-
-  const handleLogout = async () => {
-    await signOut();
-  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,24 +111,29 @@ export default function Header() {
             )}
           </div>
 
-          {/* Login/Logout Button */}
-          {mounted && !authLoading && (
-            isLoggedIn ? (
-              <Button
-                variant="ghost"
-                onClick={handleLogout}
-                className="hidden md:flex"
-              >
-                Logout
-              </Button>
-            ) : (
-              <Link href="/auth/login" className="hidden md:flex">
+          {/* Auth: Clerk Sign In / Sign Up / User */}
+          <div className="hidden md:flex items-center gap-2">
+            <SignedOut>
+              <SignInButton forceRedirectUrl="/">
                 <Button variant="default" className="bg-gradient-to-r from-purple-600 to-blue-600">
                   Login
                 </Button>
-              </Link>
-            )
-          )}
+              </SignInButton>
+              <SignUpButton forceRedirectUrl="/">
+                <Button variant="outline">Sign Up</Button>
+              </SignUpButton>
+            </SignedOut>
+            <SignedIn>
+              <UserButton
+                afterSignOutUrl="/"
+                appearance={{
+                  elements: {
+                    avatarBox: "h-9 w-9",
+                  },
+                }}
+              />
+            </SignedIn>
+          </div>
 
           {/* Mobile Menu Buttons */}
           <div className="flex md:hidden items-center gap-4">
@@ -215,20 +220,21 @@ export default function Header() {
               </Button>
             )}
 
-            {mounted && !authLoading && (
-              isLoggedIn ? (
-                <Button
-                  className="bg-gradient-to-r from-purple-600 to-blue-600"
-                  onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
-                >
-                  Logout
-                </Button>
-              ) : (
-                <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button className="bg-gradient-to-r from-purple-600 to-blue-600">Login</Button>
-                </Link>
-              )
-            )}
+            <div className="flex items-center gap-2">
+              <SignedOut>
+                <SignInButton forceRedirectUrl="/">
+                  <Button className="bg-gradient-to-r from-purple-600 to-blue-600" onClick={() => setIsMobileMenuOpen(false)}>
+                    Login
+                  </Button>
+                </SignInButton>
+                <SignUpButton forceRedirectUrl="/">
+                  <Button variant="outline" onClick={() => setIsMobileMenuOpen(false)}>Sign Up</Button>
+                </SignUpButton>
+              </SignedOut>
+              <SignedIn>
+                <UserButton afterSignOutUrl="/" />
+              </SignedIn>
+            </div>
           </div>
         </div>
       )}
