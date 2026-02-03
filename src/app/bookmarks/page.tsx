@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { NewsCardWithBookmark } from "@/components/NewsCardWithBookmark";
 import { useSupabaseBookmarks } from "@/hooks/useSupabaseBookmarks";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useAuth } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Bookmark } from "lucide-react";
@@ -12,9 +12,9 @@ export const dynamic = 'force-dynamic';
 
 export default function BookmarksPage() {
   const { bookmarks, loading } = useSupabaseBookmarks();
-  const { isLoggedIn, loading: authLoading } = useSupabaseAuth();
+  const { isSignedIn: isLoggedIn, isLoaded: authLoaded } = useAuth();
 
-  if (authLoading || loading) {
+  if (!authLoaded || loading) {
     return (
       <div className="container px-4 py-8 mx-auto">
         <p className="text-muted-foreground">Loading...</p>

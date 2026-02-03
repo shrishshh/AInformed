@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
+import { useUser } from '@clerk/nextjs';
 import { supabase } from '@/lib/supabaseClient';
-import { useSupabaseAuth } from './useSupabaseAuth';
 
 interface Bookmark {
   id: number;
@@ -20,27 +20,29 @@ interface Bookmark {
 export function useSupabaseBookmarks() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user, isLoggedIn } = useSupabaseAuth();
+  const { user } = useUser();
+  const userId = user?.id ?? null;
+  const isLoggedIn = !!userId;
 
-  // Load bookmarks when user changes
+  // Load bookmarks when user changes (Clerk user id)
   useEffect(() => {
-    if (!isLoggedIn || !user) {
+    if (!isLoggedIn || !userId) {
       setBookmarks([]);
       setLoading(false);
       return;
     }
 
     loadBookmarks();
-  }, [user?.id, isLoggedIn]); // Use user.id instead of user to avoid unnecessary re-renders
+  }, [userId, isLoggedIn]);
 
   const loadBookmarks = async () => {
-    if (!user) return;
+    if (!userId) return;
     
     setLoading(true);
     const { data, error } = await supabase
       .from('bookmarks')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -59,7 +61,7 @@ export function useSupabaseBookmarks() {
     source?: string;
     summary?: string;
   }) => {
-    if (!user) {
+    if (!userId) {
       throw new Error('You must be logged in to save bookmarks');
     }
 
@@ -74,7 +76,7 @@ export function useSupabaseBookmarks() {
 
     // Build insert object with all columns from your table
     const insertData: any = {
-      user_id: user.id,
+      user_id: userId,
       article_id: article.id,
       title: article.title,
       url: article.url,
@@ -110,16 +112,16 @@ export function useSupabaseBookmarks() {
       return [data, ...prev];
     });
     return data;
-  }, [user, bookmarks]);
+  }, [userId, bookmarks]);
 
   const removeBookmark = useCallback(async (articleId: string) => {
-    if (!user) {
+    if (!userId) {
       throw new Error('You must be logged in to remove bookmarks');
     }
 
     console.log('=== REMOVING BOOKMARK ===');
     console.log('Article ID to remove:', articleId);
-    console.log('User ID:', user.id);
+    console.log('User ID:', userId);
     console.log('Current bookmarks before removal:', bookmarks.length);
 
     // Normalize the articleId for comparison (remove trailing slashes)
@@ -130,7 +132,7 @@ export function useSupabaseBookmarks() {
     const { data: allBookmarks, error: fetchError } = await supabase
       .from('bookmarks')
       .select('*')
-      .eq('user_id', user.id);
+      .eq('user_id', userId);
 
     if (fetchError) {
       console.error('Error fetching bookmarks for removal:', fetchError);
@@ -199,7 +201,7 @@ export function useSupabaseBookmarks() {
         .from('bookmarks')
         .delete()
         .eq('article_id', matchingBookmark.article_id)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .select();
       error = result.error;
       data = result.data;
@@ -213,7 +215,7 @@ export function useSupabaseBookmarks() {
         .from('bookmarks')
         .delete()
         .eq('url', matchingBookmark.url)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .select();
       if (result.error) {
         error = result.error;
@@ -259,7 +261,7 @@ export function useSupabaseBookmarks() {
     const { data: updatedBookmarks, error: reloadError } = await supabase
       .from('bookmarks')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (reloadError) {
@@ -283,7 +285,7 @@ export function useSupabaseBookmarks() {
         console.error('The bookmark was removed from UI but may still be in database.');
       }
     }
-  }, [user, bookmarks]);
+  }, [userId, bookmarks]);
 
   const isBookmarked = useCallback((articleId: string) => {
     // Normalize the articleId for comparison

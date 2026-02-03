@@ -2,7 +2,7 @@
 
 import { NewsCard } from '@/components/news-card';
 import { useSupabaseBookmarks } from '@/hooks/useSupabaseBookmarks';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import WordExplanation from '@/components/NewComponents/WordExplanation';
@@ -34,7 +34,7 @@ export function NewsCardWithBookmark({
   readTime = 4,
 }: NewsCardWithBookmarkProps) {
   const { isBookmarked, addBookmark, removeBookmark } = useSupabaseBookmarks();
-  const { isLoggedIn } = useSupabaseAuth();
+  const { isSignedIn: isLoggedIn } = useAuth();
   const router = useRouter();
   const { summary: aiSummary, loading: summaryLoading } = useArticleSummary({
     url,

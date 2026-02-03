@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { NewsCard } from '@/components/news-card';
 import { useSupabaseBookmarks } from '@/hooks/useSupabaseBookmarks';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useAuth } from '@clerk/nextjs';
 
 export default function SearchResultsDisplay() {
   const searchParams = useSearchParams();
@@ -13,7 +13,7 @@ export default function SearchResultsDisplay() {
   const [results, setResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { isBookmarked, addBookmark, removeBookmark } = useSupabaseBookmarks();
-  const { isLoggedIn } = useSupabaseAuth();
+  const { isSignedIn: isLoggedIn } = useAuth();
 
   useEffect(() => {
     if (query) {

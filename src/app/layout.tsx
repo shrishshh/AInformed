@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Suspense } from "react"
 import { Inter as FontSans } from "next/font/google"
+import { ClerkProvider } from "@clerk/nextjs"
 import { cn } from "@/lib/utils"
 import { ThemeProvider } from "@/components/ui/theme-provider"
 import Header from "@/components/header"
@@ -81,23 +82,25 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
-        <WebViewDetector />
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <Suspense fallback={<div className="h-16 border-b bg-background/80" />}>
-            <Header />
-          </Suspense>
-          <main className="pt-20 md:pt-16">{children}</main>
-          <Footer />
-          <Toaster 
-            richColors 
-            position="top-center" 
-            closeButton 
-            duration={3000}
-          />
-        </ThemeProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" suppressHydrationWarning>
+        <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
+          <WebViewDetector />
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            <Suspense fallback={<div className="h-16 border-b bg-background/80" />}>
+              <Header />
+            </Suspense>
+            <main className="pt-20 md:pt-16">{children}</main>
+            <Footer />
+            <Toaster 
+              richColors 
+              position="top-center" 
+              closeButton 
+              duration={3000}
+            />
+          </ThemeProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }

@@ -1,31 +1,20 @@
 "use client";
+
 import { useEffect } from "react";
-import { useAuthStatus } from "@/hooks/useAuthStatus";
+import { useRouter } from "next/navigation";
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-export default function GoogleAuthRedirectPage() {
-  const { login } = useAuthStatus();
+/**
+ * Legacy OAuth redirect page. With Clerk, OAuth is handled by Clerk.
+ * Redirect to home (or sign-in if you want unauthenticated users to land there).
+ */
+export default function RedirectPage() {
+  const router = useRouter();
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      const token = url.searchParams.get("token");
-      console.log("Token received:", token ? "Yes" : "No");
-      
-      if (token) {
-        localStorage.setItem("token", token);
-        console.log("Token saved to localStorage");
-        login();
-        console.log("Login function called");
-        window.location.replace("/"); // Force full reload
-      } else {
-        console.log("No token found, redirecting to auth page");
-        window.location.replace("/auth");
-      }
-    }
-  }, [login]);
+    router.replace("/");
+  }, [router]);
 
-  return null; // No UI needed
-} 
+  return null;
+}
