@@ -1,10 +1,40 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { usePaperSummary } from '@/hooks/usePaperSummary';
+import { Sparkles } from 'lucide-react';
 
 interface Paper {
   title: string;
   authors: string;
   link: string;
+  abstract: string;
+}
+
+function PaperCard({ paper }: { paper: Paper }) {
+  const { summary, loading } = usePaperSummary(paper.abstract);
+
+  return (
+    <li className="flex flex-col pb-3 border-b border-border last:border-0 last:pb-0">
+      <a
+        href={paper.link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm font-medium text-foreground hover:text-primary transition-colors line-clamp-2 mb-1"
+      >
+        {paper.title}
+      </a>
+      <span className="text-xs text-muted-foreground line-clamp-1 mb-2">{paper.authors}</span>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+        <Sparkles className="h-3 w-3" />
+        <span>60-word AI summary</span>
+      </div>
+      {loading ? (
+        <p className="text-xs text-muted-foreground italic">Generating AI summary…</p>
+      ) : summary ? (
+        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-4">{summary}</p>
+      ) : null}
+    </li>
+  );
 }
 
 export default function LatestArxivPapers() {
@@ -36,18 +66,8 @@ export default function LatestArxivPapers() {
         {error && <div className="text-red-500 text-center py-4">{error}</div>}
         {!loading && !error && (
           <ul className="space-y-4">
-            {papers.map((paper, index) => (
-              <li key={paper.link} className="flex flex-col pb-3 border-b border-border last:border-0 last:pb-0">
-                <a
-                  href={paper.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-medium text-foreground hover:text-primary transition-colors line-clamp-2 mb-1"
-                >
-                  {paper.title}
-                </a>
-                <span className="text-xs text-muted-foreground line-clamp-1">{paper.authors}</span>
-              </li>
+            {papers.map((paper) => (
+              <PaperCard key={paper.link} paper={paper} />
             ))}
           </ul>
         )}

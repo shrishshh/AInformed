@@ -62,7 +62,7 @@ export function NewsCard({
   useArticleSummary(summary);
 
   const renderInteractiveSummary = () => {
-    const text = aiSummary || summary;
+    const text = aiSummary || summary || "";
   
     if (!onWordSelect) {
       return (
@@ -95,8 +95,8 @@ export function NewsCard({
                         if (onWordSelect) {
                           onWordSelect({
                             word: cleanWord,
-                            context: aiSummary || summary, // <-- here we pass the AI summary
-                            articleId: id,                 // <-- optional, handy for tracking
+                            context: aiSummary || summary || "",
+                            articleId: id,
                           })
                         }
                       }}
@@ -270,7 +270,7 @@ export function NewsCard({
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-xs text-gray-500">
             <Sparkles className="h-3 w-3" />
-            <span>AI-generated summary</span>
+            <span>60-word AI summary</span>
           </div>
         {summaryLoading ? (
           <p className="text-sm text-muted-foreground italic">

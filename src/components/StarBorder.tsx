@@ -51,7 +51,6 @@ const StarBorder = <T extends React.ElementType = 'button'>({
 };
 
 export default StarBorder;
-
 // tailwind.config.js
 // module.exports = {
 //   theme: {
@@ -73,3 +72,4 @@ export default StarBorder;
 //     },
 //   }
 // }
+
