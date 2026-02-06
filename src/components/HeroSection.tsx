@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import NewsSourceBanner from "./NewsSourceBanner";
-import StarBorder from './ui/starborder';
+import StarBorder from '@/components/StarBorder';
 
 const HeroSection = () => {
   return (
@@ -40,7 +40,20 @@ const HeroSection = () => {
               >
                 Explore Latest News
               </button>
-             
+              {/*<StarBorder
+              as="button"
+              className=""
+              color="cyan"
+              speed="5s"
+              onClick={() => {
+                const newsSection = document.getElementById('news-section');
+                if (newsSection) {
+                  newsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
+            >
+              Explore Latest News
+            </StarBorder>*/}
             </div>
             
           </div>

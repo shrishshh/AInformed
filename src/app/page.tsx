@@ -191,7 +191,7 @@ export default async function Home({
                   key={article.url}
                   id={article.url}
                   title={article.title}
-                  summary={article.description}
+                  summary={article.description || ""}
                   imageUrl={imageUrl}
                   source={article.source?.name || article.source}
                   date={article.publishedAt}

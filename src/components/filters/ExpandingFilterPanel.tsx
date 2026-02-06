@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Filter } from "lucide-react";
+import { Filter, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { OFFICIAL_AI_SOURCES } from "@/lib/sources/officialSources";
@@ -40,6 +40,27 @@ export default function ExpandingPanel() {
       ]),
     []
   );
+  const [openDropdowns, setOpenDropdowns] = useState({
+    source: false,
+    time: false,
+    location: false,
+  });
+
+  const toggleDropdown = (key: keyof typeof openDropdowns) => {
+    setOpenDropdowns((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const getSectionTransition = (index: number) => ({
+    delay: 0.5 + index * 0.12,
+    duration: 0.5,
+    ease: [0.22, 1, 0.36, 1] as const,
+  });
+
+  const getItemTransition = (index: number) => ({
+    delay: index * 0.07,
+    duration: 0.35,
+    ease: [0.22, 1, 0.36, 1] as const,
+  });
 
   const topics = [
     "All Topics",
@@ -228,68 +249,164 @@ export default function ExpandingPanel() {
                       </div>
                     </div>
 
-                    {/* Three-column layout */}
-                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                      {/* Source */}
-                      <div>
-                        <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                          Source
-                        </h4>
-                        <div className="space-y-2">
-                          {allSourceOptions.map((source) => (
-                            <label key={source} className="flex cursor-pointer items-center gap-2 text-sm">
-                              <input
-                                type="checkbox"
-                                className="accent-primary"
-                                checked={selectedSources.includes(source)}
-                                onChange={() => toggleSource(source)}
-                              />
-                              {source}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
+                    {/* Dropdown menus - overflow-visible so slide-in isn't clipped */}
+                    <div className="flex flex-col gap-2 overflow-visible">
+                      {/* Source dropdown */}
+                      <motion.div
+                        initial={{ x: -60, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={getSectionTransition(0)}
+                        className="border border-purple-500/30 rounded-lg overflow-hidden bg-background"
+                      >
+                        <button
+                          onClick={() => toggleDropdown("source")}
+                          className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground hover:bg-purple-50/50 transition"
+                        >
+                          Sources
+                          <ChevronDown
+                            className={`size-4 transition-transform duration-300 ${openDropdowns.source ? "rotate-180" : ""}`}
+                          />
+                        </button>
+                        <AnimatePresence initial={false}>
+                          {openDropdowns.source && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{
+                                opacity: { duration: 0.25 },
+                                height: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+                              }}
+                              className="overflow-hidden"
+                            >
+                              <div className="space-y-2 px-4 pb-4 pt-1 border-t border-purple-500/20">
+                                {allSourceOptions.map((source, i) => (
+                                  <motion.label
+                                    key={source}
+                                    initial={{ x: -24, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    transition={getItemTransition(i)}
+                                    className="flex cursor-pointer items-center gap-2 text-sm"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      className="accent-primary"
+                                      checked={selectedSources.includes(source)}
+                                      onChange={() => toggleSource(source)}
+                                    />
+                                    {source}
+                                  </motion.label>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
 
-                      {/* Time */}
-                      <div>
-                        <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                      {/* Time dropdown */}
+                      <motion.div
+                        initial={{ x: -60, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={getSectionTransition(1)}
+                        className="border border-purple-500/30 rounded-lg overflow-hidden bg-background"
+                      >
+                        <button
+                          onClick={() => toggleDropdown("time")}
+                          className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground hover:bg-purple-50/50 transition"
+                        >
                           Time
-                        </h4>
-                        <div className="space-y-2">
-                          {["Last 24 hours", "Past week", "Past month", "Past year"].map((time) => (
-                            <label key={time} className="flex cursor-pointer items-center gap-2 text-sm">
-                              <input
-                                type="radio"
-                                name="time"
-                                className="accent-primary"
-                                checked={selectedTime === time}
-                                onChange={() => setSelectedTime(time)}
-                              />
-                              {time}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
+                          <ChevronDown
+                            className={`size-4 transition-transform duration-300 ${openDropdowns.time ? "rotate-180" : ""}`}
+                          />
+                        </button>
+                        <AnimatePresence initial={false}>
+                          {openDropdowns.time && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{
+                                opacity: { duration: 0.25 },
+                                height: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+                              }}
+                              className="overflow-hidden"
+                            >
+                              <div className="space-y-2 px-4 pb-4 pt-1 border-t border-purple-500/20">
+                                {["Last 24 hours", "Past week", "Past month", "Past year"].map((time, i) => (
+                                  <motion.label
+                                    key={time}
+                                    initial={{ x: -24, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    transition={getItemTransition(i)}
+                                    className="flex cursor-pointer items-center gap-2 text-sm"
+                                  >
+                                    <input
+                                      type="radio"
+                                      name="time"
+                                      className="accent-primary"
+                                      checked={selectedTime === time}
+                                      onChange={() => setSelectedTime(time)}
+                                    />
+                                    {time}
+                                  </motion.label>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
 
-                      {/* Location */}
-                      <div>
-                        <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                      {/* Location dropdown */}
+                      <motion.div
+                        initial={{ x: -60, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={getSectionTransition(2)}
+                        className="border border-purple-500/30 rounded-lg overflow-hidden bg-background"
+                      >
+                        <button
+                          onClick={() => toggleDropdown("location")}
+                          className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground hover:bg-purple-50/50 transition"
+                        >
                           Location
-                        </h4>
-                        <div className="space-y-2">
-                          {["United States", "Europe", "Asia", "Global"].map((loc) => (
-                            <label key={loc} className="flex cursor-pointer items-center gap-2 text-sm">
-                              <input
-                                type="checkbox"
-                                className="accent-primary"
-                                checked={selectedLocations.includes(loc)}
-                                onChange={() => toggleLocation(loc)}
-                              />
-                              {loc}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
+                          <ChevronDown
+                            className={`size-4 transition-transform duration-300 ${openDropdowns.location ? "rotate-180" : ""}`}
+                          />
+                        </button>
+                        <AnimatePresence initial={false}>
+                          {openDropdowns.location && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{
+                                opacity: { duration: 0.25 },
+                                height: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+                              }}
+                              className="overflow-hidden"
+                            >
+                              <div className="space-y-2 px-4 pb-4 pt-1 border-t border-purple-500/20">
+                                {["United States", "Europe", "Asia", "Global"].map((loc, i) => (
+                                  <motion.label
+                                    key={loc}
+                                    initial={{ x: -24, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    transition={getItemTransition(i)}
+                                    className="flex cursor-pointer items-center gap-2 text-sm"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      className="accent-primary"
+                                      checked={selectedLocations.includes(loc)}
+                                      onChange={() => toggleLocation(loc)}
+                                    />
+                                    {loc}
+                                  </motion.label>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
                     </div>
                   </div>
 
