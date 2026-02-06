@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Filter, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -94,11 +94,24 @@ export default function ExpandingPanel() {
     const timeParam = searchParams.get("time") || "";
     const locationParam = searchParams.get("location") || "";
 
-    setSelectedTopics(topicsParam ? topicsParam.split(",").map((s) => decodeURIComponent(s)) : []);
-    setSelectedSources(sourcesParam ? sourcesParam.split(",").map((s) => decodeURIComponent(s)) : []);
-    setSelectedTime(timeParam ? decodeURIComponent(timeParam) : "");
-    setSelectedLocations(locationParam ? locationParam.split(",").map((s) => decodeURIComponent(s)) : []);
+    setSelectedTopics(topicsParam ? topicsParam.split(",").map((s) => decodeURIComponent(s.trim())).filter(Boolean) : []);
+    setSelectedSources(sourcesParam ? sourcesParam.split(",").map((s) => decodeURIComponent(s.trim())).filter(Boolean) : []);
+    setSelectedTime(timeParam ? decodeURIComponent(timeParam.trim()) : "");
+    setSelectedLocations(locationParam ? locationParam.split(",").map((s) => decodeURIComponent(s.trim())).filter(Boolean) : []);
   };
+
+  // Sync filter state from URL when panel opens or when URL changes (e.g. browser back, shared link)
+  useEffect(() => {
+    if (!open) return;
+    const topicsParam = searchParams.get("topics") || "";
+    const sourcesParam = searchParams.get("sources") || "";
+    const timeParam = searchParams.get("time") || "";
+    const locationParam = searchParams.get("location") || "";
+    setSelectedTopics(topicsParam ? topicsParam.split(",").map((s) => decodeURIComponent(s.trim())).filter(Boolean) : []);
+    setSelectedSources(sourcesParam ? sourcesParam.split(",").map((s) => decodeURIComponent(s.trim())).filter(Boolean) : []);
+    setSelectedTime(timeParam ? decodeURIComponent(timeParam.trim()) : "");
+    setSelectedLocations(locationParam ? locationParam.split(",").map((s) => decodeURIComponent(s.trim())).filter(Boolean) : []);
+  }, [open, searchParams]);
 
   const pushFilters = (opts?: { clear?: boolean }) => {
     const sp = new URLSearchParams(searchParams);

@@ -557,7 +557,25 @@ export async function GET(request: Request) {
         .filter(Boolean);
 
       if (requestedSources.length > 0) {
-        const requestedLower = new Set(requestedSources.map((s) => s.toLowerCase()));
+        // Aliases: when user selects X, also match related sources (e.g. Google AI <-> DeepMind)
+        const sourceAliases: Record<string, string[]> = {
+          'google ai': ['google ai', 'deepmind', 'google', 'blog.google', 'the keyword'],
+          'deepmind': ['deepmind', 'google ai'],
+          'nvidia ai': ['nvidia ai', 'nvidia', 'blogs.nvidia'],
+          'meta ai': ['meta ai', 'meta', 'ai.meta'],
+          'microsoft ai': ['microsoft ai', 'microsoft', 'microsoft research'],
+          'openai': ['openai'],
+          'xai': ['xai', 'x ai'],
+        };
+
+        const requestedLower = new Set<string>();
+        for (const s of requestedSources) {
+          const lower = s.toLowerCase();
+          requestedLower.add(lower);
+          const aliases = sourceAliases[lower];
+          if (aliases) aliases.forEach((a) => requestedLower.add(a));
+        }
+
         allArticles = allArticles.filter((a) => {
           const name = getSourceName(a).toLowerCase();
 

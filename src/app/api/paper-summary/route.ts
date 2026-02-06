@@ -1,40 +1,52 @@
-import { queryPerplexity } from "@/lib/perplexity";
+// NOTE: Legacy Perplexity-based implementation has been commented out
+// to switch to zero-cost extractive summarization.
+//
+// import { queryPerplexity } from "@/lib/perplexity";
+//
+// export async function POST(req: Request) {
+//   const body = await req.json();
+//   const text = body?.text ?? body?.abstract ?? "";
+//
+//   if (!text || typeof text !== "string") {
+//     return Response.json(
+//       { error: "Missing or invalid text/abstract" },
+//       { status: 400 }
+//     );
+//   }
+//
+//   const prompt = `...`;
+//   const summary = await queryPerplexity(prompt);
+//   return Response.json({ summary });
+// }
+
+import { summarizeContent } from "@/lib/summarization/extractiveSummarizer";
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const text = body?.text ?? body?.abstract ?? "";
+  const text = (body?.text ?? body?.abstract ?? "") as string;
+  const link = typeof body?.link === "string" ? body.link : undefined;
 
-  if (!text || typeof text !== "string") {
+  if ((!text || typeof text !== "string") && !link) {
     return Response.json(
-      { error: "Missing or invalid text/abstract" },
+      { error: "Missing paper text/abstract and link" },
       { status: 400 }
     );
   }
 
-  const prompt = `
-You are given the abstract of an academic research paper below.
+  try {
+    const result = await summarizeContent("paper", {
+      url: link,
+      abstract: text,
+      maxWords: 60,
+    });
 
-TASK:
-- Write a concise, plain-language summary of the paper in exactly 60 words.
-- All your responses are displayed on a client-side website. Do NOT engage in any other conversation.
-- Do NOT break the fourth wall. Do not mention that you are an AI assistant or that you are generating a summary.
-- Do NOT mention sources, citations, search results, or your own limitations.
-- Assume the abstract is complete and sufficient.
-- If you are not able to generate a summary, strictly return "No summary available".
-- Keep your response exactly 60 words.
-- Do NOT include a mention like [60 words].
+    if (!result?.summary) {
+      return Response.json({ summary: "No summary available." });
+    }
 
-STYLE:
-- Neutral, accessible tone suitable for researchers and general readers
-- Clear and factual; avoid unnecessary jargon
-
-ABSTRACT:
-"""
-${text}
-"""
-`;
-
-  const summary = await queryPerplexity(prompt);
-
-  return Response.json({ summary });
+    return Response.json({ summary: result.summary });
+  } catch (err) {
+    console.error("Error generating paper summary:", err);
+    return Response.json({ summary: "No summary available." });
+  }
 }

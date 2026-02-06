@@ -14,7 +14,10 @@ interface Paper {
 }
 
 function ArxivPaperCard({ paper }: { paper: Paper }) {
-  const { summary, loading } = usePaperSummary(paper.abstract || '');
+  const { summary, loading } = usePaperSummary({
+    abstract: paper.abstract,
+    link: paper.link,
+  });
 
   return (
     <li className="flex flex-col pb-3 border-b border-border last:border-0 last:pb-0">
@@ -43,7 +46,49 @@ function ArxivPaperCard({ paper }: { paper: Paper }) {
           Generating AI summary…
         </p>
       ) : summary ? (
-        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-4">
+        <p className="text-xs text-muted-foreground leading-relaxed min-h-[120px]">
+          {summary}
+        </p>
+      ) : null}
+    </li>
+  );
+}
+
+function DeepmindPaperCard({ paper }: { paper: Paper }) {
+  const { summary, loading } = usePaperSummary({
+    link: paper.link,
+  });
+
+  return (
+    <li
+      className="flex flex-col pb-3 border-b border-border last:border-0 last:pb-0"
+    >
+      <a
+        href={paper.link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm font-medium text-foreground hover:text-primary transition-colors line-clamp-2 mb-1"
+      >
+        {paper.title}
+      </a>
+
+      {!!paper.authors && (
+        <span className="text-xs text-muted-foreground line-clamp-1 mb-1">
+          {paper.authors}
+        </span>
+      )}
+
+      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+        <Sparkles className="h-3 w-3" />
+        <span>60-word AI summary</span>
+      </div>
+
+      {loading ? (
+        <p className="text-xs text-muted-foreground italic">
+          Generating AI summary…
+        </p>
+      ) : summary ? (
+        <p className="text-xs text-muted-foreground leading-relaxed min-h-[120px]">
           {summary}
         </p>
       ) : null}
@@ -103,7 +148,7 @@ export default function LatestArxivPapers() {
 
         {!loading && !error && (
           <div className="space-y-6">
-            {/* DeepMind section (no AI summary) */}
+            {/* DeepMind section (AI summaries enabled) */}
             <div>
               <div className="text-xs font-semibold text-muted-foreground tracking-wide uppercase mb-2">
                 DeepMind
@@ -116,25 +161,7 @@ export default function LatestArxivPapers() {
               ) : (
                 <ul className="space-y-4">
                   {deepmindPapers.map((paper) => (
-                    <li
-                      key={paper.link}
-                      className="flex flex-col pb-3 border-b border-border last:border-0 last:pb-0"
-                    >
-                      <a
-                        href={paper.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-medium text-foreground hover:text-primary transition-colors line-clamp-2 mb-1"
-                      >
-                        {paper.title}
-                      </a>
-
-                      {!!paper.authors && (
-                        <span className="text-xs text-muted-foreground line-clamp-1">
-                          {paper.authors}
-                        </span>
-                      )}
-                    </li>
+                    <DeepmindPaperCard key={paper.link} paper={paper} />
                   ))}
                 </ul>
               )}

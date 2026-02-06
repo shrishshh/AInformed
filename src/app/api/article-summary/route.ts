@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getExtractiveSummary } from "@/lib/summarization/extractiveSummarizer";
+import { summarizeContent } from "@/lib/summarization/extractiveSummarizer";
 
 export const dynamic = "force-dynamic";
 
@@ -23,11 +23,9 @@ export async function GET(request: Request) {
     : 3;
 
   try {
-    const result = await getExtractiveSummary({
+    const result = await summarizeContent("news", {
       url,
       maxWords: safeMaxWords,
-      sentenceCount: safeSentences,
-      bypassCache: refresh,
     });
 
     if (!result) {
