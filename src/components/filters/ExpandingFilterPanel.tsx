@@ -81,12 +81,12 @@ export default function ExpandingPanel() {
   const allSourceOptions = useMemo(() => {
     const base = OFFICIAL_AI_SOURCES.map((s) => s.company);
     const extra = ["Instagram"];
-    const uniq = Array.from(new Set([...base, ...extra]))
-      .filter(Boolean)
-      .filter((s) => !HIDDEN_SOURCES.has(s));
+    const hidden = Array.from(HIDDEN_SOURCES);
+    const uniq = Array.from(new Set([...base, ...extra, ...hidden]))
+      .filter(Boolean);
     uniq.sort((a, b) => a.localeCompare(b));
     return uniq;
-  }, [HIDDEN_SOURCES]);
+  }, []);
 
   const syncFromUrl = () => {
     const topicsParam = searchParams.get("topics") || "";
@@ -252,7 +252,7 @@ export default function ExpandingPanel() {
                                 ${
                                   active
                                     ? "bg-primary text-primary-foreground"
-                                    : "border bg-muted hover:bg-muted/70"
+                                    : "border border-border bg-muted text-foreground hover:bg-muted/70 dark:bg-muted dark:text-gray-100 dark:border-gray-600 dark:hover:bg-muted/80"
                                 }`}
                             >
                               {topic}
@@ -273,7 +273,7 @@ export default function ExpandingPanel() {
                       >
                         <button
                           onClick={() => toggleDropdown("source")}
-                          className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground hover:bg-purple-50/50 transition"
+                          className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground hover:bg-purple-50/50 dark:text-gray-100 dark:hover:bg-purple-500/20 transition"
                         >
                           Sources
                           <ChevronDown
@@ -292,22 +292,22 @@ export default function ExpandingPanel() {
                               }}
                               className="overflow-hidden"
                             >
-                              <div className="space-y-2 px-4 pb-4 pt-1 border-t border-purple-500/20">
+                              <div className="grid grid-cols-4 gap-x-4 gap-y-2 px-4 pb-4 pt-1 border-t border-purple-500/20">
                                 {allSourceOptions.map((source, i) => (
                                   <motion.label
                                     key={source}
                                     initial={{ x: -24, opacity: 0 }}
                                     animate={{ x: 0, opacity: 1 }}
                                     transition={getItemTransition(i)}
-                                    className="flex cursor-pointer items-center gap-2 text-sm"
+                                    className="flex cursor-pointer items-center gap-2 text-sm text-foreground dark:text-gray-100"
                                   >
                                     <input
                                       type="checkbox"
-                                      className="accent-primary"
+                                      className="accent-primary shrink-0"
                                       checked={selectedSources.includes(source)}
                                       onChange={() => toggleSource(source)}
                                     />
-                                    {source}
+                                    <span className="truncate" title={source}>{source}</span>
                                   </motion.label>
                                 ))}
                               </div>
@@ -325,7 +325,7 @@ export default function ExpandingPanel() {
                       >
                         <button
                           onClick={() => toggleDropdown("time")}
-                          className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground hover:bg-purple-50/50 transition"
+                          className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground hover:bg-purple-50/50 dark:text-gray-100 dark:hover:bg-purple-500/20 transition"
                         >
                           Time
                           <ChevronDown
@@ -351,7 +351,7 @@ export default function ExpandingPanel() {
                                     initial={{ x: -24, opacity: 0 }}
                                     animate={{ x: 0, opacity: 1 }}
                                     transition={getItemTransition(i)}
-                                    className="flex cursor-pointer items-center gap-2 text-sm"
+                                    className="flex cursor-pointer items-center gap-2 text-sm text-foreground dark:text-gray-100"
                                   >
                                     <input
                                       type="radio"
@@ -378,7 +378,7 @@ export default function ExpandingPanel() {
                       >
                         <button
                           onClick={() => toggleDropdown("location")}
-                          className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground hover:bg-purple-50/50 transition"
+                          className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground hover:bg-purple-50/50 dark:text-gray-100 dark:hover:bg-purple-500/20 transition"
                         >
                           Location
                           <ChevronDown
@@ -404,7 +404,7 @@ export default function ExpandingPanel() {
                                     initial={{ x: -24, opacity: 0 }}
                                     animate={{ x: 0, opacity: 1 }}
                                     transition={getItemTransition(i)}
-                                    className="flex cursor-pointer items-center gap-2 text-sm"
+                                    className="flex cursor-pointer items-center gap-2 text-sm text-foreground dark:text-gray-100"
                                   >
                                     <input
                                       type="checkbox"
